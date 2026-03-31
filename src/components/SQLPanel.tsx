@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, KeyboardEvent } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
-import { Play, Sparkles, RotateCcw, Trash2 } from 'lucide-react';
+import { Play, Sparkles } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { validateQuery } from '@/lib/validator';
 import { levels } from '@/data/levels';
@@ -137,16 +137,6 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     }
   }, [query, level, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
 
-  const handleReset = useCallback(() => {
-    setQuery(level?.seedQuery || '');
-    setError(null);
-  }, [level]);
-
-  const handleClear = useCallback(() => {
-    setQuery('');
-    setError(null);
-  }, []);
-
   // Keyboard shortcut: Ctrl/Cmd+Enter to execute
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -181,20 +171,6 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={handleClear}
-            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-            title="Clear query"
-          >
-            <Trash2 className="w-4 h-4 text-white" />
-          </button>
-          <button
-            onClick={handleReset}
-            className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-            title="Reset to seed query"
-          >
-            <RotateCcw className="w-4 h-4 text-white" />
-          </button>
           <button
             onClick={handleExecute}
             disabled={isExecuting}

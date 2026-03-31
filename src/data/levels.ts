@@ -11,7 +11,7 @@ export const levels: Level[] = [
     description: `Extract the common and scientific names for all birds currently classified as 'Critically Endangered' in the species_dim table.
 
 Return the common_name and scientific_name columns.`,
-    hint: "SELECT common_name, scientific_name FROM species_dim WHERE conservation_status = 'Critically Endangered'",
+    hint: "Select from species_dim. Filter where conservation_status matches the危 status.",
     seedQuery: `SELECT common_name,
        scientific_name
   FROM species_dim
@@ -29,7 +29,7 @@ Return the common_name and scientific_name columns.`,
     description: `Calculate the total number of unique observers registered in the database.
 
 Return a single value as total_observers.`,
-    hint: "SELECT COUNT(DISTINCT observer_id) FROM observers_dim",
+    hint: "Count unique observer IDs from observers_dim.",
     seedQuery: `SELECT COUNT(DISTINCT observer_id) AS total_observers
   FROM observers_dim`,
     solutionQuery: `SELECT COUNT(DISTINCT observer_id) AS total_observers
@@ -43,7 +43,7 @@ Return a single value as total_observers.`,
     description: `List the names of all birding hotspots located at an elevation of 2,500 meters or higher.
 
 Return locality_name and elevation.`,
-    hint: "SELECT locality_name, elevation FROM locations_dim WHERE elevation >= 2500",
+    hint: "From locations_dim, filter localities where elevation meets or exceeds 2500 meters.",
     seedQuery: `SELECT locality_name,
        elevation
   FROM locations_dim
@@ -61,7 +61,7 @@ Return locality_name and elevation.`,
     description: `Retrieve all checklist IDs submitted during the primary migration month of May 2024.
 
 Return checklist_id and observation_date.`,
-    hint: "SELECT checklist_id, observation_date FROM checklists_fact WHERE observation_date BETWEEN '2024-05-01' AND '2024-05-31'",
+    hint: "Query checklists_fact for dates within May 2024.",
     seedQuery: `SELECT checklist_id,
        observation_date
   FROM checklists_fact
@@ -79,7 +79,7 @@ Return checklist_id and observation_date.`,
     description: `Find all observation records where only a single individual was counted.
 
 Return obs_id and species_id.`,
-    hint: "SELECT obs_id, species_id FROM observations_fact WHERE bird_count = 1",
+    hint: "Find records in observations_fact where a single bird was counted.",
     seedQuery: `SELECT obs_id,
        species_id
   FROM observations_fact
@@ -97,7 +97,7 @@ Return obs_id and species_id.`,
     description: `Determine the total number of individual birds recorded across all observations in the dataset.
 
 Return a single value as aggregate_bird_abundance.`,
-    hint: "SELECT SUM(bird_count) FROM observations_fact",
+    hint: "Sum all bird_count values from observations_fact.",
     seedQuery: `SELECT SUM(bird_count) AS aggregate_bird_abundance
   FROM observations_fact`,
     solutionQuery: `SELECT SUM(bird_count) AS aggregate_bird_abundance
@@ -111,7 +111,7 @@ Return a single value as aggregate_bird_abundance.`,
     description: `List all observers who have reached the 'Professional' or 'Expert' expertise level.
 
 Return observer_name and expertise_level.`,
-    hint: "SELECT observer_name, expertise_level FROM observers_dim WHERE expertise_level IN ('Professional', 'Expert')",
+    hint: "Filter observers_dim for the two highest expertise levels.",
     seedQuery: `SELECT observer_name,
        expertise_level
   FROM observers_dim
@@ -131,7 +131,7 @@ Return observer_name and expertise_level.`,
 Return obs_id, common_name, and bird_count.
 
 Return the first 20 results.`,
-    hint: "INNER JOIN species_dim ON observations_fact.species_id = species_dim.species_id",
+    hint: "Join observations_fact to species_dim to connect counts with species names.",
     seedQuery: `SELECT o.obs_id,
        s.common_name,
        o.bird_count
@@ -155,7 +155,7 @@ Return the first 20 results.`,
     description: `Identify all locations that contain the term 'Coastal' in their habitat description.
 
 Return locality_name and habitat_type.`,
-    hint: "SELECT locality_name, habitat_type FROM locations_dim WHERE habitat_type LIKE '%Coastal%'",
+    hint: "Search locations_dim for habitats containing 'Coastal'.",
     seedQuery: `SELECT locality_name,
        habitat_type
   FROM locations_dim
@@ -175,7 +175,7 @@ Return locality_name and habitat_type.`,
 Return checklist_id and species_richness.
 
 Return the first 15 results.`,
-    hint: "SELECT checklist_id, COUNT(species_id) FROM observations_fact GROUP BY checklist_id",
+    hint: "Group observations_fact by checklist and count species per group.",
     seedQuery: `SELECT checklist_id,
        COUNT(species_id) AS species_richness
   FROM observations_fact
@@ -195,7 +195,7 @@ Return the first 15 results.`,
     description: `Calculate the mean duration of all birding sessions in the checklists_fact table.
 
 Return a single value as average_sampling_duration.`,
-    hint: "SELECT AVG(duration_minutes) FROM checklists_fact",
+    hint: "Calculate the average duration from checklists_fact.",
     seedQuery: `SELECT AVG(duration_minutes) AS average_sampling_duration
   FROM checklists_fact`,
     solutionQuery: `SELECT AVG(duration_minutes) AS average_sampling_duration
@@ -209,7 +209,7 @@ Return a single value as average_sampling_duration.`,
     description: `Find the maximum and minimum temperatures recorded during any sampling event.
 
 Return max_temp and min_temp.`,
-    hint: "SELECT MAX(temperature_celsius), MIN(temperature_celsius) FROM environmental_metrics",
+    hint: "Find the extreme temperature values from environmental_metrics.",
     seedQuery: `SELECT MAX(temperature_celsius) AS max_temp,
        MIN(temperature_celsius) AS min_temp
   FROM environmental_metrics`,
@@ -225,7 +225,7 @@ Return max_temp and min_temp.`,
     description: `Sort the list of observers by their join date, from the most recent to the earliest.
 
 Return observer_name and join_date.`,
-    hint: "SELECT observer_name, join_date FROM observers_dim ORDER BY join_date DESC",
+    hint: "Sort observers_dim by join_date in descending order.",
     seedQuery: `SELECT observer_name,
        join_date
   FROM observers_dim
@@ -243,7 +243,7 @@ Return observer_name and join_date.`,
     description: `Identify any checklists that were submitted without an associated duration value.
 
 Return checklist_id.`,
-    hint: "SELECT checklist_id FROM checklists_fact WHERE duration_minutes IS NULL",
+    hint: "Find checklists where duration_minutes has no value.",
     seedQuery: `SELECT checklist_id
   FROM checklists_fact
  WHERE duration_minutes IS NULL`,
@@ -261,7 +261,7 @@ Return checklist_id.`,
 Return the formatted taxonomy string.
 
 Return the first 10 results.`,
-    hint: "SELECT common_name || ' [' || scientific_name || ']' FROM species_dim",
+    hint: "Concatenate common_name with scientific_name using brackets.",
     seedQuery: `SELECT common_name || ' [' || scientific_name || ']' AS formatted_taxonomy
   FROM species_dim
  LIMIT 10`,
@@ -284,7 +284,7 @@ Return the first 10 results.`,
 Return habitat_type, common_name, total_count, and habitat_rank.
 
 Return the first 20 results.`,
-    hint: "RANK() OVER (PARTITION BY habitat_type ORDER BY total_count DESC)",
+    hint: "Use RANK() with PARTITION BY habitat_type and ORDER BY total_count to create rankings.",
     seedQuery: `SELECT l.habitat_type,
        s.common_name,
        SUM(o.bird_count) AS total_count,
@@ -328,7 +328,7 @@ Return the first 20 results.`,
     description: `Find the top three observers who have sighted the highest number of unique species.
 
 Return observer_name and unique_bird_count.`,
-    hint: "COUNT(DISTINCT species_id) with ORDER BY DESC LIMIT 3",
+    hint: "Count distinct species per observer, order by count descending, limit to top 3.",
     seedQuery: `SELECT ob.observer_name,
        COUNT(DISTINCT o.species_id) AS unique_bird_count
   FROM observers_dim AS ob
@@ -360,7 +360,7 @@ Return observer_name and unique_bird_count.`,
 Return common_name and male_percentage.
 
 Return the first 15 results.`,
-    hint: "CASE WHEN gender = 'Male' THEN 1 ELSE 0 END",
+    hint: "Use CASE to count only Male observations, then divide by total for percentage.",
     seedQuery: `SELECT s.common_name,
        100.0 * SUM(CASE WHEN o.gender = 'Male' THEN 1 ELSE 0 END) / COUNT(*) AS male_percentage
   FROM observations_fact AS o
@@ -386,7 +386,7 @@ Return the first 15 results.`,
 Return month_start and monthly_total.
 
 Return the first 12 results.`,
-    hint: "strftime('%Y-%m', observation_date) for monthly grouping",
+    hint: "Extract year-month from observation_date to group by month.",
     seedQuery: `SELECT strftime('%Y-%m', c.observation_date) AS month_start,
        SUM(o.bird_count) AS monthly_total
   FROM checklists_fact AS c
@@ -418,7 +418,7 @@ Return the first 12 results.`,
 Return observer_id, observation_date, and cumulative_birds.
 
 Return the first 20 results.`,
-    hint: "SUM(bird_count) OVER (PARTITION BY observer_id ORDER BY observation_date)",
+    hint: "Use a cumulative window function partitioned by observer_id to sum bird counts over time.",
     seedQuery: `SELECT c.observer_id,
        c.observation_date,
        SUM(SUM(o.bird_count)) OVER (
@@ -452,7 +452,7 @@ Return the first 20 results.`,
     description: `Identify species that have been observed in both 'Wetland' and 'Forest' habitats using a set operator.
 
 Return common_name.`,
-    hint: "INTERSECT to find species in both habitats",
+    hint: "Use INTERSECT to find species appearing in both Wetland and Forest habitats.",
     seedQuery: `SELECT s.common_name
   FROM species_dim AS s
        JOIN observations_fact AS o
@@ -504,7 +504,7 @@ SELECT s.common_name
     description: `Identify checklists where the protocol was 'Stationary' but a 'distance_traveled' was incorrectly recorded as greater than zero.
 
 Return checklist_id and observer_id.`,
-    hint: "WHERE protocol_type = 'Stationary' AND distance_km > 0",
+    hint: "Find checklists where protocol_type is 'Stationary' but distance_km is greater than zero.",
     seedQuery: `SELECT checklist_id,
        observer_id
   FROM checklists_fact
@@ -524,7 +524,7 @@ Return checklist_id and observer_id.`,
     description: `What is the average wind speed recorded during sightings of 'Peregrine Falcons'?
 
 Return avg_wind_speed.`,
-    hint: "Join four tables to link weather with taxonomy",
+    hint: "Join environmental_metrics through checklists and observations to reach species_dim.",
     seedQuery: `SELECT AVG(e.wind_speed_kmh) AS avg_wind_speed
   FROM environmental_metrics AS e
        JOIN checklists_fact AS c
@@ -552,7 +552,7 @@ Return avg_wind_speed.`,
     description: `List localities that have recorded more than 100 individual birds using the HAVING clause.
 
 Return locality_name and total_birds.`,
-    hint: "HAVING SUM(bird_count) > 100",
+    hint: "Group by location, filter with HAVING where total birds exceed 100.",
     seedQuery: `SELECT l.locality_name,
        SUM(o.bird_count) AS total_birds
   FROM locations_dim AS l
@@ -580,7 +580,7 @@ HAVING SUM(o.bird_count) > 100`,
     description: `Calculate the percentage change in the number of checklists submitted between 2023 and 2024.
 
 Return pct_change.`,
-    hint: "CTE with annual counts, then calculate percentage change",
+    hint: "Use a CTE to compute annual checklist counts, then calculate percentage change between years.",
     seedQuery: `WITH annual_counts AS (
     SELECT strftime('%Y', observation_date) AS yr,
            COUNT(*) AS cnt
@@ -616,7 +616,7 @@ SELECT 100.0 * (t2.cnt - t1.cnt) / t1.cnt AS pct_change
 Return common_name and bird_count.
 
 Return the first 15 results.`,
-    hint: "Subquery to calculate average, then filter",
+    hint: "Use a subquery to find the average bird_count, then filter observations exceeding that value.",
     seedQuery: `SELECT s.common_name,
        o.bird_count
   FROM observations_fact AS o
@@ -646,7 +646,7 @@ Return the first 15 results.`,
     description: `Find the median precipitation value across all checklists.
 
 Return median_rainfall.`,
-    hint: "Use percentile calculation for median",
+    hint: "Use PERCENTILE_CONT to find the median precipitation value.",
     seedQuery: `SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY precipitation_mm) AS median_rainfall
   FROM environmental_metrics`,
     solutionQuery: `SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY precipitation_mm) AS median_rainfall
@@ -662,7 +662,7 @@ Return median_rainfall.`,
 Return common_name and locality_name.
 
 Return the first 30 results.`,
-    hint: "CROSS JOIN to create Cartesian product",
+    hint: "Use CROSS JOIN between species and locations to create all possible combinations.",
     seedQuery: `SELECT s.common_name,
        l.locality_name
   FROM species_dim AS s
@@ -682,7 +682,7 @@ Return the first 30 results.`,
     description: `For each species, find the date of its first sighting in the year 2024.
 
 Return common_name and first_appearance.`,
-    hint: "MIN(observation_date) per species",
+    hint: "Find the earliest observation_date for each species in 2024.",
     seedQuery: `SELECT s.common_name,
        MIN(c.observation_date) AS first_appearance
   FROM species_dim AS s
@@ -712,7 +712,7 @@ Return common_name and first_appearance.`,
 Return common_name, bird_count, and weather_description.
 
 Return the first 15 results.`,
-    hint: "Join species, observations, checklists, and environmental_metrics",
+    hint: "Join species, observations, checklists, and environmental_metrics. Filter by Endangered status and Storm weather.",
     seedQuery: `SELECT s.common_name,
        o.bird_count,
        e.weather_description
@@ -755,7 +755,7 @@ Return the first 15 results.`,
 Return checklist_id, duration_minutes, and duration_class.
 
 Return the first 20 results.`,
-    hint: "CASE WHEN for duration classification",
+    hint: "Use CASE to classify duration: below 15 is Brief, 15-60 is Standard, above 60 is Extended.",
     seedQuery: `SELECT checklist_id,
        duration_minutes,
        CASE
@@ -785,7 +785,7 @@ Return the first 20 results.`,
 Return bird_name.
 
 Return the first 15 results.`,
-    hint: "COALESCE to handle NULL values",
+    hint: "Use COALESCE to provide 'Unknown Species' when common_name is NULL.",
     seedQuery: `SELECT COALESCE(common_name, 'Unknown Species') AS bird_name
   FROM species_dim
  LIMIT 15`,
@@ -803,7 +803,7 @@ Return the first 15 results.`,
 Return checklist_id, observer_id, and start_time.
 
 Return the first 10 results.`,
-    hint: "Self-join on observer_id and start_time",
+    hint: "Self-join checklists_fact on observer_id and start_time to find duplicates.",
     seedQuery: `SELECT a.checklist_id,
        b.checklist_id,
        a.observer_id,
@@ -833,7 +833,7 @@ Return the first 10 results.`,
     description: `Calculate the average number of birds sighted per checklist for each expertise level.
 
 Return expertise_level and avg_birds_per_session.`,
-    hint: "Join observers, checklists, observations, GROUP BY expertise_level",
+    hint: "Join observers, checklists, and observations. Group by expertise_level to calculate averages.",
     seedQuery: `SELECT ob.expertise_level,
        AVG(o.bird_count) AS avg_birds_per_session
   FROM observers_dim AS ob
@@ -859,7 +859,7 @@ Return expertise_level and avg_birds_per_session.`,
     description: `Select all localities within a specific latitude/longitude bounding box (Lat: 25-40, Lon: -120 to -75).
 
 Return locality_name, latitude, and longitude.`,
-    hint: "Multiple BETWEEN operators for coordinate filtering",
+    hint: "Filter locations_dim using BETWEEN for both latitude (25-40) and longitude (-120 to -75).",
     seedQuery: `SELECT locality_name,
        latitude,
        longitude
@@ -883,7 +883,7 @@ Return locality_name, latitude, and longitude.`,
 Return common_name and checklist_count.
 
 Return the first 15 results.`,
-    hint: "JOIN and GROUP BY with HAVING",
+    hint: "Join species through observations and checklists to locations. Filter for Forest, group by species, filter with HAVING for count > 5.",
     seedQuery: `SELECT s.common_name,
        COUNT(*) AS checklist_count
   FROM species_dim AS s
@@ -921,7 +921,7 @@ HAVING COUNT(*) > 5
 Return year, common_name, and yearly_total.
 
 Return the first 20 results.`,
-    hint: "Extract year from date, GROUP BY year and species",
+    hint: "Extract year from observation_date, group by year and species to get yearly totals.",
     seedQuery: `SELECT strftime('%Y', c.observation_date) AS yr,
        s.common_name,
        SUM(o.bird_count) AS yearly_total
@@ -957,7 +957,7 @@ Return the first 20 results.`,
     description: `Find all observers who have submitted checklists from more than one different state.
 
 Return observer_name and state_count.`,
-    hint: "COUNT DISTINCT state, GROUP BY observer",
+    hint: "Count distinct states per observer, filter with HAVING for more than 1 state.",
     seedQuery: `SELECT ob.observer_name,
        COUNT(DISTINCT l.state) AS state_count
   FROM observers_dim AS ob
@@ -987,7 +987,7 @@ HAVING COUNT(DISTINCT l.state) > 1`,
 Return observation_date, daily_total, and moving_avg_7d.
 
 Return the first 25 results.`,
-    hint: "AVG() OVER (ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)",
+    hint: "Use a window function with AVG and ROWS BETWEEN 6 PRECEDING AND CURRENT ROW for 7-day moving average.",
     seedQuery: `SELECT observation_date,
        daily_total,
        AVG(daily_total) OVER (
@@ -1029,7 +1029,7 @@ Return the first 25 results.`,
 Return observer_id (unique).
 
 Return the first 10 results.`,
-    hint: "Correlated subquery comparing elevation to state average",
+    hint: "Use a correlated subquery to compare each location's elevation against the average for its state.",
     seedQuery: `SELECT DISTINCT c1.observer_id
   FROM checklists_fact AS c1
        JOIN locations_dim AS l1
@@ -1066,7 +1066,7 @@ Return the first 10 results.`,
 Return common_name and 12 monthly columns.
 
 Return a single row.`,
-    hint: "CASE WHEN for each month with SUM",
+    hint: "Use CASE expressions to pivot monthly counts into separate columns (Jan-Dec). Group by species.",
     seedQuery: `SELECT s.common_name,
        SUM(CASE WHEN strftime('%m', c.observation_date) = '01' THEN o.bird_count ELSE 0 END) AS Jan,
        SUM(CASE WHEN strftime('%m', c.observation_date) = '02' THEN o.bird_count ELSE 0 END) AS Feb,
@@ -1118,7 +1118,7 @@ Return a single row.`,
 Return observer_id and expertise_level.
 
 Return the first 5 results.`,
-    hint: "PERCENT_RANK() OVER (ORDER BY expertise_level)",
+    hint: "Use PERCENT_RANK() to rank observers by expertise level. Filter for top 10th percentile.",
     seedQuery: `SELECT observer_id,
        expertise_level
   FROM (
@@ -1166,7 +1166,7 @@ Return the first 5 results.`,
 Return checklist_id, observer_id, location_id, and start_time.
 
 Return the first 10 results.`,
-    hint: "LAG to find previous checklist, time difference calculation",
+    hint: "Use LAG to access the previous checklist time per observer/location. Check if times are within 10 minutes.",
     seedQuery: `SELECT checklist_id,
        observer_id,
        location_id,
@@ -1212,7 +1212,7 @@ Return the first 10 results.`,
     description: `Find the year that recorded the third-highest total count for 'Bald Eagles'.
 
 Return obs_year and total_count.`,
-    hint: "DENSE_RANK() to find the 3rd highest",
+    hint: "Use DENSE_RANK() to rank years by total Bald Eagle count. Filter for rank = 3.",
     seedQuery: `SELECT obs_year,
        total_count
   FROM (
@@ -1258,7 +1258,7 @@ Return obs_year and total_count.`,
 Return year, rel_abundance, and abundance_trend.
 
 Return the first 5 results.`,
-    hint: "LAG() to calculate year-over-year change",
+    hint: "Use LAG() to calculate year-over-year change in relative abundance for Peregrine Falcon.",
     seedQuery: `WITH annual_stats AS (
     SELECT strftime('%Y', c.observation_date) AS yr,
            1.0 * SUM(CASE WHEN s.common_name = 'Peregrine Falcon' THEN o.bird_count ELSE 0 END) / 
@@ -1306,7 +1306,7 @@ SELECT yr,
 Return observer_id and streak_length.
 
 Return the first 10 results.`,
-    hint: "Use row numbers to detect gaps and islands in dates",
+    hint: "Use row numbers to detect gaps and islands in consecutive observation dates for each observer.",
     seedQuery: `WITH daily_activity AS (
     SELECT DISTINCT observer_id,
            observation_date
@@ -1358,7 +1358,7 @@ HAVING COUNT(*) >= 3
     description: `Find observers who were active in 2023, had no submissions in 2024, but have returned in 2025.
 
 Return observer_id.`,
-    hint: "EXCEPT and INTERSECT set operators",
+    hint: "Use EXCEPT and INTERSECT to find observers active in 2023, absent in 2024, returned in 2025.",
     seedQuery: `SELECT DISTINCT observer_id
   FROM checklists_fact
  WHERE strftime('%Y', observation_date) = '2023'
@@ -1400,7 +1400,7 @@ SELECT DISTINCT observer_id
 Return common_name and most_common_weather.
 
 Return the first 15 results.`,
-    hint: "GROUP BY species, ORDER BY COUNT DESC, take first",
+    hint: "Group by species, order by count descending to find the most frequent weather for each species.",
     seedQuery: `SELECT s.common_name,
        e.weather_description AS most_common_weather
   FROM species_dim AS s
@@ -1438,7 +1438,7 @@ Return the first 15 results.`,
 Return state and species_diversity.
 
 Return all results.`,
-    hint: "COUNT DISTINCT species_id per state",
+    hint: "Count distinct species per state by joining locations, checklists, and observations.",
     seedQuery: `SELECT l.state,
        COUNT(DISTINCT o.species_id) AS species_diversity
   FROM locations_dim AS l
@@ -1466,7 +1466,7 @@ Return all results.`,
     description: `Summarize the total bird counts by conservation status.
 
 Return conservation_status, species_count, and total_individuals.`,
-    hint: "GROUP BY conservation_status with COUNT and SUM",
+    hint: "Group observations by conservation_status. Use COUNT for species and SUM for total individuals.",
     seedQuery: `SELECT s.conservation_status,
        COUNT(DISTINCT s.species_id) AS species_count,
        SUM(o.bird_count) AS total_individuals
