@@ -6,6 +6,7 @@ import SQLPanel from './SQLPanel';
 import DataPreview from './DataPreview';
 import FlockStatus from './FlockStatus';
 import LevelUpModal from './LevelUpModal';
+import LevelNavigator from './LevelNavigator';
 import { useGameStore } from '@/store/useGameStore';
 import { initDatabase } from '@/lib/db';
 import SchemaViewer from './SchemaViewer';
@@ -22,6 +23,7 @@ export default function GameProvider() {
   const [isClient, setIsClient] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [activeRightTab, setActiveRightTab] = useState<'schema' | 'data'>('schema');
+  const [showLevelNavigator, setShowLevelNavigator] = useState(false);
   const { completeLevel, currentLevel, boids } = useGameStore();
 
   // Mark as client-side only after hydration
@@ -150,9 +152,15 @@ export default function GameProvider() {
           </div>
 
           {/* Flock Status */}
-          <FlockStatus />
+          <FlockStatus onOpenLevelNavigator={() => setShowLevelNavigator(true)} />
         </div>
       </div>
+
+      {/* Level Navigator Panel */}
+      <LevelNavigator 
+        isOpen={showLevelNavigator} 
+        onClose={() => setShowLevelNavigator(false)} 
+      />
 
       {/* Level Up Modal */}
       <LevelUpModal />

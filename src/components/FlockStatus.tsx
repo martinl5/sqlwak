@@ -1,9 +1,13 @@
 'use client';
 
 import { useGameStore, selectCurrentEpoch } from '@/store/useGameStore';
-import { Feather, ChevronLeft } from 'lucide-react';
+import { Feather, ChevronLeft, List } from 'lucide-react';
 
-export default function FlockStatus() {
+interface FlockStatusProps {
+  onOpenLevelNavigator: () => void;
+}
+
+export default function FlockStatus({ onOpenLevelNavigator }: FlockStatusProps) {
   const { currentLevel, flockSize, resetGame, goToPreviousLevel, levelHistory } = useGameStore();
   const epoch = selectCurrentEpoch(currentLevel);
   const canGoBack = levelHistory.length > 1;
@@ -26,6 +30,13 @@ export default function FlockStatus() {
     <div className="p-3 flex items-center justify-between gap-4 rounded-2xl overflow-hidden" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
       {/* Navigation Button */}
       <div className="flex items-center gap-1">
+        <button
+          onClick={onOpenLevelNavigator}
+          className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+          title="Browse all levels"
+        >
+          <List className="w-4 h-4" />
+        </button>
         <button
           onClick={goToPreviousLevel}
           disabled={!canGoBack}
