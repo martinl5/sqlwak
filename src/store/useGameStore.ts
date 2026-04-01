@@ -131,6 +131,9 @@ export const useGameStore = create<GameState>()(
         levelHistory: state.levelHistory,
         flockSize: state.flockSize,
         userName: state.userName,
+        // Intentionally NOT persisted:
+        // - hasAttemptedCurrent: prevents refresh-cheating by hiding hints until user attempts
+        // - queryResult/error: session-only state
       }),
     }
   )
