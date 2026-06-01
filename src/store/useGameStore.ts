@@ -124,7 +124,7 @@ export const useGameStore = create<GameState>()(
       },
     }),
     {
-      name: 'sqlawk-storage',
+      name: 'lcb-analytics-storage',
       partialize: (state) => ({
         currentLevel: state.currentLevel,
         completedLevels: state.completedLevels,
@@ -148,22 +148,8 @@ export const selectCurrentEpoch = (level: number): string => {
 };
 
 export const selectBoidSpecies = (level: number): { species: string; color: string; size: number } => {
-  if (level <= 15) {
-    // Foundational - Vibrant coral/orange to stand out against blue sky
-    const hue = 15 + (level * 8); // Orange to coral
-    return { species: 'Sparrow', color: `hsl(${hue}, 85%, 55%)`, size: 8 + level * 0.3 };
-  }
-  if (level <= 30) {
-    // Intermediate - Hot pink/magenta
-    const hue = 320 + (level - 16) * 3;
-    return { species: 'Kingfisher', color: `hsl(${hue}, 80%, 55%)`, size: 12 + (level - 15) * 0.4 };
-  }
-  if (level <= 40) {
-    // Advanced - Golden yellow
-    const hue = 45 + (level - 31) * 2;
-    return { species: 'Heron', color: `hsl(${hue}, 85%, ${55 - (level - 31) * 1}%)`, size: 18 + (level - 30) * 0.5 };
-  }
-  // Expert - Rich emerald green
-  const hue = 150 + (level - 41) * 3;
-  return { species: 'Eagle', color: `hsl(${hue}, 70%, 45%)`, size: 22 + (level - 40) * 0.6 };
+  if (level <= 15) return { species: 'Tugboat',        color: '#c9a84c', size: 14 };
+  if (level <= 30) return { species: 'Cargo Ship',     color: '#60a5fa', size: 22 };
+  if (level <= 40) return { species: 'Container Ship', color: '#34d399', size: 30 };
+  return                  { species: 'Supertanker',    color: '#f59e0b', size: 38 };
 };

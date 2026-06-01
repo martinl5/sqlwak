@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, KeyboardEvent } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
-import { Play, Sparkles } from 'lucide-react';
+import { Play, Lightbulb } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { validateQuery } from '@/lib/validator';
 import { levels } from '@/data/levels';
@@ -11,27 +11,35 @@ interface SQLPanelProps {
   onSuccess: () => void;
 }
 
-// Quick snippet buttons
 const SQL_SNIPPETS = [
-  { label: 'SELECT', insert: 'SELECT ' },
-  { label: 'FROM', insert: '\nFROM ' },
-  { label: 'WHERE', insert: '\nWHERE ' },
-  { label: 'ORDER BY', insert: '\nORDER BY ' },
-  { label: 'LIMIT', insert: '\nLIMIT ' },
+  { label: 'SELECT',   insert: 'SELECT '    },
+  { label: 'FROM',     insert: '\nFROM '    },
+  { label: 'WHERE',    insert: '\nWHERE '   },
+  { label: 'JOIN',     insert: '\nJOIN '    },
+  { label: 'GROUP BY', insert: '\nGROUP BY '},
+  { label: 'ORDER BY', insert: '\nORDER BY '},
+  { label: 'LIMIT',    insert: '\nLIMIT '   },
 ];
 
-export default function SQLPanel({ onSuccess }: SQLPanelProps) {
-  const [query, setQuery] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const editorRef = useRef<unknown>(null);
-  const monacoRef = useRef<Monaco | null>(null);
+const EPOCH_LABEL: Record<string, string> = {
+  Foundational: 'GRADUATE ANALYST',
+  Intermediate: 'SENIOR ANALYST',
+  Advanced:     'VP, DATA & ANALYTICS',
+  Expert:       'MANAGING DIRECTOR',
+};
 
-  const { 
-    currentLevel, 
-    isExecuting, 
+export default function SQLPanel({ onSuccess }: SQLPanelProps) {
+  const [query, setQuery]   = useState('');
+  const [error, setError]   = useState<string | null>(null);
+  const editorRef           = useRef<unknown>(null);
+  const monacoRef           = useRef<Monaco | null>(null);
+
+  const {
+    currentLevel,
+    isExecuting,
     hasAttemptedCurrent,
-    setIsExecuting, 
-    setQueryResult, 
+    setIsExecuting,
+    setQueryResult,
     setError: setStoreError,
     setShowLevelUp,
     setLastSpawnedBird,
@@ -40,90 +48,75 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
 
   const level = levels.find((l) => l.id === currentLevel);
 
+  const epochOf = (id: number) => {
+    if (id <= 15) return 'Foundational';
+    if (id <= 30) return 'Intermediate';
+    if (id <= 40) return 'Advanced';
+    return 'Expert';
+  };
+
   const handleEditorMount = (editor: unknown, monaco: Monaco) => {
-    editorRef.current = editor;
-    monacoRef.current = monaco;
-    
-    // Define custom blue theme
-    monaco.editor.defineTheme('sqlawk-blue', {
+    editorRef.current  = editor;
+    monacoRef.current  = monaco;
+
+    monaco.editor.defineTheme('lcb-terminal', {
       base: 'vs-dark',
       inherit: true,
       rules: [
-        { token: 'keyword', foreground: '60A5FA', fontStyle: 'bold' }, // blue-400
-        { token: 'string', foreground: '34D399' }, // emerald-400
-        { token: 'number', foreground: 'F472B6' }, // pink-400
-        { token: 'comment', foreground: '64748B', fontStyle: 'italic' }, // slate-500
-        { token: 'operator', foreground: 'FCD34D' }, // amber-400
+        { token: 'keyword',  foreground: 'c9a84c', fontStyle: 'bold' }, // gold
+        { token: 'string',   foreground: '4ade80' },                     // green
+        { token: 'number',   foreground: 'f87171' },                     // red
+        { token: 'comment',  foreground: '4b5563', fontStyle: 'italic' },
+        { token: 'operator', foreground: '93c5fd' },                     // blue
       ],
       colors: {
-        'editor.background': '#1E3A5F',
-        'editor.foreground': '#E2E8F0',
-        'editor.lineHighlightBackground': '#2D4A6F',
-        'editor.selectionBackground': '#3B82F680',
-        'editorCursor.foreground': '#22D3EE',
-        'editorLineNumber.foreground': '#64748B',
-        'editorLineNumber.activeForeground': '#94A3B8',
+        'editor.background':              '#0a1117',
+        'editor.foreground':              '#e8e6e0',
+        'editor.lineHighlightBackground': '#111827',
+        'editor.selectionBackground':     '#c9a84c30',
+        'editorCursor.foreground':        '#c9a84c',
+        'editorLineNumber.foreground':    '#374151',
+        'editorLineNumber.activeForeground': '#c9a84c',
       },
     });
-    monaco.editor.setTheme('sqlawk-blue');
-    
-    // Focus editor
+    monaco.editor.setTheme('lcb-terminal');
     (editor as { focus?: () => void }).focus?.();
   };
 
   const handleSnippetClick = (insert: string) => {
-    const editor = editorRef.current as { executeEdits?: (source: string, edits: any[]) => void; getPosition?: () => { lineNumber: number; column: number } } | null;
+    const editor = editorRef.current as {
+      executeEdits?: (src: string, edits: unknown[]) => void;
+      getPosition?: () => { lineNumber: number; column: number };
+    } | null;
     if (!editor) return;
-    
-    const position = editor.getPosition?.();
-    if (position) {
+    const pos = editor.getPosition?.();
+    if (pos) {
       editor.executeEdits?.('snippets', [{
-        range: {
-          startLineNumber: position.lineNumber,
-          startColumn: position.column,
-          endLineNumber: position.lineNumber,
-          endColumn: position.column,
-        },
+        range: { startLineNumber: pos.lineNumber, startColumn: pos.column, endLineNumber: pos.lineNumber, endColumn: pos.column },
         text: insert,
       }]);
     }
   };
 
   const handleExecute = useCallback(async () => {
-    if (!query.trim()) {
-      setError('Please enter a SQL query');
-      return;
-    }
-
-    // Mark that user has attempted this level
+    const activeQuery = query.trim() || (level?.seedQuery ?? '').trim();
+    if (!activeQuery) { setError('Please enter a SQL query'); return; }
     setHasAttemptedCurrent(true);
-    
     setIsExecuting(true);
     setError(null);
     setStoreError(null);
 
     try {
-      const result = validateQuery(query, level?.solutionQuery || '');
-
+      const result = validateQuery(activeQuery, level?.solutionQuery || '');
       if (result.success) {
         setQueryResult(result.userResult || null);
-        
-        // Get editor position for bird spawn animation
         try {
           const editor = editorRef.current as { getPosition?: () => { lineNumber: number; column: number } | null } | null;
           if (editor && typeof editor.getPosition === 'function') {
             const pos = editor.getPosition();
-            if (pos && typeof pos.lineNumber === 'number' && typeof pos.column === 'number') {
-              // Convert to approximate screen coordinates
-              const spawnX = 150 + pos.column * 8;
-              const spawnY = 100 + pos.lineNumber * 20;
-              setLastSpawnedBird({ x: spawnX, y: spawnY });
-            }
+            if (pos) setLastSpawnedBird({ x: 150 + pos.column * 8, y: 100 + pos.lineNumber * 20 });
           }
-        } catch (e) {
-          // Ignore position errors
-        }
-
+        } catch (_) { /* ignore */ }
         setShowLevelUp(true);
         onSuccess();
       } else {
@@ -137,102 +130,141 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     }
   }, [query, level, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
 
-  // Keyboard shortcut: Ctrl/Cmd+Enter to execute
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        handleExecute();
-      }
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); handleExecute(); }
     };
-    
-    window.addEventListener('keydown', handleKeyDown as any);
-    return () => window.removeEventListener('keydown', handleKeyDown as any);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [handleExecute]);
 
-  // Auto-focus editor when level changes
   useEffect(() => {
     const editor = editorRef.current as { focus?: () => void } | null;
-    const focusFn = editor?.focus;
-    if (focusFn) {
-      // Small delay to ensure editor is ready
-      setTimeout(() => focusFn(), 50);
-    }
+    if (editor?.focus) setTimeout(() => editor.focus?.(), 50);
   }, [currentLevel]);
 
+  const epoch = epochOf(currentLevel);
+
   return (
-    <div className="h-full flex flex-col rounded-2xl overflow-hidden" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10" style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)' }}>
-        <div>
-          <h2 className="text-lg font-semibold text-white">SQL Editor</h2>
-          <p className="text-sm text-white/60">
-            Level {currentLevel}: {level?.title}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleExecute}
-            disabled={isExecuting}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/25 font-medium"
+    <div
+      className="h-full flex flex-col overflow-hidden fade-in-up"
+      style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 6 }}
+    >
+      {/* ── Panel header ────────────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: '1px solid var(--lcb-border)', background: 'var(--lcb-panel-2)' }}
+      >
+        <div className="lcb-header">
+          <p
+            className="text-xs tracking-widest uppercase"
+            style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-muted)' }}
           >
-            <Play className="w-4 h-4" />
-            <span>{isExecuting ? 'Running...' : 'Run'}</span>
-            <span className="text-xs opacity-60 ml-1">Ctrl+↵</span>
-          </button>
+            {EPOCH_LABEL[epoch]} — {epoch}
+          </p>
+          <h2
+            className="text-sm font-semibold mt-0.5"
+            style={{ fontFamily: 'var(--font-playfair)', color: 'var(--lcb-white)' }}
+          >
+            Level {currentLevel}: {level?.title}
+          </h2>
         </div>
+        <button
+          onClick={handleExecute}
+          disabled={isExecuting}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase transition-opacity hover:opacity-85 disabled:opacity-40"
+          style={{
+            background: 'var(--lcb-gold)',
+            color: 'var(--lcb-black)',
+            borderRadius: 4,
+            fontFamily: 'var(--font-ibm-plex-mono)',
+          }}
+        >
+          <Play className="w-3 h-3" />
+          {isExecuting ? 'Running…' : 'Run'}
+          <span style={{ opacity: 0.6, fontSize: 10 }}>⌘↵</span>
+        </button>
       </div>
 
-      {/* Level Description */}
-      <div className="p-4 border-b border-white/10">
-        <p className="text-white/80 text-sm">{level?.description}</p>
-        {hasAttemptedCurrent && (
-          <p className="text-amber-300/80 text-xs mt-2 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            Hint: {level?.hint}
-          </p>
+      {/* ── Level description ────────────────────────────────────────────── */}
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--lcb-border)' }}>
+        <p className="text-xs leading-5" style={{ color: 'var(--lcb-white)', opacity: 0.8, fontFamily: 'var(--font-ibm-plex-mono)', whiteSpace: 'pre-wrap' }}>
+          {level?.description}
+        </p>
+        {hasAttemptedCurrent && level?.hint && (
+          <div
+            className="flex items-start gap-2 mt-2 px-3 py-2"
+            style={{ borderLeft: '2px solid var(--lcb-gold-dim)', background: 'rgba(201,168,76,0.05)' }}
+          >
+            <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
+            <p className="text-xs" style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+              {level.hint}
+            </p>
+          </div>
         )}
       </div>
 
-      {/* Quick Snippets */}
-      <div className="flex gap-1 px-4 py-2 border-b border-white/5 bg-white/5">
-        {SQL_SNIPPETS.map((snippet) => (
+      {/* ── Quick snippets ───────────────────────────────────────────────── */}
+      <div
+        className="flex flex-wrap gap-1 px-3 py-2"
+        style={{ borderBottom: '1px solid var(--lcb-border)', background: 'rgba(255,255,255,0.01)' }}
+      >
+        {SQL_SNIPPETS.map((s) => (
           <button
-            key={snippet.label}
-            onClick={() => handleSnippetClick(snippet.insert)}
-            className="px-2 py-1 text-xs rounded bg-white/10 hover:bg-white/20 text-blue-200 hover:text-white transition-colors font-mono"
+            key={s.label}
+            onClick={() => handleSnippetClick(s.insert)}
+            className="px-2 py-0.5 text-xs transition-colors"
+            style={{
+              fontFamily: 'var(--font-ibm-plex-mono)',
+              color: 'var(--lcb-muted)',
+              border: '1px solid var(--lcb-border)',
+              borderRadius: 3,
+              background: 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--lcb-gold)';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--lcb-gold)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--lcb-border)';
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--lcb-muted)';
+            }}
           >
-            {snippet.label}
+            {s.label}
           </button>
         ))}
       </div>
 
-      {/* Editor */}
+      {/* ── Monaco Editor ────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0">
         <Editor
           height="100%"
           defaultLanguage="sql"
-          theme="sqlawk-blue"
+          theme="lcb-terminal"
           value={query || level?.seedQuery || ''}
-          onChange={(value) => setQuery(value || '')}
+          onChange={(v) => setQuery(v || '')}
           onMount={handleEditorMount}
           options={{
-            minimap: { enabled: false },
-            fontSize: 14,
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            automaticLayout: true,
-            tabSize: 2,
-            padding: { top: 16 },
+            minimap:               { enabled: false },
+            fontSize:              13,
+            lineNumbers:           'on',
+            scrollBeyondLastLine:  false,
+            automaticLayout:       true,
+            tabSize:               2,
+            padding:               { top: 12 },
+            fontFamily:            '"IBM Plex Mono", "Courier New", monospace',
+            fontLigatures:         true,
           }}
         />
       </div>
 
-      {/* Error Display */}
+      {/* ── Error ────────────────────────────────────────────────────────── */}
       {error && (
-        <div className="p-4 bg-red-500/20 border-t border-red-500/30">
-          <p className="text-red-300 text-sm flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
+        <div
+          className="px-4 py-3"
+          style={{ borderTop: '1px solid var(--lcb-red)', borderLeft: '3px solid var(--lcb-red)', background: 'rgba(239,68,68,0.06)' }}
+        >
+          <p className="text-xs" style={{ color: 'var(--lcb-red)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
             {error}
           </p>
         </div>

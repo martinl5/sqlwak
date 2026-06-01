@@ -6,17 +6,29 @@ import { Table, Database } from 'lucide-react';
 export default function DataPreview() {
   const { queryResult, error } = useGameStore();
 
+  const panelStyle = {
+    background: 'var(--lcb-panel)',
+    border: '1px solid var(--lcb-border)',
+    borderRadius: 6,
+  };
+
+  const headerStyle = {
+    borderBottom: '1px solid var(--lcb-border)',
+    background: 'var(--lcb-panel-2)',
+    padding: '10px 12px',
+  };
+
   if (error) {
     return (
-      <div className="h-full flex flex-col overflow-hidden rounded-2xl" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-        <div className="p-4 border-b border-white/10" style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)' }}>
-          <h3 className="text-white font-semibold flex items-center gap-2">
-            <Database className="w-4 h-4" />
-            Data Preview
-          </h3>
+      <div className="h-full flex flex-col overflow-hidden fade-in-up" style={panelStyle}>
+        <div style={headerStyle} className="flex items-center gap-2">
+          <Database className="w-3.5 h-3.5" style={{ color: 'var(--lcb-gold)' }} />
+          <span className="text-xs font-semibold uppercase tracking-widest lcb-header" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-white)' }}>
+            Query Results
+          </span>
         </div>
         <div className="flex-1 p-4">
-          <p className="text-red-300 text-sm">{error}</p>
+          <p className="text-xs" style={{ color: 'var(--lcb-red)', fontFamily: 'var(--font-ibm-plex-mono)' }}>{error}</p>
         </div>
       </div>
     );
@@ -24,40 +36,51 @@ export default function DataPreview() {
 
   if (!queryResult || queryResult.values.length === 0) {
     return (
-      <div className="h-full flex flex-col overflow-hidden rounded-2xl" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-        <div className="p-4 border-b border-white/10" style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)' }}>
-          <h3 className="text-white font-semibold flex items-center gap-2">
-            <Database className="w-4 h-4" />
-            Data Preview
-          </h3>
+      <div className="h-full flex flex-col overflow-hidden fade-in-up" style={panelStyle}>
+        <div style={headerStyle} className="flex items-center gap-2">
+          <Database className="w-3.5 h-3.5" style={{ color: 'var(--lcb-gold)' }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-white)' }}>
+            Query Results
+          </span>
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-white/40 text-sm">Execute a query to see results</p>
+          <p className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+            Run a query to see results
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden rounded-2xl" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-      <div className="p-4 border-b border-white/10 flex items-center justify-between" style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)' }}>
-        <h3 className="text-white font-semibold flex items-center gap-2">
-          <Table className="w-4 h-4" />
-          Data Preview
-        </h3>
-        <span className="text-white/50 text-xs">
+    <div className="h-full flex flex-col overflow-hidden fade-in-up" style={panelStyle}>
+      <div style={headerStyle} className="flex items-center justify-between">
+        <div className="flex items-center gap-2 lcb-header">
+          <Table className="w-3.5 h-3.5" style={{ color: 'var(--lcb-gold)' }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-white)' }}>
+            Query Results
+          </span>
+        </div>
+        <span className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
           {queryResult.values.length} rows
         </span>
       </div>
-      
+
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0" style={{ backgroundColor: 'rgba(10, 22, 40, 0.9)' }}>
+        <table className="w-full text-xs" style={{ fontFamily: 'var(--font-ibm-plex-mono)', borderCollapse: 'collapse' }}>
+          <thead className="sticky top-0" style={{ background: 'var(--lcb-panel-2)' }}>
             <tr>
               {queryResult.columns.map((col, i) => (
                 <th
                   key={i}
-                  className="px-4 py-3 text-left text-cyan-300 font-semibold text-xs uppercase tracking-wider border-b border-white/10"
+                  className="text-left px-3 py-2 uppercase tracking-widest"
+                  style={{
+                    color: 'var(--lcb-gold)',
+                    borderBottom: '1px solid var(--lcb-border)',
+                    fontWeight: 600,
+                    fontSize: 10,
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   {col}
                 </th>
@@ -68,20 +91,23 @@ export default function DataPreview() {
             {queryResult.values.map((row, rowIdx) => (
               <tr
                 key={rowIdx}
-                className={`${rowIdx % 2 === 0 ? 'bg-white/5' : 'bg-white/[0.02]'} hover:bg-blue-500/20 transition-colors`}
+                className="lcb-table-row"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
               >
                 {row.map((cell, cellIdx) => (
                   <td
                     key={cellIdx}
-                    className="px-4 py-2.5 text-white/80 border-b border-white/5"
+                    className="px-3 py-1.5"
+                    style={{
+                      color: cell === null
+                        ? 'var(--lcb-muted)'
+                        : typeof cell === 'number'
+                        ? '#7dd3fc'
+                        : 'var(--lcb-white)',
+                      fontStyle: cell === null ? 'italic' : 'normal',
+                    }}
                   >
-                    {cell === null ? (
-                      <span className="text-blue-300/40 italic">NULL</span>
-                    ) : (
-                      <span className={typeof cell === 'number' ? 'text-cyan-300' : ''}>
-                        {String(cell)}
-                      </span>
-                    )}
+                    {cell === null ? 'NULL' : String(cell)}
                   </td>
                 ))}
               </tr>

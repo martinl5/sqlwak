@@ -18,183 +18,205 @@ interface TableSchema {
   sample: string;
 }
 
-// Updated schema for ornithology database
 const SCHEMA: Record<string, TableSchema> = {
-  species_dim: {
-    description: 'Bird species catalog with conservation status',
+  customers: {
+    description: 'LCB customer profiles with segment and credit data',
     columns: [
-      { name: 'species_id', type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
-      { name: 'common_name', type: 'TEXT', description: 'Common bird name' },
-      { name: 'scientific_name', type: 'TEXT', description: 'Scientific binomial name' },
-      { name: 'conservation_status', type: 'TEXT', description: 'Conservation status (e.g., Critically Endangered)' },
+      { name: 'customer_id',   type: 'INTEGER', description: 'Unique identifier',                      primaryKey: true },
+      { name: 'customer_name', type: 'TEXT',    description: 'Full customer name'                                       },
+      { name: 'segment',       type: 'TEXT',    description: 'Banking tier: Mass / Priority / Private / SME'           },
+      { name: 'credit_score',  type: 'INTEGER', description: 'Credit score (300–850)'                                  },
+      { name: 'join_date',     type: 'TEXT',    description: 'Date customer onboarded (YYYY-MM-DD)'                    },
+      { name: 'email',         type: 'TEXT',    description: 'Contact email'                                           },
     ],
-    sample: 'SELECT * FROM species_dim LIMIT 3;',
+    sample: 'SELECT * FROM customers LIMIT 5;',
   },
-  observers_dim: {
-    description: 'Citizen scientist profiles with expertise levels',
+  products: {
+    description: 'LCB product catalogue — savings, loans, investments, cards',
     columns: [
-      { name: 'observer_id', type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
-      { name: 'observer_name', type: 'TEXT', description: 'Observer full name' },
-      { name: 'expertise_level', type: 'TEXT', description: 'Skill level (Beginner to Expert)' },
-      { name: 'join_date', type: 'TEXT', description: 'Date joined (YYYY-MM-DD)' },
+      { name: 'product_id',    type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'product_name',  type: 'TEXT',    description: 'Full product name (e.g. LCB EasySave Account)' },
+      { name: 'product_type',  type: 'TEXT',    description: 'Category: Savings / Current / Fixed Deposit / Investment / Loan / Credit Card' },
+      { name: 'interest_rate', type: 'REAL',    description: 'Annual interest rate (%)' },
+      { name: 'min_balance',   type: 'REAL',    description: 'Minimum balance required (SGD)' },
     ],
-    sample: 'SELECT * FROM observers_dim LIMIT 3;',
+    sample: 'SELECT * FROM products;',
   },
-  locations_dim: {
-    description: 'Birding hotspot locations with geospatial data',
+  branches: {
+    description: 'LCB branch network across Singapore',
     columns: [
-      { name: 'location_id', type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
-      { name: 'locality_name', type: 'TEXT', description: 'Location name' },
-      { name: 'latitude', type: 'REAL', description: 'Latitude coordinate' },
-      { name: 'longitude', type: 'REAL', description: 'Longitude coordinate' },
-      { name: 'elevation', type: 'REAL', description: 'Elevation in meters' },
-      { name: 'habitat_type', type: 'TEXT', description: 'Habitat (Forest, Wetland, etc.)' },
-      { name: 'state', type: 'TEXT', description: 'US state' },
-      { name: 'region', type: 'TEXT', description: 'Geographic region' },
+      { name: 'branch_id',   type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'branch_name', type: 'TEXT',    description: 'Branch name (e.g. LCB Marina Bay HQ)' },
+      { name: 'city',        type: 'TEXT',    description: 'City (all Singapore)' },
+      { name: 'region',      type: 'TEXT',    description: 'Planning region: Central / East / West / North' },
+      { name: 'branch_type', type: 'TEXT',    description: 'HQ / High Street / Community / Business Centre' },
     ],
-    sample: 'SELECT * FROM locations_dim LIMIT 3;',
+    sample: 'SELECT * FROM branches;',
   },
-  checklists_fact: {
-    description: 'Sampling events with observer, location, and protocol',
+  accounts: {
+    description: 'Customer accounts linking customers, products and branches',
     columns: [
-      { name: 'checklist_id', type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
-      { name: 'observer_id', type: 'INTEGER', description: 'Foreign key to observers', foreignKey: 'observers_dim.observer_id' },
-      { name: 'location_id', type: 'INTEGER', description: 'Foreign key to locations', foreignKey: 'locations_dim.location_id' },
-      { name: 'observation_date', type: 'TEXT', description: 'Date of observation (YYYY-MM-DD)' },
-      { name: 'start_time', type: 'TEXT', description: 'Start time (HH:MM)' },
-      { name: 'duration_minutes', type: 'INTEGER', description: 'Session duration in minutes' },
-      { name: 'protocol_type', type: 'TEXT', description: 'Protocol (Stationary, Traveling, Driving)' },
-      { name: 'distance_km', type: 'REAL', description: 'Distance traveled in km' },
+      { name: 'account_id',  type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'customer_id', type: 'INTEGER', description: 'FK → customers',    foreignKey: 'customers.customer_id' },
+      { name: 'product_id',  type: 'INTEGER', description: 'FK → products',     foreignKey: 'products.product_id'   },
+      { name: 'branch_id',   type: 'INTEGER', description: 'FK → branches',     foreignKey: 'branches.branch_id'    },
+      { name: 'balance',     type: 'REAL',    description: 'Current balance (SGD)' },
+      { name: 'opened_date', type: 'TEXT',    description: 'Account open date (YYYY-MM-DD)' },
+      { name: 'status',      type: 'TEXT',    description: 'Active / Dormant / Closed' },
     ],
-    sample: 'SELECT * FROM checklists_fact LIMIT 3;',
+    sample: 'SELECT * FROM accounts LIMIT 5;',
   },
-  observations_fact: {
-    description: 'Individual bird count records per species per checklist',
+  transactions: {
+    description: 'All debit and credit transactions on LCB accounts',
     columns: [
-      { name: 'obs_id', type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
-      { name: 'checklist_id', type: 'INTEGER', description: 'Foreign key to checklists', foreignKey: 'checklists_fact.checklist_id' },
-      { name: 'species_id', type: 'INTEGER', description: 'Foreign key to species', foreignKey: 'species_dim.species_id' },
-      { name: 'bird_count', type: 'INTEGER', description: 'Number of individuals observed' },
-      { name: 'gender', type: 'TEXT', description: 'Gender if known (Male/Female)' },
+      { name: 'transaction_id',   type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'account_id',       type: 'INTEGER', description: 'FK → accounts', foreignKey: 'accounts.account_id' },
+      { name: 'amount',           type: 'REAL',    description: 'Transaction amount (SGD)' },
+      { name: 'transaction_type', type: 'TEXT',    description: 'Credit or Debit' },
+      { name: 'transaction_date', type: 'TEXT',    description: 'Date (YYYY-MM-DD)' },
+      { name: 'merchant_category',type: 'TEXT',    description: 'Category: Salary Credit / Hawker Centre / Grab / MRT Top-up / …' },
+      { name: 'channel',          type: 'TEXT',    description: 'Channel: PayNow / FAST / GIRO / ATM / Card / Online / Branch' },
     ],
-    sample: 'SELECT * FROM observations_fact LIMIT 3;',
+    sample: 'SELECT * FROM transactions LIMIT 5;',
   },
-  environmental_metrics: {
-    description: 'Weather conditions recorded during each checklist',
+  loans: {
+    description: 'LCB loan book — home loans, car loans, personal credit',
     columns: [
-      { name: 'env_id', type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
-      { name: 'checklist_id', type: 'INTEGER', description: 'Foreign key to checklists', foreignKey: 'checklists_fact.checklist_id' },
-      { name: 'temperature_celsius', type: 'REAL', description: 'Temperature in °C' },
-      { name: 'wind_speed_kmh', type: 'REAL', description: 'Wind speed in km/h' },
-      { name: 'precipitation_mm', type: 'REAL', description: 'Precipitation in mm' },
-      { name: 'weather_description', type: 'TEXT', description: 'Weather condition (Clear, Cloudy, etc.)' },
+      { name: 'loan_id',          type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'customer_id',      type: 'INTEGER', description: 'FK → customers', foreignKey: 'customers.customer_id' },
+      { name: 'product_id',       type: 'INTEGER', description: 'FK → products',  foreignKey: 'products.product_id'   },
+      { name: 'principal_amount', type: 'REAL',    description: 'Original loan principal (SGD)' },
+      { name: 'interest_rate',    type: 'REAL',    description: 'Annual interest rate (%)' },
+      { name: 'term_months',      type: 'INTEGER', description: 'Loan term in months' },
+      { name: 'start_date',       type: 'TEXT',    description: 'Loan disbursement date (YYYY-MM-DD)' },
+      { name: 'status',           type: 'TEXT',    description: 'Active / Paid Off / Default' },
+      { name: 'risk_grade',       type: 'TEXT',    description: 'Risk grade A (best) → E (worst)' },
     ],
-    sample: 'SELECT * FROM environmental_metrics LIMIT 3;',
+    sample: 'SELECT * FROM loans;',
   },
 };
 
 export default function SchemaViewer() {
-  const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set(['species_dim']));
-  const [searchTerm, setSearchTerm] = useState('');
-  const { queryResult } = useGameStore();
+  const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set(['customers']));
+  const [searchTerm, setSearchTerm]         = useState('');
 
-  const toggleTable = (tableName: string) => {
-    const newExpanded = new Set(expandedTables);
-    if (newExpanded.has(tableName)) {
-      newExpanded.delete(tableName);
-    } else {
-      newExpanded.add(tableName);
-    }
-    setExpandedTables(newExpanded);
+  const toggle = (t: string) => {
+    const next = new Set(expandedTables);
+    next.has(t) ? next.delete(t) : next.add(t);
+    setExpandedTables(next);
   };
 
-  const filteredSchema = Object.entries(SCHEMA).filter(([tableName]) =>
-    tableName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = Object.entries(SCHEMA).filter(([t]) =>
+    t.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="h-full flex flex-col overflow-hidden rounded-2xl" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+    <div
+      className="h-full flex flex-col overflow-hidden fade-in-up"
+      style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 6 }}
+    >
       {/* Header */}
-      <div className="p-3 border-b border-white/10" style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)' }}>
-        <div className="flex items-center gap-2 mb-2">
-          <Database className="w-4 h-4 text-cyan-400" />
-          <h3 className="text-white font-semibold text-sm">Database Schema</h3>
+      <div className="px-3 py-3" style={{ borderBottom: '1px solid var(--lcb-border)', background: 'var(--lcb-panel-2)' }}>
+        <div className="flex items-center gap-2 mb-2 lcb-header">
+          <Database className="w-3.5 h-3.5" style={{ color: 'var(--lcb-gold)' }} />
+          <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-white)' }}>
+            LCB Database Schema
+          </h3>
         </div>
-        
-        {/* Search */}
         <div className="relative">
-          <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-white/40" />
+          <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2" style={{ color: 'var(--lcb-muted)' }} />
           <input
             type="text"
-            placeholder="Search tables..."
+            placeholder="Search tables…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-7 pr-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded text-white placeholder-white/40 focus:outline-none focus:border-cyan-500/50"
+            className="w-full pl-6 pr-2 py-1.5 text-xs"
+            style={{
+              fontFamily: 'var(--font-ibm-plex-mono)',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid var(--lcb-border)',
+              borderRadius: 4,
+              color: 'var(--lcb-white)',
+              outline: 'none',
+            }}
           />
         </div>
       </div>
 
       {/* Tables */}
       <div className="flex-1 overflow-auto p-2">
-        {filteredSchema.map(([tableName, tableInfo]) => (
+        {filtered.map(([tableName, info]) => (
           <div key={tableName} className="mb-1">
-            {/* Table Header */}
             <button
-              onClick={() => toggleTable(tableName)}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 transition-colors text-left"
+              onClick={() => toggle(tableName)}
+              className="w-full flex items-center gap-2 px-2 py-1.5 text-left transition-colors hover:bg-white/5"
+              style={{ borderRadius: 4 }}
             >
-              {expandedTables.has(tableName) ? (
-                <ChevronDown className="w-3 h-3 text-cyan-400" />
-              ) : (
-                <ChevronRight className="w-3 h-3 text-white/40" />
-              )}
-              <Table className="w-3 h-3 text-emerald-400" />
-              <span className="text-white text-sm font-medium">{tableName}</span>
-              <span className="text-white/30 text-xs">({tableInfo.columns.length})</span>
+              {expandedTables.has(tableName)
+                ? <ChevronDown  className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
+                : <ChevronRight className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--lcb-muted)' }} />}
+              <Table className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--lcb-green)' }} />
+              <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-white)' }}>
+                {tableName}
+              </span>
+              <span className="text-xs" style={{ color: 'var(--lcb-muted)' }}>({info.columns.length})</span>
             </button>
 
-            {/* Expanded Columns */}
             {expandedTables.has(tableName) && (
-              <div className="ml-6 mb-2 p-2 rounded" style={{ backgroundColor: 'rgba(10, 22, 40, 0.6)' }}>
-                <p className="text-white/50 text-xs mb-2 px-1">{tableInfo.description}</p>
-                
-                {/* Columns */}
+              <div
+                className="ml-5 mb-2 p-2"
+                style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--lcb-border)', borderRadius: 4 }}
+              >
+                <p className="text-xs mb-2 px-1" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+                  {info.description}
+                </p>
                 <div className="space-y-0.5">
-                  {tableInfo.columns.map((col) => (
-                    <div key={col.name} className="flex items-start gap-2 px-2 py-1 rounded hover:bg-white/5 text-xs">
-                      <span className={col.primaryKey ? 'text-amber-400' : col.foreignKey ? 'text-pink-400' : 'text-blue-300'}>
-                        {col.primaryKey ? '🔑' : col.foreignKey ? '🔗' : '○'}
+                  {info.columns.map((col) => (
+                    <div key={col.name} className="flex items-start gap-2 px-2 py-0.5 rounded lcb-table-row text-xs">
+                      <span style={{ color: col.primaryKey ? '#fbbf24' : col.foreignKey ? '#f472b6' : 'var(--lcb-border)', fontSize: 10, marginTop: 1 }}>
+                        {col.primaryKey ? '⬡' : col.foreignKey ? '◈' : '○'}
                       </span>
-                      <span className="text-cyan-300 font-mono min-w-[100px]">{col.name}</span>
-                      <span className="text-white/50 font-mono">{col.type}</span>
-                      <span className="text-white/40 hidden sm:inline">— {col.description}</span>
+                      <span
+                        className="min-w-[120px]"
+                        style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: col.primaryKey ? '#fbbf24' : col.foreignKey ? '#f472b6' : '#7dd3fc' }}
+                      >
+                        {col.name}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-muted)' }}>{col.type}</span>
                     </div>
                   ))}
                 </div>
-
-                {/* Quick Query */}
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(tableInfo.sample);
+                  onClick={() => navigator.clipboard.writeText(info.sample)}
+                  className="mt-2 px-2 py-0.5 text-xs transition-opacity hover:opacity-70"
+                  style={{
+                    fontFamily: 'var(--font-ibm-plex-mono)',
+                    color: 'var(--lcb-muted)',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid var(--lcb-border)',
+                    borderRadius: 3,
                   }}
-                  className="mt-2 px-2 py-1 text-xs bg-white/5 hover:bg-white/10 rounded text-white/50 hover:text-white/80 transition-colors"
                   title="Click to copy"
                 >
-                  📋 {tableInfo.sample}
+                  {info.sample}
                 </button>
               </div>
             )}
           </div>
         ))}
-
-        {filteredSchema.length === 0 && (
-          <p className="text-white/40 text-sm text-center py-4">No tables found</p>
+        {filtered.length === 0 && (
+          <p className="text-xs text-center py-6" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+            No tables found
+          </p>
         )}
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-white/10 text-xs text-white/40" style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)' }}>
-        <p>{Object.keys(SCHEMA).length} tables • Click to expand • Click query to copy</p>
+      <div
+        className="px-3 py-2 text-xs"
+        style={{ borderTop: '1px solid var(--lcb-border)', color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)', background: 'var(--lcb-panel-2)' }}
+      >
+        {Object.keys(SCHEMA).length} tables · Click table to expand · Click query to copy
       </div>
     </div>
   );
