@@ -1,97 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a1628;
-  --foreground: #ededed;
-  --glass-bg: rgba(13, 31, 53, 0.95);
-  --glass-border: rgba(56, 189, 248, 0.2);
-  --glass-shadow: rgba(0, 0, 0, 0.4);
+  --lcb-black:    #08090d;
+  --lcb-navy:     #0d1829;
+  --lcb-panel:    #111827;
+  --lcb-panel-2:  #0d1520;
+  --lcb-border:   #1e2d40;
+  --lcb-gold:     #c9a84c;
+  --lcb-gold-dim: #7a6230;
+  --lcb-white:    #e8e6e0;
+  --lcb-muted:    #6b7280;
+  --lcb-green:    #22c55e;
+  --lcb-red:      #ef4444;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--lcb-navy);
+  --color-foreground: var(--lcb-white);
+  --font-sans: var(--font-playfair);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--lcb-black);
+  color: var(--lcb-white);
+  font-family: var(--font-ibm-plex-mono), 'Courier New', monospace;
 }
 
-/* Legacy glass-panel - now using inline styles */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px var(--glass-shadow);
+/* ── Panel base ───────────────────────────────────────────────────────────── */
+.lcb-panel {
+  background: var(--lcb-panel);
+  border: 1px solid var(--lcb-border);
+  border-radius: 6px;
 }
 
-/* Monaco Editor Customizations */
-.monaco-editor {
-  border-radius: 8px;
+/* ── Gold accent strip on panel headers ──────────────────────────────────── */
+.lcb-header {
+  border-left: 2px solid var(--lcb-gold);
+  padding-left: 10px;
 }
 
-.monaco-editor .margin {
-  background: transparent !important;
-}
+/* ── Monaco Editor ────────────────────────────────────────────────────────── */
+.monaco-editor { border-radius: 4px; }
+.monaco-editor .margin { background: transparent !important; }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* ── Scrollbars ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: rgba(255,255,255,0.03); }
+::-webkit-scrollbar-thumb  { background: var(--lcb-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--lcb-gold-dim); }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
+/* ── Data table rows ─────────────────────────────────────────────────────── */
+.lcb-table-row:nth-child(even) { background: rgba(255,255,255,0.02); }
+.lcb-table-row:hover           { background: rgba(201,168,76,0.06); }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Animation Classes */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(135deg, #10b981, #06b6d4, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Focus styles */
+/* ── Focus ───────────────────────────────────────────────────────────────── */
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid rgba(16, 185, 129, 0.5);
+  outline: 1px solid var(--lcb-gold);
   outline-offset: 2px;
 }
+
+/* ── Gold glow pulse ─────────────────────────────────────────────────────── */
+@keyframes gold-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+  50%       { box-shadow: 0 0 12px 3px rgba(201,168,76,0.25); }
+}
+.animate-gold-pulse { animation: gold-pulse 2.5s ease-in-out infinite; }
+
+/* ── Stagger fade-in ─────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.35s ease forwards; }

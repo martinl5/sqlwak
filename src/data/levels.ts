@@ -1,1497 +1,1457 @@
 import type { Level } from '@/types';
 
 export const levels: Level[] = [
-  // ============================================
-  // FOUNDATIONAL (Levels 1-15)
-  // Basic SQL: SELECT, WHERE, COUNT, SUM, AVG
-  // ============================================
+  // ============================================================
+  // FOUNDATIONAL (Levels 1–15)
+  // Basic SQL: SELECT, WHERE, COUNT, SUM, AVG, LIKE, ORDER BY
+  // ============================================================
   {
     id: 1,
-    title: "Critical Species Retrieval",
-    description: `Extract the common and scientific names for all birds currently classified as 'Critically Endangered' in the species_dim table.
+    title: 'Priority Banking Customers',
+    description: `The Relationship Management team needs a list of all LCB Priority segment customers to prepare for the quarterly review.
 
-Return the common_name and scientific_name columns.`,
-    hint: "Select from species_dim. Filter where conservation_status matches the危 status.",
-    seedQuery: `SELECT common_name,
-       scientific_name
-  FROM species_dim
- WHERE conservation_status = 'Critically Endangered'`,
-    solutionQuery: `SELECT common_name,
-       scientific_name
-  FROM species_dim
- WHERE conservation_status = 'Critically Endangered'`,
-    epoch: "Foundational",
+Return the \`customer_name\` and \`segment\` for every customer in the \`Priority\` segment.`,
+    hint: 'SELECT from customers WHERE segment equals the Priority segment.',
+    seedQuery: `SELECT customer_name,
+       segment
+  FROM customers
+ WHERE segment = 'Priority'`,
+    solutionQuery: `SELECT customer_name,
+       segment
+  FROM customers
+ WHERE segment = 'Priority'`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 2,
-    title: "Observer Count",
-    description: `Calculate the total number of unique observers registered in the database.
+    title: 'Total Customer Count',
+    description: `Compliance requires the total number of unique customers registered in the LCB system for the MAS regulatory report.
 
-Return a single value as total_observers.`,
-    hint: "Count unique observer IDs from observers_dim.",
-    seedQuery: `SELECT COUNT(DISTINCT observer_id) AS total_observers
-  FROM observers_dim`,
-    solutionQuery: `SELECT COUNT(DISTINCT observer_id) AS total_observers
-  FROM observers_dim`,
-    epoch: "Foundational",
+Return a single value aliased as \`total_customers\`.`,
+    hint: 'Use COUNT(DISTINCT customer_id) on the customers table.',
+    seedQuery: `SELECT COUNT(DISTINCT customer_id) AS total_customers
+  FROM customers`,
+    solutionQuery: `SELECT COUNT(DISTINCT customer_id) AS total_customers
+  FROM customers`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 3,
-    title: "High Elevation Hotspots",
-    description: `List the names of all birding hotspots located at an elevation of 2,500 meters or higher.
+    title: 'Central Region Branches',
+    description: `The Operations team is planning a Central region audit. List all LCB branches located in the \`Central\` region.
 
-Return locality_name and elevation.`,
-    hint: "From locations_dim, filter localities where elevation meets or exceeds 2500 meters.",
-    seedQuery: `SELECT locality_name,
-       elevation
-  FROM locations_dim
- WHERE elevation >= 2500`,
-    solutionQuery: `SELECT locality_name,
-       elevation
-  FROM locations_dim
- WHERE elevation >= 2500`,
-    epoch: "Foundational",
+Return \`branch_name\` and \`branch_type\`.`,
+    hint: 'Filter the branches table WHERE region equals Central.',
+    seedQuery: `SELECT branch_name,
+       branch_type
+  FROM branches
+ WHERE region = 'Central'`,
+    solutionQuery: `SELECT branch_name,
+       branch_type
+  FROM branches
+ WHERE region = 'Central'`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 4,
-    title: "May 2024 Migration Records",
-    description: `Retrieve all checklist IDs submitted during the primary migration month of May 2024.
+    title: 'CNY Period Transactions',
+    description: `Risk Management wants to analyse spending patterns during the Chinese New Year festive period in February 2024.
 
-Return checklist_id and observation_date.`,
-    hint: "Query checklists_fact for dates within May 2024.",
-    seedQuery: `SELECT checklist_id,
-       observation_date
-  FROM checklists_fact
- WHERE observation_date BETWEEN '2024-05-01' AND '2024-05-31'`,
-    solutionQuery: `SELECT checklist_id,
-       observation_date
-  FROM checklists_fact
- WHERE observation_date BETWEEN '2024-05-01' AND '2024-05-31'`,
-    epoch: "Foundational",
+Return \`transaction_id\`, \`transaction_date\`, and \`merchant_category\` for all transactions between 1 Feb and 29 Feb 2024.`,
+    hint: 'Use BETWEEN on transaction_date in the transactions table.',
+    seedQuery: `SELECT transaction_id,
+       transaction_date,
+       merchant_category
+  FROM transactions
+ WHERE transaction_date BETWEEN '2024-02-01' AND '2024-02-29'`,
+    solutionQuery: `SELECT transaction_id,
+       transaction_date,
+       merchant_category
+  FROM transactions
+ WHERE transaction_date BETWEEN '2024-02-01' AND '2024-02-29'`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 5,
-    title: "Solitary Sightings",
-    description: `Find all observation records where only a single individual was counted.
+    title: 'PayNow Transfers',
+    description: `The Digital Banking team needs a list of all transactions conducted through the \`PayNow\` channel to measure its adoption.
 
-Return obs_id and species_id.`,
-    hint: "Find records in observations_fact where a single bird was counted.",
-    seedQuery: `SELECT obs_id,
-       species_id
-  FROM observations_fact
- WHERE bird_count = 1`,
-    solutionQuery: `SELECT obs_id,
-       species_id
-  FROM observations_fact
- WHERE bird_count = 1`,
-    epoch: "Foundational",
+Return \`transaction_id\`, \`amount\`, and \`transaction_date\`.`,
+    hint: 'Filter transactions WHERE channel equals PayNow.',
+    seedQuery: `SELECT transaction_id,
+       amount,
+       transaction_date
+  FROM transactions
+ WHERE channel = 'PayNow'`,
+    solutionQuery: `SELECT transaction_id,
+       amount,
+       transaction_date
+  FROM transactions
+ WHERE channel = 'PayNow'`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 6,
-    title: "Total Bird Abundance",
-    description: `Determine the total number of individual birds recorded across all observations in the dataset.
+    title: 'Total Salary Credits',
+    description: `Treasury wants the aggregate value of all salary credits flowing into LCB accounts — a key indicator of customer payroll dependency.
 
-Return a single value as aggregate_bird_abundance.`,
-    hint: "Sum all bird_count values from observations_fact.",
-    seedQuery: `SELECT SUM(bird_count) AS aggregate_bird_abundance
-  FROM observations_fact`,
-    solutionQuery: `SELECT SUM(bird_count) AS aggregate_bird_abundance
-  FROM observations_fact`,
-    epoch: "Foundational",
+Return a single value aliased as \`total_salary_credits\` for all transactions where \`merchant_category\` is \`Salary Credit\`.`,
+    hint: 'SUM the amount column filtered by merchant_category = Salary Credit.',
+    seedQuery: `SELECT SUM(amount) AS total_salary_credits
+  FROM transactions
+ WHERE merchant_category = 'Salary Credit'`,
+    solutionQuery: `SELECT SUM(amount) AS total_salary_credits
+  FROM transactions
+ WHERE merchant_category = 'Salary Credit'`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 7,
-    title: "Expert Observers",
-    description: `List all observers who have reached the 'Professional' or 'Expert' expertise level.
+    title: 'Average Customer Credit Score',
+    description: `The Credit Risk team needs the mean credit score across all LCB customers to benchmark against MAS guidelines.
 
-Return observer_name and expertise_level.`,
-    hint: "Filter observers_dim for the two highest expertise levels.",
-    seedQuery: `SELECT observer_name,
-       expertise_level
-  FROM observers_dim
- WHERE expertise_level IN ('Professional', 'Expert')`,
-    solutionQuery: `SELECT observer_name,
-       expertise_level
-  FROM observers_dim
- WHERE expertise_level IN ('Professional', 'Expert')`,
-    epoch: "Foundational",
+Return a single value aliased as \`avg_credit_score\`.`,
+    hint: 'Use AVG(credit_score) on the customers table.',
+    seedQuery: `SELECT AVG(credit_score) AS avg_credit_score
+  FROM customers`,
+    solutionQuery: `SELECT AVG(credit_score) AS avg_credit_score
+  FROM customers`,
+    epoch: 'Foundational',
     difficulty: 1,
   },
   {
     id: 8,
-    title: "Species Names in Observations",
-    description: `Join the observations_fact and species_dim tables to return the common name for every bird count recorded.
+    title: 'Dormant Accounts',
+    description: `Operations must identify dormant accounts for the annual account dormancy review process.
 
-Return obs_id, common_name, and bird_count.
-
-Return the first 20 results.`,
-    hint: "Join observations_fact to species_dim to connect counts with species names.",
-    seedQuery: `SELECT o.obs_id,
-       s.common_name,
-       o.bird_count
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- LIMIT 20`,
-    solutionQuery: `SELECT o.obs_id,
-       s.common_name,
-       o.bird_count
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- LIMIT 20`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`account_id\`, \`customer_id\`, and \`balance\` for all accounts with a status of \`Dormant\`.`,
+    hint: 'Filter the accounts table WHERE status equals Dormant.',
+    seedQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ WHERE status = 'Dormant'`,
+    solutionQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ WHERE status = 'Dormant'`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 9,
-    title: "Coastal Habitat Locations",
-    description: `Identify all locations that contain the term 'Coastal' in their habitat description.
+    title: 'CPF-Linked Products',
+    description: `Wealth Management wants to list all products connected to the CPF (Central Provident Fund) investment scheme.
 
-Return locality_name and habitat_type.`,
-    hint: "Search locations_dim for habitats containing 'Coastal'.",
-    seedQuery: `SELECT locality_name,
-       habitat_type
-  FROM locations_dim
- WHERE habitat_type LIKE '%Coastal%'`,
-    solutionQuery: `SELECT locality_name,
-       habitat_type
-  FROM locations_dim
- WHERE habitat_type LIKE '%Coastal%'`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`product_name\`, \`product_type\`, and \`interest_rate\` for all products whose name contains the text \`CPF\`.`,
+    hint: 'Use a LIKE filter with % wildcards on product_name.',
+    seedQuery: `SELECT product_name,
+       product_type,
+       interest_rate
+  FROM products
+ WHERE product_name LIKE '%CPF%'`,
+    solutionQuery: `SELECT product_name,
+       product_type,
+       interest_rate
+  FROM products
+ WHERE product_name LIKE '%CPF%'`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 10,
-    title: "Species Richness per Checklist",
-    description: `Count the number of distinct species identified in each submitted checklist.
+    title: 'Home Loan Products',
+    description: `The Mortgage desk needs a catalogue of all LCB Home Loan products to include in the Q2 product brochure.
 
-Return checklist_id and species_richness.
-
-Return the first 15 results.`,
-    hint: "Group observations_fact by checklist and count species per group.",
-    seedQuery: `SELECT checklist_id,
-       COUNT(species_id) AS species_richness
-  FROM observations_fact
- GROUP BY checklist_id
- LIMIT 15`,
-    solutionQuery: `SELECT checklist_id,
-       COUNT(species_id) AS species_richness
-  FROM observations_fact
- GROUP BY checklist_id
- LIMIT 15`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`product_name\`, \`product_type\`, and \`interest_rate\` for all products whose name contains \`Home Loan\`.`,
+    hint: 'Filter products with a LIKE pattern matching Home Loan in the product_name.',
+    seedQuery: `SELECT product_name,
+       product_type,
+       interest_rate
+  FROM products
+ WHERE product_name LIKE '%Home Loan%'`,
+    solutionQuery: `SELECT product_name,
+       product_type,
+       interest_rate
+  FROM products
+ WHERE product_name LIKE '%Home Loan%'`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 11,
-    title: "Average Sampling Duration",
-    description: `Calculate the mean duration of all birding sessions in the checklists_fact table.
+    title: 'Accounts Without a Loan',
+    description: `Cross-sell targeting: find accounts whose customers do NOT currently hold any loan with LCB. These are candidates for the new home loan campaign.
 
-Return a single value as average_sampling_duration.`,
-    hint: "Calculate the average duration from checklists_fact.",
-    seedQuery: `SELECT AVG(duration_minutes) AS average_sampling_duration
-  FROM checklists_fact`,
-    solutionQuery: `SELECT AVG(duration_minutes) AS average_sampling_duration
-  FROM checklists_fact`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`account_id\`, \`balance\`, and \`status\` from accounts where the customer has no matching row in loans.`,
+    hint: 'Use a LEFT JOIN between accounts and loans on customer_id, then filter WHERE the loan side IS NULL.',
+    seedQuery: `SELECT a.account_id,
+       a.balance,
+       a.status
+  FROM accounts a
+  LEFT JOIN loans l ON a.customer_id = l.customer_id
+ WHERE l.loan_id IS NULL`,
+    solutionQuery: `SELECT a.account_id,
+       a.balance,
+       a.status
+  FROM accounts a
+  LEFT JOIN loans l ON a.customer_id = l.customer_id
+ WHERE l.loan_id IS NULL`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 12,
-    title: "Temperature Extremes",
-    description: `Find the maximum and minimum temperatures recorded during any sampling event.
+    title: 'Balances Ranked High to Low',
+    description: `Treasury wants a full ranking of all accounts by their current balance to identify the highest-value accounts.
 
-Return max_temp and min_temp.`,
-    hint: "Find the extreme temperature values from environmental_metrics.",
-    seedQuery: `SELECT MAX(temperature_celsius) AS max_temp,
-       MIN(temperature_celsius) AS min_temp
-  FROM environmental_metrics`,
-    solutionQuery: `SELECT MAX(temperature_celsius) AS max_temp,
-       MIN(temperature_celsius) AS min_temp
-  FROM environmental_metrics`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`account_id\`, \`customer_id\`, and \`balance\`, ordered from highest to lowest balance.`,
+    hint: 'SELECT from accounts and use ORDER BY balance DESC.',
+    seedQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ ORDER BY balance DESC`,
+    solutionQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ ORDER BY balance DESC`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 13,
-    title: "Recent Observers",
-    description: `Sort the list of observers by their join date, from the most recent to the earliest.
+    title: 'Top 5 Wealthiest Accounts',
+    description: `Private Banking is preparing personalised relationship outreach for the five highest-value account holders.
 
-Return observer_name and join_date.`,
-    hint: "Sort observers_dim by join_date in descending order.",
-    seedQuery: `SELECT observer_name,
-       join_date
-  FROM observers_dim
- ORDER BY join_date DESC`,
-    solutionQuery: `SELECT observer_name,
-       join_date
-  FROM observers_dim
- ORDER BY join_date DESC`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return the top 5 accounts by \`balance\`, showing \`account_id\`, \`customer_id\`, and \`balance\`.`,
+    hint: 'Order by balance DESC and use LIMIT 5.',
+    seedQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ ORDER BY balance DESC
+ LIMIT 5`,
+    solutionQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ ORDER BY balance DESC
+ LIMIT 5`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 14,
-    title: "Missing Duration Records",
-    description: `Identify any checklists that were submitted without an associated duration value.
+    title: 'Transaction Count by Channel',
+    description: `The Digital team needs a breakdown of transaction volume by payment channel to inform the upcoming channel investment review.
 
-Return checklist_id.`,
-    hint: "Find checklists where duration_minutes has no value.",
-    seedQuery: `SELECT checklist_id
-  FROM checklists_fact
- WHERE duration_minutes IS NULL`,
-    solutionQuery: `SELECT checklist_id
-  FROM checklists_fact
- WHERE duration_minutes IS NULL`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`channel\` and the count as \`transaction_count\`, ordered by count descending.`,
+    hint: 'GROUP BY channel and COUNT(*), then ORDER BY the count DESC.',
+    seedQuery: `SELECT channel,
+       COUNT(*) AS transaction_count
+  FROM transactions
+ GROUP BY channel
+ ORDER BY transaction_count DESC`,
+    solutionQuery: `SELECT channel,
+       COUNT(*) AS transaction_count
+  FROM transactions
+ GROUP BY channel
+ ORDER BY transaction_count DESC`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
   {
     id: 15,
-    title: "Formatted Taxonomy",
-    description: `Create a formatted list of all species as "Common Name [Scientific Name]".
+    title: 'Customer Names on Accounts',
+    description: `Relationship Managers need a combined view of customer names alongside their account balances — your first JOIN query at LCB.
 
-Return the formatted taxonomy string.
-
-Return the first 10 results.`,
-    hint: "Concatenate common_name with scientific_name using brackets.",
-    seedQuery: `SELECT common_name || ' [' || scientific_name || ']' AS formatted_taxonomy
-  FROM species_dim
- LIMIT 10`,
-    solutionQuery: `SELECT common_name || ' [' || scientific_name || ']' AS formatted_taxonomy
-  FROM species_dim
- LIMIT 10`,
-    epoch: "Foundational",
-    difficulty: 2,
+Return \`customer_name\`, \`account_id\`, and \`balance\` by joining \`accounts\` with \`customers\`, ordered by balance descending.`,
+    hint: 'JOIN accounts and customers on customer_id. Use table aliases a and c.',
+    seedQuery: `SELECT c.customer_name,
+       a.account_id,
+       a.balance
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ ORDER BY a.balance DESC`,
+    solutionQuery: `SELECT c.customer_name,
+       a.account_id,
+       a.balance
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ ORDER BY a.balance DESC`,
+    epoch: 'Foundational',
+    difficulty: 1,
   },
 
-  // ============================================
-  // INTERMEDIATE (Levels 16-30)
-  // Window functions, subqueries, CASE, JOINs
-  // ============================================
+  // ============================================================
+  // INTERMEDIATE (Levels 16–30)
+  // GROUP BY, HAVING, Subqueries, UNION, CASE WHEN
+  // ============================================================
   {
     id: 16,
-    title: "Habitat-Specific Abundance Ranking",
-    description: `Rank the species within each habitat type based on their total individual count.
+    title: 'Total Balance per Branch',
+    description: `Branch Directors want to know the total deposits held at each LCB branch to inform their performance scorecards.
 
-Return habitat_type, common_name, total_count, and habitat_rank.
-
-Return the first 20 results.`,
-    hint: "Use RANK() with PARTITION BY habitat_type and ORDER BY total_count to create rankings.",
-    seedQuery: `SELECT l.habitat_type,
-       s.common_name,
-       SUM(o.bird_count) AS total_count,
-       RANK() OVER (
-           PARTITION BY l.habitat_type
-           ORDER BY SUM(o.bird_count) DESC
-       ) AS habitat_rank
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- GROUP BY l.habitat_type,
-          s.common_name
- LIMIT 20`,
-    solutionQuery: `SELECT l.habitat_type,
-       s.common_name,
-       SUM(o.bird_count) AS total_count,
-       RANK() OVER (
-           PARTITION BY l.habitat_type
-           ORDER BY SUM(o.bird_count) DESC
-       ) AS habitat_rank
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- GROUP BY l.habitat_type,
-          s.common_name
- LIMIT 20`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`branch_name\`, the number of accounts as \`account_count\`, and \`SUM(balance)\` as \`total_balance\`, ordered by total_balance descending.`,
+    hint: 'LEFT JOIN branches to accounts on branch_id, then GROUP BY branch_id and branch_name.',
+    seedQuery: `SELECT b.branch_name,
+       COUNT(a.account_id) AS account_count,
+       SUM(a.balance)      AS total_balance
+  FROM branches b
+  LEFT JOIN accounts a ON b.branch_id = a.branch_id
+ GROUP BY b.branch_id, b.branch_name
+ ORDER BY total_balance DESC`,
+    solutionQuery: `SELECT b.branch_name,
+       COUNT(a.account_id) AS account_count,
+       SUM(a.balance)      AS total_balance
+  FROM branches b
+  LEFT JOIN accounts a ON b.branch_id = a.branch_id
+ GROUP BY b.branch_id, b.branch_name
+ ORDER BY total_balance DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 17,
-    title: "Top Species Observers",
-    description: `Find the top three observers who have sighted the highest number of unique species.
+    title: 'Average Balance by Segment',
+    description: `Segment analytics: calculate the mean account balance for each customer segment (Mass, Priority, Private, SME).
 
-Return observer_name and unique_bird_count.`,
-    hint: "Count distinct species per observer, order by count descending, limit to top 3.",
-    seedQuery: `SELECT ob.observer_name,
-       COUNT(DISTINCT o.species_id) AS unique_bird_count
-  FROM observers_dim AS ob
-       JOIN checklists_fact AS c
-       ON ob.observer_id = c.observer_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY ob.observer_name
- ORDER BY unique_bird_count DESC
- LIMIT 3`,
-    solutionQuery: `SELECT ob.observer_name,
-       COUNT(DISTINCT o.species_id) AS unique_bird_count
-  FROM observers_dim AS ob
-       JOIN checklists_fact AS c
-       ON ob.observer_id = c.observer_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY ob.observer_name
- ORDER BY unique_bird_count DESC
- LIMIT 3`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`segment\` and \`avg_balance\` (rounded to 2dp), ordered by avg_balance descending.`,
+    hint: 'JOIN accounts to customers, GROUP BY c.segment, and use AVG(a.balance).',
+    seedQuery: `SELECT c.segment,
+       ROUND(AVG(a.balance), 2) AS avg_balance
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ GROUP BY c.segment
+ ORDER BY avg_balance DESC`,
+    solutionQuery: `SELECT c.segment,
+       ROUND(AVG(a.balance), 2) AS avg_balance
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ GROUP BY c.segment
+ ORDER BY avg_balance DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 18,
-    title: "Sex Ratio Analysis",
-    description: `Calculate the percentage of identified birds for each species that were recorded as 'Male'.
+    title: 'High-Volume Segments',
+    description: `Segments with more than 10 accounts are considered high-volume and receive dedicated service teams. Identify those segments now.
 
-Return common_name and male_percentage.
-
-Return the first 15 results.`,
-    hint: "Use CASE to count only Male observations, then divide by total for percentage.",
-    seedQuery: `SELECT s.common_name,
-       100.0 * SUM(CASE WHEN o.gender = 'Male' THEN 1 ELSE 0 END) / COUNT(*) AS male_percentage
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- GROUP BY s.common_name
- LIMIT 15`,
-    solutionQuery: `SELECT s.common_name,
-       100.0 * SUM(CASE WHEN o.gender = 'Male' THEN 1 ELSE 0 END) / COUNT(*) AS male_percentage
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- GROUP BY s.common_name
- LIMIT 15`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`segment\` and \`account_count\` where the count exceeds 10, ordered by account_count descending.`,
+    hint: 'GROUP BY segment with a HAVING COUNT(*) > 10 clause.',
+    seedQuery: `SELECT c.segment,
+       COUNT(a.account_id) AS account_count
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ GROUP BY c.segment
+HAVING COUNT(a.account_id) > 10
+ ORDER BY account_count DESC`,
+    solutionQuery: `SELECT c.segment,
+       COUNT(a.account_id) AS account_count
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ GROUP BY c.segment
+HAVING COUNT(a.account_id) > 10
+ ORDER BY account_count DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 19,
-    title: "Monthly Migration Totals",
-    description: `Calculate the total birds sighted per month during 2024 to identify migration peaks.
+    title: 'Loan Exposure by Risk Grade',
+    description: `Credit Risk needs the total loan principal broken down by risk grade (A–E) to calculate the portfolio's weighted risk score.
 
-Return month_start and monthly_total.
-
-Return the first 12 results.`,
-    hint: "Extract year-month from observation_date to group by month.",
-    seedQuery: `SELECT strftime('%Y-%m', c.observation_date) AS month_start,
-       SUM(o.bird_count) AS monthly_total
-  FROM checklists_fact AS c
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- WHERE c.observation_date >= '2024-01-01'
-   AND c.observation_date <= '2024-12-31'
- GROUP BY 1
- ORDER BY 1
- LIMIT 12`,
-    solutionQuery: `SELECT strftime('%Y-%m', c.observation_date) AS month_start,
-       SUM(o.bird_count) AS monthly_total
-  FROM checklists_fact AS c
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- WHERE c.observation_date >= '2024-01-01'
-   AND c.observation_date <= '2024-12-31'
- GROUP BY 1
- ORDER BY 1
- LIMIT 12`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`risk_grade\`, \`loan_count\`, and \`total_principal\` (rounded to 0dp), ordered by risk_grade.`,
+    hint: 'GROUP BY risk_grade on the loans table using COUNT and SUM.',
+    seedQuery: `SELECT risk_grade,
+       COUNT(*)                      AS loan_count,
+       ROUND(SUM(principal_amount), 0) AS total_principal
+  FROM loans
+ GROUP BY risk_grade
+ ORDER BY risk_grade`,
+    solutionQuery: `SELECT risk_grade,
+       COUNT(*)                      AS loan_count,
+       ROUND(SUM(principal_amount), 0) AS total_principal
+  FROM loans
+ GROUP BY risk_grade
+ ORDER BY risk_grade`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 20,
-    title: "Observer Cumulative Counts",
-    description: `Generate a report showing the date of each checklist and the cumulative total of birds an observer has seen up to that date.
+    title: 'Customers with Multiple Accounts',
+    description: `Multi-banking customers (those holding more than one LCB account) are valuable — they have deeper engagement and lower churn.
 
-Return observer_id, observation_date, and cumulative_birds.
-
-Return the first 20 results.`,
-    hint: "Use a cumulative window function partitioned by observer_id to sum bird counts over time.",
-    seedQuery: `SELECT c.observer_id,
-       c.observation_date,
-       SUM(SUM(o.bird_count)) OVER (
-           PARTITION BY c.observer_id
-           ORDER BY c.observation_date
-       ) AS cumulative_birds
-  FROM checklists_fact AS c
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY c.observer_id,
-          c.observation_date
- LIMIT 20`,
-    solutionQuery: `SELECT c.observer_id,
-       c.observation_date,
-       SUM(SUM(o.bird_count)) OVER (
-           PARTITION BY c.observer_id
-           ORDER BY c.observation_date
-       ) AS cumulative_birds
-  FROM checklists_fact AS c
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY c.observer_id,
-          c.observation_date
- LIMIT 20`,
-    epoch: "Intermediate",
-    difficulty: 4,
+Return \`customer_name\` and \`account_count\` for customers with more than 1 account, ordered by account_count descending.`,
+    hint: 'JOIN customers to accounts, GROUP BY customer, HAVING COUNT > 1.',
+    seedQuery: `SELECT c.customer_name,
+       COUNT(a.account_id) AS account_count
+  FROM customers c
+  JOIN accounts a ON c.customer_id = a.customer_id
+ GROUP BY c.customer_id, c.customer_name
+HAVING COUNT(a.account_id) > 1
+ ORDER BY account_count DESC`,
+    solutionQuery: `SELECT c.customer_name,
+       COUNT(a.account_id) AS account_count
+  FROM customers c
+  JOIN accounts a ON c.customer_id = a.customer_id
+ GROUP BY c.customer_id, c.customer_name
+HAVING COUNT(a.account_id) > 1
+ ORDER BY account_count DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 21,
-    title: "Multi-Habitat Species",
-    description: `Identify species that have been observed in both 'Wetland' and 'Forest' habitats using a set operator.
+    title: 'Above-Average Balance Accounts',
+    description: `VIP alert: identify all accounts holding more than the average balance across the entire portfolio — prime targets for wealth upsell.
 
-Return common_name.`,
-    hint: "Use INTERSECT to find species appearing in both Wetland and Forest habitats.",
-    seedQuery: `SELECT s.common_name
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- WHERE l.habitat_type = 'Wetland'
-
-INTERSECT
-
-SELECT s.common_name
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- WHERE l.habitat_type = 'Forest'`,
-    solutionQuery: `SELECT s.common_name
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- WHERE l.habitat_type = 'Wetland'
-
-INTERSECT
-
-SELECT s.common_name
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- WHERE l.habitat_type = 'Forest'`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`account_id\`, \`customer_id\`, and \`balance\`, ordered by balance descending.`,
+    hint: 'Use a subquery: WHERE balance > (SELECT AVG(balance) FROM accounts).',
+    seedQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ WHERE balance > (SELECT AVG(balance) FROM accounts)
+ ORDER BY balance DESC`,
+    solutionQuery: `SELECT account_id,
+       customer_id,
+       balance
+  FROM accounts
+ WHERE balance > (SELECT AVG(balance) FROM accounts)
+ ORDER BY balance DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 22,
-    title: "Protocol Data Validation",
-    description: `Identify checklists where the protocol was 'Stationary' but a 'distance_traveled' was incorrectly recorded as greater than zero.
+    title: 'Defaulted Loan Customers',
+    description: `The Collections team needs the names and details of customers with a loan status of \`Default\` for immediate follow-up.
 
-Return checklist_id and observer_id.`,
-    hint: "Find checklists where protocol_type is 'Stationary' but distance_km is greater than zero.",
-    seedQuery: `SELECT checklist_id,
-       observer_id
-  FROM checklists_fact
- WHERE protocol_type = 'Stationary'
-   AND distance_km > 0`,
-    solutionQuery: `SELECT checklist_id,
-       observer_id
-  FROM checklists_fact
- WHERE protocol_type = 'Stationary'
-   AND distance_km > 0`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`customer_name\`, \`segment\`, \`principal_amount\`, and \`risk_grade\` for defaulted loans.`,
+    hint: 'JOIN customers to loans on customer_id, filtering WHERE l.status = Default.',
+    seedQuery: `SELECT c.customer_name,
+       c.segment,
+       l.principal_amount,
+       l.risk_grade
+  FROM customers c
+  JOIN loans l ON c.customer_id = l.customer_id
+ WHERE l.status = 'Default'`,
+    solutionQuery: `SELECT c.customer_name,
+       c.segment,
+       l.principal_amount,
+       l.risk_grade
+  FROM customers c
+  JOIN loans l ON c.customer_id = l.customer_id
+ WHERE l.status = 'Default'`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 23,
-    title: "Weather Correlation",
-    description: `What is the average wind speed recorded during sightings of 'Peregrine Falcons'?
+    title: 'Monthly Transaction Totals',
+    description: `Finance wants a month-by-month summary of total transaction volume for the H1 2024 performance report.
 
-Return avg_wind_speed.`,
-    hint: "Join environmental_metrics through checklists and observations to reach species_dim.",
-    seedQuery: `SELECT AVG(e.wind_speed_kmh) AS avg_wind_speed
-  FROM environmental_metrics AS e
-       JOIN checklists_fact AS c
-       ON e.checklist_id = c.checklist_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- WHERE s.common_name = 'Peregrine Falcon'`,
-    solutionQuery: `SELECT AVG(e.wind_speed_kmh) AS avg_wind_speed
-  FROM environmental_metrics AS e
-       JOIN checklists_fact AS c
-       ON e.checklist_id = c.checklist_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- WHERE s.common_name = 'Peregrine Falcon'`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`month\` (as YYYY-MM), \`total_amount\`, and \`transaction_count\`, ordered by month.`,
+    hint: 'Use strftime(\'%Y-%m\', transaction_date) and GROUP BY the result.',
+    seedQuery: `SELECT strftime('%Y-%m', transaction_date) AS month,
+       ROUND(SUM(amount), 2)                AS total_amount,
+       COUNT(*)                              AS transaction_count
+  FROM transactions
+ GROUP BY strftime('%Y-%m', transaction_date)
+ ORDER BY month`,
+    solutionQuery: `SELECT strftime('%Y-%m', transaction_date) AS month,
+       ROUND(SUM(amount), 2)                AS total_amount,
+       COUNT(*)                              AS transaction_count
+  FROM transactions
+ GROUP BY strftime('%Y-%m', transaction_date)
+ ORDER BY month`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 24,
-    title: "High-Activity Hotspots",
-    description: `List localities that have recorded more than 100 individual birds using the HAVING clause.
+    title: 'Savings and Investment Products',
+    description: `The Product team needs a combined list of all Savings and Investment products in one result set using a UNION.
 
-Return locality_name and total_birds.`,
-    hint: "Group by location, filter with HAVING where total birds exceed 100.",
-    seedQuery: `SELECT l.locality_name,
-       SUM(o.bird_count) AS total_birds
-  FROM locations_dim AS l
-       JOIN checklists_fact AS c
-       ON l.location_id = c.location_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY l.locality_name
-HAVING SUM(o.bird_count) > 100`,
-    solutionQuery: `SELECT l.locality_name,
-       SUM(o.bird_count) AS total_birds
-  FROM locations_dim AS l
-       JOIN checklists_fact AS c
-       ON l.location_id = c.location_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY l.locality_name
-HAVING SUM(o.bird_count) > 100`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`product_name\` and \`product_type\` for products of type \`Savings\` UNION those of type \`Investment\`, ordered by product_type then product_name.`,
+    hint: 'Write two SELECT statements connected by UNION and ORDER BY at the end.',
+    seedQuery: `SELECT product_name, product_type
+  FROM products
+ WHERE product_type = 'Savings'
+UNION
+SELECT product_name, product_type
+  FROM products
+ WHERE product_type = 'Investment'
+ ORDER BY product_type, product_name`,
+    solutionQuery: `SELECT product_name, product_type
+  FROM products
+ WHERE product_type = 'Savings'
+UNION
+SELECT product_name, product_type
+  FROM products
+ WHERE product_type = 'Investment'
+ ORDER BY product_type, product_name`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 25,
-    title: "Year-over-Year Growth",
-    description: `Calculate the percentage change in the number of checklists submitted between 2023 and 2024.
+    title: 'Active vs Dormant Account Count',
+    description: `Operations needs a simple breakdown of how many accounts are Active versus Dormant for the monthly MAS reporting pack.
 
-Return pct_change.`,
-    hint: "Use a CTE to compute annual checklist counts, then calculate percentage change between years.",
-    seedQuery: `WITH annual_counts AS (
-    SELECT strftime('%Y', observation_date) AS yr,
-           COUNT(*) AS cnt
-      FROM checklists_fact
-     WHERE strftime('%Y', observation_date) IN ('2023', '2024')
-     GROUP BY 1
-)
-SELECT 100.0 * (t2.cnt - t1.cnt) / t1.cnt AS pct_change
-  FROM annual_counts AS t1,
-       annual_counts AS t2
- WHERE t1.yr = '2023'
-   AND t2.yr = '2024'`,
-    solutionQuery: `WITH annual_counts AS (
-    SELECT strftime('%Y', observation_date) AS yr,
-           COUNT(*) AS cnt
-      FROM checklists_fact
-     WHERE strftime('%Y', observation_date) IN ('2023', '2024')
-     GROUP BY 1
-)
-SELECT 100.0 * (t2.cnt - t1.cnt) / t1.cnt AS pct_change
-  FROM annual_counts AS t1,
-       annual_counts AS t2
- WHERE t1.yr = '2023'
-   AND t2.yr = '2024'`,
-    epoch: "Intermediate",
-    difficulty: 4,
+Return \`status\` and \`account_count\` for Active and Dormant accounts only.`,
+    hint: 'Filter WHERE status IN (Active, Dormant), then GROUP BY status.',
+    seedQuery: `SELECT status,
+       COUNT(*) AS account_count
+  FROM accounts
+ WHERE status IN ('Active', 'Dormant')
+ GROUP BY status`,
+    solutionQuery: `SELECT status,
+       COUNT(*) AS account_count
+  FROM accounts
+ WHERE status IN ('Active', 'Dormant')
+ GROUP BY status`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 26,
-    title: "Above-Average Species",
-    description: `List species that were sighted in counts higher than the average count for all species in the database.
+    title: 'Full Transaction History with Customer Names',
+    description: `Customer Service needs a complete view linking each transaction to the customer who made it — spanning three tables.
 
-Return common_name and bird_count.
-
-Return the first 15 results.`,
-    hint: "Use a subquery to find the average bird_count, then filter observations exceeding that value.",
-    seedQuery: `SELECT s.common_name,
-       o.bird_count
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- WHERE o.bird_count > (
-     SELECT AVG(bird_count)
-       FROM observations_fact
- )
- LIMIT 15`,
-    solutionQuery: `SELECT s.common_name,
-       o.bird_count
-  FROM observations_fact AS o
-       JOIN species_dim AS s
-       ON o.species_id = s.species_id
- WHERE o.bird_count > (
-     SELECT AVG(bird_count)
-       FROM observations_fact
- )
- LIMIT 15`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`customer_name\`, \`merchant_category\`, \`amount\`, and \`transaction_date\`, ordered by transaction_date descending. Limit to 20 rows.`,
+    hint: 'JOIN transactions → accounts → customers using account_id and customer_id.',
+    seedQuery: `SELECT c.customer_name,
+       t.merchant_category,
+       t.amount,
+       t.transaction_date
+  FROM transactions t
+  JOIN accounts a  ON t.account_id   = a.account_id
+  JOIN customers c ON a.customer_id  = c.customer_id
+ ORDER BY t.transaction_date DESC
+ LIMIT 20`,
+    solutionQuery: `SELECT c.customer_name,
+       t.merchant_category,
+       t.amount,
+       t.transaction_date
+  FROM transactions t
+  JOIN accounts a  ON t.account_id   = a.account_id
+  JOIN customers c ON a.customer_id  = c.customer_id
+ ORDER BY t.transaction_date DESC
+ LIMIT 20`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 27,
-    title: "Median Rainfall",
-    description: `Find the median precipitation value across all checklists.
+    title: 'Branch Transaction Volume',
+    description: `Branch performance report: for each LCB branch, calculate how many transactions passed through its accounts and the total SGD volume.
 
-Return median_rainfall.`,
-    hint: "Use PERCENTILE_CONT to find the median precipitation value.",
-    seedQuery: `SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY precipitation_mm) AS median_rainfall
-  FROM environmental_metrics`,
-    solutionQuery: `SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY precipitation_mm) AS median_rainfall
-  FROM environmental_metrics`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`branch_name\`, \`tx_count\`, and \`total_volume\` (rounded to 2dp), ordered by total_volume descending.`,
+    hint: 'Chain JOINs: branches → accounts → transactions, then GROUP BY branch.',
+    seedQuery: `SELECT b.branch_name,
+       COUNT(t.transaction_id)       AS tx_count,
+       ROUND(SUM(t.amount), 2)        AS total_volume
+  FROM branches b
+  JOIN accounts a     ON b.branch_id    = a.branch_id
+  JOIN transactions t ON a.account_id   = t.account_id
+ GROUP BY b.branch_id, b.branch_name
+ ORDER BY total_volume DESC`,
+    solutionQuery: `SELECT b.branch_name,
+       COUNT(t.transaction_id)       AS tx_count,
+       ROUND(SUM(t.amount), 2)        AS total_volume
+  FROM branches b
+  JOIN accounts a     ON b.branch_id    = a.branch_id
+  JOIN transactions t ON a.account_id   = t.account_id
+ GROUP BY b.branch_id, b.branch_name
+ ORDER BY total_volume DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 28,
-    title: "Species-Location Grid",
-    description: `Create a list of every unique species paired with every unique location to generate a master survey template.
+    title: 'Credit Score Banding',
+    description: `Credit Analytics wants customers categorised into standard MAS credit bands using a CASE expression.
 
-Return common_name and locality_name.
+Return \`customer_name\`, \`credit_score\`, and a computed \`credit_band\` column:
+- ≥800 → Excellent
+- ≥740 → Very Good
+- ≥670 → Good
+- ≥580 → Fair
+- else → Poor
 
-Return the first 30 results.`,
-    hint: "Use CROSS JOIN between species and locations to create all possible combinations.",
-    seedQuery: `SELECT s.common_name,
-       l.locality_name
-  FROM species_dim AS s
-       CROSS JOIN locations_dim AS l
- LIMIT 30`,
-    solutionQuery: `SELECT s.common_name,
-       l.locality_name
-  FROM species_dim AS s
-       CROSS JOIN locations_dim AS l
- LIMIT 30`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Order by credit_score descending.`,
+    hint: 'Use CASE WHEN ... THEN ... ELSE ... END as credit_band.',
+    seedQuery: `SELECT customer_name,
+       credit_score,
+       CASE
+         WHEN credit_score >= 800 THEN 'Excellent'
+         WHEN credit_score >= 740 THEN 'Very Good'
+         WHEN credit_score >= 670 THEN 'Good'
+         WHEN credit_score >= 580 THEN 'Fair'
+         ELSE 'Poor'
+       END AS credit_band
+  FROM customers
+ ORDER BY credit_score DESC`,
+    solutionQuery: `SELECT customer_name,
+       credit_score,
+       CASE
+         WHEN credit_score >= 800 THEN 'Excellent'
+         WHEN credit_score >= 740 THEN 'Very Good'
+         WHEN credit_score >= 670 THEN 'Good'
+         WHEN credit_score >= 580 THEN 'Fair'
+         ELSE 'Poor'
+       END AS credit_band
+  FROM customers
+ ORDER BY credit_score DESC`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 29,
-    title: "First Arrival of Season",
-    description: `For each species, find the date of its first sighting in the year 2024.
+    title: 'Top Debit Spend by Category',
+    description: `Marketing Analytics needs to know where customers are spending the most on debit transactions per merchant category, to target rewards promotions.
 
-Return common_name and first_appearance.`,
-    hint: "Find the earliest observation_date for each species in 2024.",
-    seedQuery: `SELECT s.common_name,
-       MIN(c.observation_date) AS first_appearance
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
- WHERE c.observation_date >= '2024-01-01'
- GROUP BY s.common_name`,
-    solutionQuery: `SELECT s.common_name,
-       MIN(c.observation_date) AS first_appearance
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
- WHERE c.observation_date >= '2024-01-01'
- GROUP BY s.common_name`,
-    epoch: "Intermediate",
-    difficulty: 3,
+Return \`customer_name\`, \`merchant_category\`, and \`total_spend\` for all Debit transactions, grouped by customer and category, ordered by total_spend descending. Limit 10 rows.`,
+    hint: 'Three-table JOIN (transactions → accounts → customers) filtered by transaction_type = Debit, then GROUP BY customer and category.',
+    seedQuery: `SELECT c.customer_name,
+       t.merchant_category,
+       ROUND(SUM(t.amount), 2) AS total_spend
+  FROM transactions t
+  JOIN accounts a  ON t.account_id  = a.account_id
+  JOIN customers c ON a.customer_id = c.customer_id
+ WHERE t.transaction_type = 'Debit'
+ GROUP BY c.customer_id, c.customer_name, t.merchant_category
+ ORDER BY total_spend DESC
+ LIMIT 10`,
+    solutionQuery: `SELECT c.customer_name,
+       t.merchant_category,
+       ROUND(SUM(t.amount), 2) AS total_spend
+  FROM transactions t
+  JOIN accounts a  ON t.account_id  = a.account_id
+  JOIN customers c ON a.customer_id = c.customer_id
+ WHERE t.transaction_type = 'Debit'
+ GROUP BY c.customer_id, c.customer_name, t.merchant_category
+ ORDER BY total_spend DESC
+ LIMIT 10`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
   {
     id: 30,
-    title: "Rare Birds in Storms",
-    description: `Retrieve all observations of 'Endangered' birds that occurred during a 'Storm' event.
+    title: 'Loan Portfolio Summary',
+    description: `The Board risk deck requires a loan portfolio summary grouped by both status and risk grade, showing loan count, average interest rate, and total exposure.
 
-Return common_name, bird_count, and weather_description.
-
-Return the first 15 results.`,
-    hint: "Join species, observations, checklists, and environmental_metrics. Filter by Endangered status and Storm weather.",
-    seedQuery: `SELECT s.common_name,
-       o.bird_count,
-       e.weather_description
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN environmental_metrics AS e
-       ON c.checklist_id = e.checklist_id
- WHERE s.conservation_status = 'Endangered'
-   AND e.weather_description = 'Storm'
- LIMIT 15`,
-    solutionQuery: `SELECT s.common_name,
-       o.bird_count,
-       e.weather_description
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN environmental_metrics AS e
-       ON c.checklist_id = e.checklist_id
- WHERE s.conservation_status = 'Endangered'
-   AND e.weather_description = 'Storm'
- LIMIT 15`,
-    epoch: "Intermediate",
-    difficulty: 4,
+Return \`status\`, \`risk_grade\`, \`loan_count\`, \`avg_rate\` (2dp), and \`total_exposure\` (rounded), ordered by status then risk_grade.`,
+    hint: 'GROUP BY two columns (status and risk_grade) simultaneously.',
+    seedQuery: `SELECT status,
+       risk_grade,
+       COUNT(*)                        AS loan_count,
+       ROUND(AVG(interest_rate), 2)    AS avg_rate,
+       ROUND(SUM(principal_amount), 0) AS total_exposure
+  FROM loans
+ GROUP BY status, risk_grade
+ ORDER BY status, risk_grade`,
+    solutionQuery: `SELECT status,
+       risk_grade,
+       COUNT(*)                        AS loan_count,
+       ROUND(AVG(interest_rate), 2)    AS avg_rate,
+       ROUND(SUM(principal_amount), 0) AS total_exposure
+  FROM loans
+ GROUP BY status, risk_grade
+ ORDER BY status, risk_grade`,
+    epoch: 'Intermediate',
+    difficulty: 2,
   },
 
-  // ============================================
-  // ADVANCED (Levels 31-40)
-  // Complex queries, CTEs, advanced patterns
-  // ============================================
+  // ============================================================
+  // ADVANCED (Levels 31–40)
+  // CTEs, Window Functions, Date Arithmetic
+  // ============================================================
   {
     id: 31,
-    title: "Protocol Duration Classification",
-    description: `Classify checklists as 'Brief' (<15 min), 'Standard' (15-60 min), or 'Extended' (>60 min).
+    title: 'Running Cumulative Deposits',
+    description: `Treasury wants to see the cumulative total of account balances ordered from highest to lowest — a running total window function.
 
-Return checklist_id, duration_minutes, and duration_class.
-
-Return the first 20 results.`,
-    hint: "Use CASE to classify duration: below 15 is Brief, 15-60 is Standard, above 60 is Extended.",
-    seedQuery: `SELECT checklist_id,
-       duration_minutes,
-       CASE
-           WHEN duration_minutes < 15 THEN 'Brief'
-           WHEN duration_minutes <= 60 THEN 'Standard'
-           ELSE 'Extended'
-       END AS duration_class
-  FROM checklists_fact
- LIMIT 20`,
-    solutionQuery: `SELECT checklist_id,
-       duration_minutes,
-       CASE
-           WHEN duration_minutes < 15 THEN 'Brief'
-           WHEN duration_minutes <= 60 THEN 'Standard'
-           ELSE 'Extended'
-       END AS duration_class
-  FROM checklists_fact
- LIMIT 20`,
-    epoch: "Advanced",
+Return \`account_id\`, \`balance\`, and \`running_total\` using SUM() OVER, ordered by balance descending.`,
+    hint: 'Use SUM(balance) OVER (ORDER BY balance DESC) as running_total.',
+    seedQuery: `SELECT account_id,
+       balance,
+       SUM(balance) OVER (ORDER BY balance DESC) AS running_total
+  FROM accounts
+ ORDER BY balance DESC`,
+    solutionQuery: `SELECT account_id,
+       balance,
+       SUM(balance) OVER (ORDER BY balance DESC) AS running_total
+  FROM accounts
+ ORDER BY balance DESC`,
+    epoch: 'Advanced',
     difficulty: 3,
   },
   {
     id: 32,
-    title: "Missing Species Names",
-    description: `Display species names, using 'Unknown Species' if the common name is missing in the database.
+    title: 'Rank Customers Within Segment',
+    description: `Private Banking wants to rank customers by balance within each segment to identify the top-ranked client per tier.
 
-Return bird_name.
-
-Return the first 15 results.`,
-    hint: "Use COALESCE to provide 'Unknown Species' when common_name is NULL.",
-    seedQuery: `SELECT COALESCE(common_name, 'Unknown Species') AS bird_name
-  FROM species_dim
- LIMIT 15`,
-    solutionQuery: `SELECT COALESCE(common_name, 'Unknown Species') AS bird_name
-  FROM species_dim
- LIMIT 15`,
-    epoch: "Advanced",
+Return \`customer_name\`, \`segment\`, \`balance\`, and \`rank_in_segment\` using RANK() OVER PARTITION BY segment, ordered by segment then rank.`,
+    hint: 'Use RANK() OVER (PARTITION BY c.segment ORDER BY a.balance DESC).',
+    seedQuery: `SELECT c.customer_name,
+       c.segment,
+       a.balance,
+       RANK() OVER (
+         PARTITION BY c.segment
+             ORDER BY a.balance DESC
+       ) AS rank_in_segment
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ ORDER BY c.segment, rank_in_segment`,
+    solutionQuery: `SELECT c.customer_name,
+       c.segment,
+       a.balance,
+       RANK() OVER (
+         PARTITION BY c.segment
+             ORDER BY a.balance DESC
+       ) AS rank_in_segment
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ ORDER BY c.segment, rank_in_segment`,
+    epoch: 'Advanced',
     difficulty: 3,
   },
   {
     id: 33,
-    title: "Concurrent Observations",
-    description: `Find instances where the same observer submitted two different checklists at the exact same start time.
+    title: 'Month-over-Month Transaction Growth',
+    description: `Finance tracks monthly transaction growth using LAG() to compare each month's volume to the prior month.
 
-Return checklist_id, observer_id, and start_time.
-
-Return the first 10 results.`,
-    hint: "Self-join checklists_fact on observer_id and start_time to find duplicates.",
-    seedQuery: `SELECT a.checklist_id,
-       b.checklist_id,
-       a.observer_id,
-       a.start_time
-  FROM checklists_fact AS a
-       JOIN checklists_fact AS b
-       ON a.observer_id = b.observer_id
-       AND a.start_time = b.start_time
-       AND a.checklist_id < b.checklist_id
- LIMIT 10`,
-    solutionQuery: `SELECT a.checklist_id,
-       b.checklist_id,
-       a.observer_id,
-       a.start_time
-  FROM checklists_fact AS a
-       JOIN checklists_fact AS b
-       ON a.observer_id = b.observer_id
-       AND a.start_time = b.start_time
-       AND a.checklist_id < b.checklist_id
- LIMIT 10`,
-    epoch: "Advanced",
-    difficulty: 4,
+Return \`month\`, \`total_amount\`, \`prev_month_amount\`, and \`growth_pct\` (rounded to 2dp), ordered by month.`,
+    hint: 'Wrap a GROUP BY subquery, then apply LAG(total_amount) OVER (ORDER BY month) in the outer query.',
+    seedQuery: `SELECT month,
+       total_amount,
+       LAG(total_amount) OVER (ORDER BY month)                                           AS prev_month_amount,
+       ROUND(
+         (total_amount - LAG(total_amount) OVER (ORDER BY month))
+         / LAG(total_amount) OVER (ORDER BY month) * 100
+       , 2)                                                                               AS growth_pct
+  FROM (
+    SELECT strftime('%Y-%m', transaction_date) AS month,
+           ROUND(SUM(amount), 2)               AS total_amount
+      FROM transactions
+     GROUP BY strftime('%Y-%m', transaction_date)
+  )
+ ORDER BY month`,
+    solutionQuery: `SELECT month,
+       total_amount,
+       LAG(total_amount) OVER (ORDER BY month)                                           AS prev_month_amount,
+       ROUND(
+         (total_amount - LAG(total_amount) OVER (ORDER BY month))
+         / LAG(total_amount) OVER (ORDER BY month) * 100
+       , 2)                                                                               AS growth_pct
+  FROM (
+    SELECT strftime('%Y-%m', transaction_date) AS month,
+           ROUND(SUM(amount), 2)               AS total_amount
+      FROM transactions
+     GROUP BY strftime('%Y-%m', transaction_date)
+  )
+ ORDER BY month`,
+    epoch: 'Advanced',
+    difficulty: 3,
   },
   {
     id: 34,
-    title: "Birds per Expertise Level",
-    description: `Calculate the average number of birds sighted per checklist for each expertise level.
+    title: 'High-Balance Accounts CTE',
+    description: `Using a CTE, first identify all active accounts with a balance above SGD 50,000, then summarise them by customer segment.
 
-Return expertise_level and avg_birds_per_session.`,
-    hint: "Join observers, checklists, and observations. Group by expertise_level to calculate averages.",
-    seedQuery: `SELECT ob.expertise_level,
-       AVG(o.bird_count) AS avg_birds_per_session
-  FROM observers_dim AS ob
-       JOIN checklists_fact AS c
-       ON ob.observer_id = c.observer_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY ob.expertise_level`,
-    solutionQuery: `SELECT ob.expertise_level,
-       AVG(o.bird_count) AS avg_birds_per_session
-  FROM observers_dim AS ob
-       JOIN checklists_fact AS c
-       ON ob.observer_id = c.observer_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY ob.expertise_level`,
-    epoch: "Advanced",
+Return \`segment\`, \`account_count\`, and \`avg_balance\` (2dp), ordered by avg_balance descending.`,
+    hint: 'Define a WITH high_balance AS (...) CTE that filters balance > 50000 and joins customers, then aggregate in the outer query.',
+    seedQuery: `WITH high_balance AS (
+  SELECT a.account_id, a.balance, c.segment
+    FROM accounts a
+    JOIN customers c ON a.customer_id = c.customer_id
+   WHERE a.balance > 50000
+     AND a.status = 'Active'
+)
+SELECT segment,
+       COUNT(*)                   AS account_count,
+       ROUND(AVG(balance), 2)     AS avg_balance
+  FROM high_balance
+ GROUP BY segment
+ ORDER BY avg_balance DESC`,
+    solutionQuery: `WITH high_balance AS (
+  SELECT a.account_id, a.balance, c.segment
+    FROM accounts a
+    JOIN customers c ON a.customer_id = c.customer_id
+   WHERE a.balance > 50000
+     AND a.status = 'Active'
+)
+SELECT segment,
+       COUNT(*)                   AS account_count,
+       ROUND(AVG(balance), 2)     AS avg_balance
+  FROM high_balance
+ GROUP BY segment
+ ORDER BY avg_balance DESC`,
+    epoch: 'Advanced',
     difficulty: 3,
   },
   {
     id: 35,
-    title: "Spatial Bounding Box",
-    description: `Select all localities within a specific latitude/longitude bounding box (Lat: 25-40, Lon: -120 to -75).
+    title: 'At-Risk Loan Customers CTE',
+    description: `Using a CTE, isolate loans that are in Default or carry a risk grade of D, then return the full customer and loan detail for immediate escalation.
 
-Return locality_name, latitude, and longitude.`,
-    hint: "Filter locations_dim using BETWEEN for both latitude (25-40) and longitude (-120 to -75).",
-    seedQuery: `SELECT locality_name,
-       latitude,
-       longitude
-  FROM locations_dim
- WHERE latitude BETWEEN 25 AND 40
-   AND longitude BETWEEN -120 AND -75`,
-    solutionQuery: `SELECT locality_name,
-       latitude,
-       longitude
-  FROM locations_dim
- WHERE latitude BETWEEN 25 AND 40
-   AND longitude BETWEEN -120 AND -75`,
-    epoch: "Advanced",
+Return \`customer_name\`, \`segment\`, \`principal_amount\`, \`interest_rate\`, \`risk_grade\`, and \`status\`, ordered by principal_amount descending.`,
+    hint: 'Build a WITH at_risk AS (...) CTE joining loans and customers, filtering by status = Default OR risk_grade = D.',
+    seedQuery: `WITH at_risk AS (
+  SELECT l.loan_id, l.principal_amount, l.interest_rate, l.risk_grade, l.status,
+         c.customer_name, c.segment
+    FROM loans l
+    JOIN customers c ON l.customer_id = c.customer_id
+   WHERE l.status = 'Default'
+      OR l.risk_grade = 'D'
+)
+SELECT customer_name,
+       segment,
+       principal_amount,
+       interest_rate,
+       risk_grade,
+       status
+  FROM at_risk
+ ORDER BY principal_amount DESC`,
+    solutionQuery: `WITH at_risk AS (
+  SELECT l.loan_id, l.principal_amount, l.interest_rate, l.risk_grade, l.status,
+         c.customer_name, c.segment
+    FROM loans l
+    JOIN customers c ON l.customer_id = c.customer_id
+   WHERE l.status = 'Default'
+      OR l.risk_grade = 'D'
+)
+SELECT customer_name,
+       segment,
+       principal_amount,
+       interest_rate,
+       risk_grade,
+       status
+  FROM at_risk
+ ORDER BY principal_amount DESC`,
+    epoch: 'Advanced',
     difficulty: 3,
   },
   {
     id: 36,
-    title: "Taxonomic Lineage",
-    description: `Find all species in the 'Forest' habitat that have appeared in more than 5 checklists.
+    title: 'Balance Quartiles with NTILE',
+    description: `Wealth segmentation: bucket all active account holders into four equal quartiles by balance using NTILE(4), so the top 25% can be targeted for Private Banking upgrade.
 
-Return common_name and checklist_count.
-
-Return the first 15 results.`,
-    hint: "Join species through observations and checklists to locations. Filter for Forest, group by species, filter with HAVING for count > 5.",
-    seedQuery: `SELECT s.common_name,
-       COUNT(*) AS checklist_count
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- WHERE l.habitat_type = 'Forest'
- GROUP BY s.common_name
-HAVING COUNT(*) > 5
- LIMIT 15`,
-    solutionQuery: `SELECT s.common_name,
-       COUNT(*) AS checklist_count
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- WHERE l.habitat_type = 'Forest'
- GROUP BY s.common_name
-HAVING COUNT(*) > 5
- LIMIT 15`,
-    epoch: "Advanced",
-    difficulty: 4,
+Return \`customer_name\`, \`balance\`, and \`quartile\`, ordered by balance descending.`,
+    hint: 'Use NTILE(4) OVER (ORDER BY a.balance DESC) as quartile.',
+    seedQuery: `SELECT c.customer_name,
+       a.balance,
+       NTILE(4) OVER (ORDER BY a.balance DESC) AS quartile
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ WHERE a.status = 'Active'
+ ORDER BY a.balance DESC`,
+    solutionQuery: `SELECT c.customer_name,
+       a.balance,
+       NTILE(4) OVER (ORDER BY a.balance DESC) AS quartile
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ WHERE a.status = 'Active'
+ ORDER BY a.balance DESC`,
+    epoch: 'Advanced',
+    difficulty: 3,
   },
   {
     id: 37,
-    title: "Yearly Species Counts",
-    description: `Calculate the total count per species for each year.
+    title: 'First Transaction per Account',
+    description: `Onboarding analytics: find each account's very first transaction using ROW_NUMBER() partitioned by account.
 
-Return year, common_name, and yearly_total.
-
-Return the first 20 results.`,
-    hint: "Extract year from observation_date, group by year and species to get yearly totals.",
-    seedQuery: `SELECT strftime('%Y', c.observation_date) AS yr,
-       s.common_name,
-       SUM(o.bird_count) AS yearly_total
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
- GROUP BY 1,
-          2
- ORDER BY 1,
-          2
- LIMIT 20`,
-    solutionQuery: `SELECT strftime('%Y', c.observation_date) AS yr,
-       s.common_name,
-       SUM(o.bird_count) AS yearly_total
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
- GROUP BY 1,
-          2
- ORDER BY 1,
-          2
- LIMIT 20`,
-    epoch: "Advanced",
+Return \`account_id\`, \`transaction_date\`, \`amount\`, and \`merchant_category\` for only the first transaction per account, ordered by account_id.`,
+    hint: 'Assign ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY transaction_date), then filter WHERE rn = 1 in an outer query.',
+    seedQuery: `SELECT account_id,
+       transaction_date,
+       amount,
+       merchant_category
+  FROM (
+    SELECT account_id,
+           transaction_date,
+           amount,
+           merchant_category,
+           ROW_NUMBER() OVER (
+             PARTITION BY account_id
+                 ORDER BY transaction_date
+           ) AS rn
+      FROM transactions
+  )
+ WHERE rn = 1
+ ORDER BY account_id`,
+    solutionQuery: `SELECT account_id,
+       transaction_date,
+       amount,
+       merchant_category
+  FROM (
+    SELECT account_id,
+           transaction_date,
+           amount,
+           merchant_category,
+           ROW_NUMBER() OVER (
+             PARTITION BY account_id
+                 ORDER BY transaction_date
+           ) AS rn
+      FROM transactions
+  )
+ WHERE rn = 1
+ ORDER BY account_id`,
+    epoch: 'Advanced',
     difficulty: 3,
   },
   {
     id: 38,
-    title: "Observer State Comparison",
-    description: `Find all observers who have submitted checklists from more than one different state.
+    title: 'Account Age in Days',
+    description: `Retention analysis: calculate how many days each active account has been open as of 30 Jun 2024, to identify long-tenured customers for loyalty rewards.
 
-Return observer_name and state_count.`,
-    hint: "Count distinct states per observer, filter with HAVING for more than 1 state.",
-    seedQuery: `SELECT ob.observer_name,
-       COUNT(DISTINCT l.state) AS state_count
-  FROM observers_dim AS ob
-       JOIN checklists_fact AS c
-       ON ob.observer_id = c.observer_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- GROUP BY ob.observer_name
-HAVING COUNT(DISTINCT l.state) > 1`,
-    solutionQuery: `SELECT ob.observer_name,
-       COUNT(DISTINCT l.state) AS state_count
-  FROM observers_dim AS ob
-       JOIN checklists_fact AS c
-       ON ob.observer_id = c.observer_id
-       JOIN locations_dim AS l
-       ON c.location_id = l.location_id
- GROUP BY ob.observer_name
-HAVING COUNT(DISTINCT l.state) > 1`,
-    epoch: "Advanced",
-    difficulty: 4,
+Return \`account_id\`, \`customer_name\`, \`opened_date\`, and \`days_open\`, ordered by days_open descending.`,
+    hint: 'Use CAST(julianday(\'2024-06-30\') - julianday(opened_date) AS INTEGER) AS days_open.',
+    seedQuery: `SELECT a.account_id,
+       c.customer_name,
+       a.opened_date,
+       CAST(julianday('2024-06-30') - julianday(a.opened_date) AS INTEGER) AS days_open
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ ORDER BY days_open DESC`,
+    solutionQuery: `SELECT a.account_id,
+       c.customer_name,
+       a.opened_date,
+       CAST(julianday('2024-06-30') - julianday(a.opened_date) AS INTEGER) AS days_open
+  FROM accounts a
+  JOIN customers c ON a.customer_id = c.customer_id
+ ORDER BY days_open DESC`,
+    epoch: 'Advanced',
+    difficulty: 3,
   },
   {
     id: 39,
-    title: "7-Day Moving Average",
-    description: `Calculate a 7-day trailing moving average of the total birds observed at each location.
+    title: 'Transactions Above Personal Average',
+    description: `Fraud pre-screening: flag transactions where the amount exceeds that customer's own average transaction value — an early signal of unusual activity.
 
-Return observation_date, daily_total, and moving_avg_7d.
-
-Return the first 25 results.`,
-    hint: "Use a window function with AVG and ROWS BETWEEN 6 PRECEDING AND CURRENT ROW for 7-day moving average.",
-    seedQuery: `SELECT observation_date,
-       daily_total,
-       AVG(daily_total) OVER (
-           ORDER BY observation_date
-           ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-       ) AS moving_avg_7d
-  FROM (
-      SELECT c.observation_date,
-             SUM(o.bird_count) AS daily_total
-        FROM checklists_fact AS c
-             JOIN observations_fact AS o
-             ON c.checklist_id = o.checklist_id
-       GROUP BY c.observation_date
-  ) AS daily_series
- LIMIT 25`,
-    solutionQuery: `SELECT observation_date,
-       daily_total,
-       AVG(daily_total) OVER (
-           ORDER BY observation_date
-           ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-       ) AS moving_avg_7d
-  FROM (
-      SELECT c.observation_date,
-             SUM(o.bird_count) AS daily_total
-        FROM checklists_fact AS c
-             JOIN observations_fact AS o
-             ON c.checklist_id = o.checklist_id
-       GROUP BY c.observation_date
-  ) AS daily_series
- LIMIT 25`,
-    epoch: "Advanced",
-    difficulty: 5,
+Return \`transaction_id\`, \`customer_name\`, \`amount\`, and \`merchant_category\` for such transactions, ordered by amount descending. Limit 20 rows.`,
+    hint: 'Use a correlated subquery in the WHERE clause: WHERE t.amount > (SELECT AVG(...) WHERE account belongs to same customer).',
+    seedQuery: `SELECT t.transaction_id,
+       c.customer_name,
+       t.amount,
+       t.merchant_category
+  FROM transactions t
+  JOIN accounts a  ON t.account_id  = a.account_id
+  JOIN customers c ON a.customer_id = c.customer_id
+ WHERE t.amount > (
+   SELECT AVG(t2.amount)
+     FROM transactions t2
+     JOIN accounts a2 ON t2.account_id = a2.account_id
+    WHERE a2.customer_id = a.customer_id
+ )
+ ORDER BY t.amount DESC
+ LIMIT 20`,
+    solutionQuery: `SELECT t.transaction_id,
+       c.customer_name,
+       t.amount,
+       t.merchant_category
+  FROM transactions t
+  JOIN accounts a  ON t.account_id  = a.account_id
+  JOIN customers c ON a.customer_id = c.customer_id
+ WHERE t.amount > (
+   SELECT AVG(t2.amount)
+     FROM transactions t2
+     JOIN accounts a2 ON t2.account_id = a2.account_id
+    WHERE a2.customer_id = a.customer_id
+ )
+ ORDER BY t.amount DESC
+ LIMIT 20`,
+    epoch: 'Advanced',
+    difficulty: 3,
   },
   {
     id: 40,
-    title: "Correlated Subquery: High Altitude Specialists",
-    description: `Find observers who only submit checklists at locations above the average elevation in their respective state.
+    title: 'Investment Cross-Sell Targets',
+    description: `Cross-sell opportunity: identify customers who hold an active account but have never opened an Investment-type product — prime targets for the LCB CPF / Wealth Management pitch.
 
-Return observer_id (unique).
-
-Return the first 10 results.`,
-    hint: "Use a correlated subquery to compare each location's elevation against the average for its state.",
-    seedQuery: `SELECT DISTINCT c1.observer_id
-  FROM checklists_fact AS c1
-       JOIN locations_dim AS l1
-       ON c1.location_id = l1.location_id
- WHERE l1.elevation > (
-     SELECT AVG(l2.elevation)
-       FROM locations_dim AS l2
-      WHERE l2.state = l1.state
+Return \`customer_name\`, \`segment\`, and \`credit_score\`, ordered by credit_score descending.`,
+    hint: 'Use NOT IN with a subquery that finds customer_ids who have an Investment product in their accounts.',
+    seedQuery: `SELECT c.customer_name,
+       c.segment,
+       c.credit_score
+  FROM customers c
+ WHERE c.customer_id NOT IN (
+   SELECT DISTINCT a.customer_id
+     FROM accounts a
+     JOIN products p ON a.product_id = p.product_id
+    WHERE p.product_type = 'Investment'
  )
- LIMIT 10`,
-    solutionQuery: `SELECT DISTINCT c1.observer_id
-  FROM checklists_fact AS c1
-       JOIN locations_dim AS l1
-       ON c1.location_id = l1.location_id
- WHERE l1.elevation > (
-     SELECT AVG(l2.elevation)
-       FROM locations_dim AS l2
-      WHERE l2.state = l1.state
+ ORDER BY c.credit_score DESC`,
+    solutionQuery: `SELECT c.customer_name,
+       c.segment,
+       c.credit_score
+  FROM customers c
+ WHERE c.customer_id NOT IN (
+   SELECT DISTINCT a.customer_id
+     FROM accounts a
+     JOIN products p ON a.product_id = p.product_id
+    WHERE p.product_type = 'Investment'
  )
- LIMIT 10`,
-    epoch: "Advanced",
-    difficulty: 5,
+ ORDER BY c.credit_score DESC`,
+    epoch: 'Advanced',
+    difficulty: 3,
   },
 
-  // ============================================
-  // EXPERT (Levels 41-50)
-  // Complex modeling, optimization, edge cases
-  // ============================================
+  // ============================================================
+  // EXPERT (Levels 41–50)
+  // Recursive CTEs, Advanced Windows, Multi-CTE Analysis
+  // ============================================================
   {
     id: 41,
-    title: "Seasonal Presence Pivot",
-    description: `Show the total count of 'Northern Cardinal' in each month (Jan-Dec) as separate columns.
+    title: 'Customer Lifetime Value Estimate',
+    description: `Strategic Finance estimates Customer Lifetime Value (CLV) using a simplified formula:
+\`LTV = total_balance × 0.015 + total_transacted × 0.001\`
 
-Return common_name and 12 monthly columns.
+Use two CTEs — one for account balances, one for transaction totals — then compute LTV.
 
-Return a single row.`,
-    hint: "Use CASE expressions to pivot monthly counts into separate columns (Jan-Dec). Group by species.",
-    seedQuery: `SELECT s.common_name,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '01' THEN o.bird_count ELSE 0 END) AS Jan,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '02' THEN o.bird_count ELSE 0 END) AS Feb,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '03' THEN o.bird_count ELSE 0 END) AS Mar,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '04' THEN o.bird_count ELSE 0 END) AS Apr,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '05' THEN o.bird_count ELSE 0 END) AS May,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '06' THEN o.bird_count ELSE 0 END) AS Jun,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '07' THEN o.bird_count ELSE 0 END) AS Jul,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '08' THEN o.bird_count ELSE 0 END) AS Aug,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '09' THEN o.bird_count ELSE 0 END) AS Sep,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '10' THEN o.bird_count ELSE 0 END) AS Oct,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '11' THEN o.bird_count ELSE 0 END) AS Nov,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '12' THEN o.bird_count ELSE 0 END) AS Dec
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
- WHERE s.common_name = 'Northern Cardinal'
- GROUP BY s.common_name`,
-    solutionQuery: `SELECT s.common_name,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '01' THEN o.bird_count ELSE 0 END) AS Jan,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '02' THEN o.bird_count ELSE 0 END) AS Feb,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '03' THEN o.bird_count ELSE 0 END) AS Mar,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '04' THEN o.bird_count ELSE 0 END) AS Apr,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '05' THEN o.bird_count ELSE 0 END) AS May,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '06' THEN o.bird_count ELSE 0 END) AS Jun,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '07' THEN o.bird_count ELSE 0 END) AS Jul,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '08' THEN o.bird_count ELSE 0 END) AS Aug,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '09' THEN o.bird_count ELSE 0 END) AS Sep,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '10' THEN o.bird_count ELSE 0 END) AS Oct,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '11' THEN o.bird_count ELSE 0 END) AS Nov,
-       SUM(CASE WHEN strftime('%m', c.observation_date) = '12' THEN o.bird_count ELSE 0 END) AS Dec
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
- WHERE s.common_name = 'Northern Cardinal'
- GROUP BY s.common_name`,
-    epoch: "Expert",
-    difficulty: 5,
+Return \`customer_name\`, \`segment\`, \`total_balance\`, \`total_transacted\`, and \`estimated_ltv\` (2dp), ordered by estimated_ltv descending.`,
+    hint: 'Define two CTEs: one summing balances per customer, one summing transaction amounts per customer. Join them in the final SELECT.',
+    seedQuery: `WITH balance_totals AS (
+  SELECT customer_id, SUM(balance) AS total_balance
+    FROM accounts
+   GROUP BY customer_id
+),
+tx_totals AS (
+  SELECT a.customer_id, ROUND(SUM(t.amount), 2) AS total_transacted
+    FROM transactions t
+    JOIN accounts a ON t.account_id = a.account_id
+   GROUP BY a.customer_id
+)
+SELECT c.customer_name,
+       c.segment,
+       ROUND(bt.total_balance,    2) AS total_balance,
+       ROUND(tt.total_transacted, 2) AS total_transacted,
+       ROUND(bt.total_balance * 0.015 + tt.total_transacted * 0.001, 2) AS estimated_ltv
+  FROM customers c
+  JOIN balance_totals bt ON c.customer_id = bt.customer_id
+  LEFT JOIN tx_totals tt ON c.customer_id = tt.customer_id
+ ORDER BY estimated_ltv DESC`,
+    solutionQuery: `WITH balance_totals AS (
+  SELECT customer_id, SUM(balance) AS total_balance
+    FROM accounts
+   GROUP BY customer_id
+),
+tx_totals AS (
+  SELECT a.customer_id, ROUND(SUM(t.amount), 2) AS total_transacted
+    FROM transactions t
+    JOIN accounts a ON t.account_id = a.account_id
+   GROUP BY a.customer_id
+)
+SELECT c.customer_name,
+       c.segment,
+       ROUND(bt.total_balance,    2) AS total_balance,
+       ROUND(tt.total_transacted, 2) AS total_transacted,
+       ROUND(bt.total_balance * 0.015 + tt.total_transacted * 0.001, 2) AS estimated_ltv
+  FROM customers c
+  JOIN balance_totals bt ON c.customer_id = bt.customer_id
+  LEFT JOIN tx_totals tt ON c.customer_id = tt.customer_id
+ ORDER BY estimated_ltv DESC`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 42,
-    title: "Top 10th Percentile Observers",
-    description: `Rank observers by their 'Data Quality Score' and return those in the top 10th percentile.
+    title: 'Transaction Spike Detection',
+    description: `Fraud Operations flags customers whose single largest transaction is more than 3× their personal average. Compute the anomaly ratio.
 
-Return observer_id and expertise_level.
-
-Return the first 5 results.`,
-    hint: "Use PERCENT_RANK() to rank observers by expertise level. Filter for top 10th percentile.",
-    seedQuery: `SELECT observer_id,
-       expertise_level
-  FROM (
-      SELECT observer_id,
-             expertise_level,
-             PERCENT_RANK() OVER (
-                 ORDER BY CASE expertise_level
-                     WHEN 'Expert' THEN 5
-                     WHEN 'Professional' THEN 4
-                     WHEN 'Intermediate' THEN 3
-                     WHEN 'Amateur' THEN 2
-                     ELSE 1
-                 END DESC
-             ) AS p_rank
-        FROM observers_dim
-  ) AS ranked_observers
- WHERE p_rank <= 0.1
- LIMIT 5`,
-    solutionQuery: `SELECT observer_id,
-       expertise_level
-  FROM (
-      SELECT observer_id,
-             expertise_level,
-             PERCENT_RANK() OVER (
-                 ORDER BY CASE expertise_level
-                     WHEN 'Expert' THEN 5
-                     WHEN 'Professional' THEN 4
-                     WHEN 'Intermediate' THEN 3
-                     WHEN 'Amateur' THEN 2
-                     ELSE 1
-                 END DESC
-             ) AS p_rank
-        FROM observers_dim
-  ) AS ranked_observers
- WHERE p_rank <= 0.1
- LIMIT 5`,
-    epoch: "Expert",
-    difficulty: 5,
+Return \`customer_name\`, \`segment\`, \`avg_transaction\`, \`largest_transaction\`, and \`anomaly_ratio\` (1dp) for customers meeting this threshold, ordered by anomaly_ratio descending.`,
+    hint: 'Use a CTE to compute AVG and MAX per customer via a join chain, then filter in the outer query.',
+    seedQuery: `WITH spend_stats AS (
+  SELECT a.customer_id,
+         ROUND(AVG(t.amount), 2) AS avg_tx,
+         MAX(t.amount)           AS max_tx
+    FROM transactions t
+    JOIN accounts a ON t.account_id = a.account_id
+   GROUP BY a.customer_id
+)
+SELECT c.customer_name,
+       c.segment,
+       s.avg_tx                              AS avg_transaction,
+       s.max_tx                              AS largest_transaction,
+       ROUND(s.max_tx / s.avg_tx, 1)         AS anomaly_ratio
+  FROM customers c
+  JOIN spend_stats s ON c.customer_id = s.customer_id
+ WHERE s.max_tx > s.avg_tx * 3
+ ORDER BY anomaly_ratio DESC`,
+    solutionQuery: `WITH spend_stats AS (
+  SELECT a.customer_id,
+         ROUND(AVG(t.amount), 2) AS avg_tx,
+         MAX(t.amount)           AS max_tx
+    FROM transactions t
+    JOIN accounts a ON t.account_id = a.account_id
+   GROUP BY a.customer_id
+)
+SELECT c.customer_name,
+       c.segment,
+       s.avg_tx                              AS avg_transaction,
+       s.max_tx                              AS largest_transaction,
+       ROUND(s.max_tx / s.avg_tx, 1)         AS anomaly_ratio
+  FROM customers c
+  JOIN spend_stats s ON c.customer_id = s.customer_id
+ WHERE s.max_tx > s.avg_tx * 3
+ ORDER BY anomaly_ratio DESC`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 43,
-    title: "Duplicate Checklist Detection",
-    description: `Identify checklists submitted by the same observer at the same location within 10 minutes of each other.
+    title: 'Rolling 30-Day Debit Spend',
+    description: `Treasury's liquidity desk monitors a rolling 30-day debit spend window to detect unusual cash outflow patterns.
 
-Return checklist_id, observer_id, location_id, and start_time.
-
-Return the first 10 results.`,
-    hint: "Use LAG to access the previous checklist time per observer/location. Check if times are within 10 minutes.",
-    seedQuery: `SELECT checklist_id,
-       observer_id,
-       location_id,
-       start_time
-  FROM (
-      SELECT checklist_id,
-             observer_id,
-             location_id,
-             start_time,
-             LAG(start_time) OVER (
-                 PARTITION BY observer_id,
-                            location_id
-                 ORDER BY start_time
-             ) AS prev_time
-        FROM checklists_fact
-  )
- WHERE prev_time IS NOT NULL
- LIMIT 10`,
-    solutionQuery: `SELECT checklist_id,
-       observer_id,
-       location_id,
-       start_time
-  FROM (
-      SELECT checklist_id,
-             observer_id,
-             location_id,
-             start_time,
-             LAG(start_time) OVER (
-                 PARTITION BY observer_id,
-                            location_id
-                 ORDER BY start_time
-             ) AS prev_time
-        FROM checklists_fact
-  )
- WHERE prev_time IS NOT NULL
- LIMIT 10`,
-    epoch: "Expert",
-    difficulty: 5,
+Aggregate daily debit totals, then compute a 30-day rolling sum using a window frame. Return \`transaction_date\`, \`daily_amount\`, and \`rolling_30d\` (rounded to 2dp), ordered by date. Limit to 30 rows.`,
+    hint: 'GROUP BY date first for daily_amount, then use SUM(...) OVER (ORDER BY transaction_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW).',
+    seedQuery: `SELECT transaction_date,
+       ROUND(SUM(amount), 2)        AS daily_amount,
+       ROUND(SUM(SUM(amount)) OVER (
+         ORDER BY transaction_date
+         ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+       ), 2)                         AS rolling_30d
+  FROM transactions
+ WHERE transaction_type = 'Debit'
+ GROUP BY transaction_date
+ ORDER BY transaction_date
+ LIMIT 30`,
+    solutionQuery: `SELECT transaction_date,
+       ROUND(SUM(amount), 2)        AS daily_amount,
+       ROUND(SUM(SUM(amount)) OVER (
+         ORDER BY transaction_date
+         ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+       ), 2)                         AS rolling_30d
+  FROM transactions
+ WHERE transaction_type = 'Debit'
+ GROUP BY transaction_date
+ ORDER BY transaction_date
+ LIMIT 30`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 44,
-    title: "Third Highest Population Year",
-    description: `Find the year that recorded the third-highest total count for 'Bald Eagles'.
+    title: 'Loan Amortisation Schedule (Recursive CTE)',
+    description: `Using a recursive CTE, generate the first 12 months of the repayment schedule for Loan #1 (SGD 380,000 at 2.5% p.a., monthly payment ≈ SGD 1,760).
 
-Return obs_year and total_count.`,
-    hint: "Use DENSE_RANK() to rank years by total Bald Eagle count. Filter for rank = 3.",
-    seedQuery: `SELECT obs_year,
-       total_count
-  FROM (
-      SELECT strftime('%Y', c.observation_date) AS obs_year,
-             SUM(o.bird_count) AS total_count,
-             DENSE_RANK() OVER (
-                 ORDER BY SUM(o.bird_count) DESC
-             ) AS population_rank
-        FROM observations_fact AS o
-             JOIN checklists_fact AS c
-             ON o.checklist_id = c.checklist_id
-             JOIN species_dim AS s
-             ON o.species_id = s.species_id
-       WHERE s.common_name = 'Bald Eagle'
-       GROUP BY 1
-  ) AS ranked_years
- WHERE population_rank = 3`,
-    solutionQuery: `SELECT obs_year,
-       total_count
-  FROM (
-      SELECT strftime('%Y', c.observation_date) AS obs_year,
-             SUM(o.bird_count) AS total_count,
-             DENSE_RANK() OVER (
-                 ORDER BY SUM(o.bird_count) DESC
-             ) AS population_rank
-        FROM observations_fact AS o
-             JOIN checklists_fact AS c
-             ON o.checklist_id = c.checklist_id
-             JOIN species_dim AS s
-             ON o.species_id = s.species_id
-       WHERE s.common_name = 'Bald Eagle'
-       GROUP BY 1
-  ) AS ranked_years
- WHERE population_rank = 3`,
-    epoch: "Expert",
-    difficulty: 5,
+Return \`month_num\` and \`remaining_balance\` (2dp) for months 1 through 12.`,
+    hint: 'Start the recursive CTE with month_num = 1 and balance = 380000, then each step: balance * (1 + 0.025/12) - 1760. Stop at month_num < 12.',
+    seedQuery: `WITH RECURSIVE schedule(month_num, balance) AS (
+  SELECT 1, 380000.0
+  UNION ALL
+  SELECT month_num + 1,
+         ROUND(balance * (1.0 + 0.025 / 12) - 1760.0, 2)
+    FROM schedule
+   WHERE month_num < 12
+)
+SELECT month_num,
+       balance AS remaining_balance
+  FROM schedule`,
+    solutionQuery: `WITH RECURSIVE schedule(month_num, balance) AS (
+  SELECT 1, 380000.0
+  UNION ALL
+  SELECT month_num + 1,
+         ROUND(balance * (1.0 + 0.025 / 12) - 1760.0, 2)
+    FROM schedule
+   WHERE month_num < 12
+)
+SELECT month_num,
+       balance AS remaining_balance
+  FROM schedule`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 45,
-    title: "Relative Abundance Trend",
-    description: `Calculate the year-over-year change in 'Relative Abundance' (species count / total bird count) for 'Peregrine Falcon'.
+    title: 'Customer Acquisition Cohort Analysis',
+    description: `Cohort analysis: group customers by the year they joined LCB, then measure total accounts opened and average balance per cohort.
 
-Return year, rel_abundance, and abundance_trend.
-
-Return the first 5 results.`,
-    hint: "Use LAG() to calculate year-over-year change in relative abundance for Peregrine Falcon.",
-    seedQuery: `WITH annual_stats AS (
-    SELECT strftime('%Y', c.observation_date) AS yr,
-           1.0 * SUM(CASE WHEN s.common_name = 'Peregrine Falcon' THEN o.bird_count ELSE 0 END) / 
-           SUM(o.bird_count) AS rel_abundance
-      FROM observations_fact AS o
-           JOIN checklists_fact AS c
-           ON o.checklist_id = c.checklist_id
-           JOIN species_dim AS s
-           ON o.species_id = s.species_id
-     GROUP BY 1
+Return \`cohort_year\`, \`customers_acquired\`, \`total_accounts\`, and \`avg_balance_per_customer\` (2dp), ordered by cohort_year.`,
+    hint: 'Use strftime(\'%Y\', join_date) to extract the cohort year, then aggregate with a join to accounts.',
+    seedQuery: `WITH cohorts AS (
+  SELECT customer_id,
+         strftime('%Y', join_date) AS cohort_year
+    FROM customers
 )
-SELECT yr,
-       rel_abundance,
-       rel_abundance - LAG(rel_abundance) OVER (
-           ORDER BY yr
-       ) AS abundance_trend
-  FROM annual_stats
- LIMIT 5`,
-    solutionQuery: `WITH annual_stats AS (
-    SELECT strftime('%Y', c.observation_date) AS yr,
-           1.0 * SUM(CASE WHEN s.common_name = 'Peregrine Falcon' THEN o.bird_count ELSE 0 END) / 
-           SUM(o.bird_count) AS rel_abundance
-      FROM observations_fact AS o
-           JOIN checklists_fact AS c
-           ON o.checklist_id = c.checklist_id
-           JOIN species_dim AS s
-           ON o.species_id = s.species_id
-     GROUP BY 1
+SELECT c.cohort_year,
+       COUNT(DISTINCT c.customer_id)                            AS customers_acquired,
+       COUNT(a.account_id)                                      AS total_accounts,
+       ROUND(SUM(a.balance) / COUNT(DISTINCT c.customer_id), 2) AS avg_balance_per_customer
+  FROM cohorts c
+  JOIN accounts a ON c.customer_id = a.customer_id
+ GROUP BY c.cohort_year
+ ORDER BY c.cohort_year`,
+    solutionQuery: `WITH cohorts AS (
+  SELECT customer_id,
+         strftime('%Y', join_date) AS cohort_year
+    FROM customers
 )
-SELECT yr,
-       rel_abundance,
-       rel_abundance - LAG(rel_abundance) OVER (
-           ORDER BY yr
-       ) AS abundance_trend
-  FROM annual_stats
- LIMIT 5`,
-    epoch: "Expert",
-    difficulty: 6,
+SELECT c.cohort_year,
+       COUNT(DISTINCT c.customer_id)                            AS customers_acquired,
+       COUNT(a.account_id)                                      AS total_accounts,
+       ROUND(SUM(a.balance) / COUNT(DISTINCT c.customer_id), 2) AS avg_balance_per_customer
+  FROM cohorts c
+  JOIN accounts a ON c.customer_id = a.customer_id
+ GROUP BY c.cohort_year
+ ORDER BY c.cohort_year`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 46,
-    title: "Gaps and Islands: Observer Streaks",
-    description: `Identify observers who have submitted checklists for 3 or more consecutive days.
+    title: 'Portfolio Risk Concentration',
+    description: `The Board requires a risk concentration report: for each risk grade, show the loan count, total exposure, average rate, and its percentage of the overall portfolio.
 
-Return observer_id and streak_length.
+Use two CTEs — one for per-grade totals, one for the portfolio grand total — then join them.
 
-Return the first 10 results.`,
-    hint: "Use row numbers to detect gaps and islands in consecutive observation dates for each observer.",
-    seedQuery: `WITH daily_activity AS (
-    SELECT DISTINCT observer_id,
-           observation_date
-      FROM checklists_fact
+Return \`risk_grade\`, \`loan_count\`, \`total_exposure\`, \`avg_rate\` (2dp), and \`portfolio_pct\` (1dp), ordered by risk_grade.`,
+    hint: 'First CTE groups by risk_grade. Second CTE selects the grand total. Cross-join them in the final SELECT to compute the percentage.',
+    seedQuery: `WITH grade_totals AS (
+  SELECT risk_grade,
+         COUNT(*)                        AS loan_count,
+         ROUND(SUM(principal_amount), 0) AS total_exposure,
+         ROUND(AVG(interest_rate), 2)    AS avg_rate
+    FROM loans
+   GROUP BY risk_grade
 ),
-grouped_activity AS (
-    SELECT observer_id,
-           observation_date,
-           DATE(observation_date, '-' || (ROW_NUMBER() OVER (
-               PARTITION BY observer_id
-               ORDER BY observation_date
-           ) - 1) || ' days') AS streak_group
-      FROM daily_activity
+portfolio AS (
+  SELECT SUM(principal_amount) AS grand_total
+    FROM loans
 )
-SELECT observer_id,
-       COUNT(*) AS streak_length
-  FROM grouped_activity
- GROUP BY observer_id,
-          streak_group
-HAVING COUNT(*) >= 3
- LIMIT 10`,
-    solutionQuery: `WITH daily_activity AS (
-    SELECT DISTINCT observer_id,
-           observation_date
-      FROM checklists_fact
+SELECT g.risk_grade,
+       g.loan_count,
+       g.total_exposure,
+       g.avg_rate,
+       ROUND(g.total_exposure * 100.0 / p.grand_total, 1) AS portfolio_pct
+  FROM grade_totals g, portfolio p
+ ORDER BY g.risk_grade`,
+    solutionQuery: `WITH grade_totals AS (
+  SELECT risk_grade,
+         COUNT(*)                        AS loan_count,
+         ROUND(SUM(principal_amount), 0) AS total_exposure,
+         ROUND(AVG(interest_rate), 2)    AS avg_rate
+    FROM loans
+   GROUP BY risk_grade
 ),
-grouped_activity AS (
-    SELECT observer_id,
-           observation_date,
-           DATE(observation_date, '-' || (ROW_NUMBER() OVER (
-               PARTITION BY observer_id
-               ORDER BY observation_date
-           ) - 1) || ' days') AS streak_group
-      FROM daily_activity
+portfolio AS (
+  SELECT SUM(principal_amount) AS grand_total
+    FROM loans
 )
-SELECT observer_id,
-       COUNT(*) AS streak_length
-  FROM grouped_activity
- GROUP BY observer_id,
-          streak_group
-HAVING COUNT(*) >= 3
- LIMIT 10`,
-    epoch: "Expert",
-    difficulty: 6,
+SELECT g.risk_grade,
+       g.loan_count,
+       g.total_exposure,
+       g.avg_rate,
+       ROUND(g.total_exposure * 100.0 / p.grand_total, 1) AS portfolio_pct
+  FROM grade_totals g, portfolio p
+ ORDER BY g.risk_grade`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 47,
-    title: "Multi-Year Activity Analysis",
-    description: `Find observers who were active in 2023, had no submissions in 2024, but have returned in 2025.
+    title: 'Customer Churn Risk Signals',
+    description: `Retention Analytics flags customers showing churn signals: either they have at least one Dormant account, or their last transaction was before March 2024.
 
-Return observer_id.`,
-    hint: "Use EXCEPT and INTERSECT to find observers active in 2023, absent in 2024, returned in 2025.",
-    seedQuery: `SELECT DISTINCT observer_id
-  FROM checklists_fact
- WHERE strftime('%Y', observation_date) = '2023'
+Use two CTEs (last_tx and dormant_check) and a LEFT JOIN to combine signals.
 
-EXCEPT
-
-SELECT DISTINCT observer_id
-  FROM checklists_fact
- WHERE strftime('%Y', observation_date) = '2024'
-
-INTERSECT
-
-SELECT DISTINCT observer_id
-  FROM checklists_fact
- WHERE strftime('%Y', observation_date) = '2025'`,
-    solutionQuery: `SELECT DISTINCT observer_id
-  FROM checklists_fact
- WHERE strftime('%Y', observation_date) = '2023'
-
-EXCEPT
-
-SELECT DISTINCT observer_id
-  FROM checklists_fact
- WHERE strftime('%Y', observation_date) = '2024'
-
-INTERSECT
-
-SELECT DISTINCT observer_id
-  FROM checklists_fact
- WHERE strftime('%Y', observation_date) = '2025'`,
-    epoch: "Expert",
-    difficulty: 5,
+Return \`customer_name\`, \`segment\`, \`join_date\`, \`last_transaction\`, and \`dormant_accounts\`, ordered by segment then customer_name.`,
+    hint: 'CTE 1: MAX transaction date per customer. CTE 2: COUNT dormant accounts per customer. Join both to customers with LEFT JOIN, filter in WHERE.',
+    seedQuery: `WITH last_tx AS (
+  SELECT a.customer_id,
+         MAX(t.transaction_date) AS last_transaction
+    FROM transactions t
+    JOIN accounts a ON t.account_id = a.account_id
+   GROUP BY a.customer_id
+),
+dormant_check AS (
+  SELECT customer_id,
+         COUNT(*) AS dormant_accounts
+    FROM accounts
+   WHERE status = 'Dormant'
+   GROUP BY customer_id
+)
+SELECT c.customer_name,
+       c.segment,
+       c.join_date,
+       lt.last_transaction,
+       COALESCE(dc.dormant_accounts, 0) AS dormant_accounts
+  FROM customers c
+  LEFT JOIN last_tx       lt ON c.customer_id = lt.customer_id
+  LEFT JOIN dormant_check dc ON c.customer_id = dc.customer_id
+ WHERE COALESCE(dc.dormant_accounts, 0) > 0
+    OR lt.last_transaction < '2024-03-01'
+ ORDER BY c.segment, c.customer_name`,
+    solutionQuery: `WITH last_tx AS (
+  SELECT a.customer_id,
+         MAX(t.transaction_date) AS last_transaction
+    FROM transactions t
+    JOIN accounts a ON t.account_id = a.account_id
+   GROUP BY a.customer_id
+),
+dormant_check AS (
+  SELECT customer_id,
+         COUNT(*) AS dormant_accounts
+    FROM accounts
+   WHERE status = 'Dormant'
+   GROUP BY customer_id
+)
+SELECT c.customer_name,
+       c.segment,
+       c.join_date,
+       lt.last_transaction,
+       COALESCE(dc.dormant_accounts, 0) AS dormant_accounts
+  FROM customers c
+  LEFT JOIN last_tx       lt ON c.customer_id = lt.customer_id
+  LEFT JOIN dormant_check dc ON c.customer_id = dc.customer_id
+ WHERE COALESCE(dc.dormant_accounts, 0) > 0
+    OR lt.last_transaction < '2024-03-01'
+ ORDER BY c.segment, c.customer_name`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
   {
     id: 48,
-    title: "Weather Preference Analysis",
-    description: `Find the most common weather condition for each species.
+    title: 'Total Interest Income Projection',
+    description: `Finance needs the projected total interest income for all active loans using the simple interest formula:
+\`total_interest = principal × rate / 100 / 12 × term_months\`
 
-Return common_name and most_common_weather.
-
-Return the first 15 results.`,
-    hint: "Group by species, order by count descending to find the most frequent weather for each species.",
-    seedQuery: `SELECT s.common_name,
-       e.weather_description AS most_common_weather
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN environmental_metrics AS e
-       ON c.checklist_id = e.checklist_id
- GROUP BY s.common_name
- ORDER BY s.common_name,
-          COUNT(*) DESC
- LIMIT 15`,
-    solutionQuery: `SELECT s.common_name,
-       e.weather_description AS most_common_weather
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
-       JOIN checklists_fact AS c
-       ON o.checklist_id = c.checklist_id
-       JOIN environmental_metrics AS e
-       ON c.checklist_id = e.checklist_id
- GROUP BY s.common_name
- ORDER BY s.common_name,
-          COUNT(*) DESC
- LIMIT 15`,
-    epoch: "Expert",
+Return \`loan_id\`, \`customer_name\`, \`principal_amount\`, \`interest_rate\`, \`term_months\`, \`total_interest\` (2dp), and \`total_repayment\` (2dp), ordered by total_interest descending. Limit 10.`,
+    hint: 'Calculate total_interest as ROUND(principal * rate / 100.0 / 12 * term_months, 2) and total_repayment as principal + that value.',
+    seedQuery: `SELECT l.loan_id,
+       c.customer_name,
+       l.principal_amount,
+       l.interest_rate,
+       l.term_months,
+       ROUND(l.principal_amount * l.interest_rate / 100.0 / 12 * l.term_months, 2) AS total_interest,
+       ROUND(l.principal_amount + l.principal_amount * l.interest_rate / 100.0 / 12 * l.term_months, 2) AS total_repayment
+  FROM loans l
+  JOIN customers c ON l.customer_id = c.customer_id
+ WHERE l.status = 'Active'
+ ORDER BY total_interest DESC
+ LIMIT 10`,
+    solutionQuery: `SELECT l.loan_id,
+       c.customer_name,
+       l.principal_amount,
+       l.interest_rate,
+       l.term_months,
+       ROUND(l.principal_amount * l.interest_rate / 100.0 / 12 * l.term_months, 2) AS total_interest,
+       ROUND(l.principal_amount + l.principal_amount * l.interest_rate / 100.0 / 12 * l.term_months, 2) AS total_repayment
+  FROM loans l
+  JOIN customers c ON l.customer_id = c.customer_id
+ WHERE l.status = 'Active'
+ ORDER BY total_interest DESC
+ LIMIT 10`,
+    epoch: 'Expert',
     difficulty: 4,
   },
   {
     id: 49,
-    title: "Species Diversity by State",
-    description: `Calculate species diversity (unique species count) for each state.
+    title: 'Transaction Anomaly Z-Score',
+    description: `Advanced fraud detection: compute a simplified Z-score for each transaction relative to its account's mean and variance. Flag those with an absolute Z-score > 1.5.
 
-Return state and species_diversity.
+Use a CTE for account-level statistics, then calculate Z-score in the outer query.
 
-Return all results.`,
-    hint: "Count distinct species per state by joining locations, checklists, and observations.",
-    seedQuery: `SELECT l.state,
-       COUNT(DISTINCT o.species_id) AS species_diversity
-  FROM locations_dim AS l
-       JOIN checklists_fact AS c
-       ON l.location_id = c.location_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY l.state
- ORDER BY species_diversity DESC`,
-    solutionQuery: `SELECT l.state,
-       COUNT(DISTINCT o.species_id) AS species_diversity
-  FROM locations_dim AS l
-       JOIN checklists_fact AS c
-       ON l.location_id = c.location_id
-       JOIN observations_fact AS o
-       ON c.checklist_id = o.checklist_id
- GROUP BY l.state
- ORDER BY species_diversity DESC`,
-    epoch: "Expert",
+Return \`transaction_id\`, \`account_id\`, \`amount\`, \`merchant_category\`, \`account_avg\`, and \`z_score\` (2dp), ordered by z_score descending. Limit 15.`,
+    hint: 'CTE: compute AVG and SUM of squared deviations per account_id. Outer query: CASE WHEN variance > 0 THEN (amount - avg) / SQRT(variance) ELSE 0 END.',
+    seedQuery: `WITH account_stats AS (
+  SELECT account_id,
+         AVG(amount) AS avg_amt,
+         SUM((amount - (SELECT AVG(a2.amount) FROM transactions a2 WHERE a2.account_id = transactions.account_id))
+           * (amount - (SELECT AVG(a2.amount) FROM transactions a2 WHERE a2.account_id = transactions.account_id)))
+           / COUNT(*) AS variance
+    FROM transactions
+   GROUP BY account_id
+)
+SELECT t.transaction_id,
+       t.account_id,
+       t.amount,
+       t.merchant_category,
+       ROUND(s.avg_amt, 2) AS account_avg,
+       CASE WHEN s.variance > 0
+            THEN ROUND((t.amount - s.avg_amt) / SQRT(s.variance), 2)
+            ELSE 0
+       END AS z_score
+  FROM transactions t
+  JOIN account_stats s ON t.account_id = s.account_id
+ WHERE s.variance > 0
+   AND ABS((t.amount - s.avg_amt) / SQRT(s.variance)) > 1.5
+ ORDER BY z_score DESC
+ LIMIT 15`,
+    solutionQuery: `WITH account_stats AS (
+  SELECT account_id,
+         AVG(amount) AS avg_amt,
+         SUM((amount - (SELECT AVG(a2.amount) FROM transactions a2 WHERE a2.account_id = transactions.account_id))
+           * (amount - (SELECT AVG(a2.amount) FROM transactions a2 WHERE a2.account_id = transactions.account_id)))
+           / COUNT(*) AS variance
+    FROM transactions
+   GROUP BY account_id
+)
+SELECT t.transaction_id,
+       t.account_id,
+       t.amount,
+       t.merchant_category,
+       ROUND(s.avg_amt, 2) AS account_avg,
+       CASE WHEN s.variance > 0
+            THEN ROUND((t.amount - s.avg_amt) / SQRT(s.variance), 2)
+            ELSE 0
+       END AS z_score
+  FROM transactions t
+  JOIN account_stats s ON t.account_id = s.account_id
+ WHERE s.variance > 0
+   AND ABS((t.amount - s.avg_amt) / SQRT(s.variance)) > 1.5
+ ORDER BY z_score DESC
+ LIMIT 15`,
+    epoch: 'Expert',
     difficulty: 4,
   },
   {
     id: 50,
-    title: "Conservation Status Summary",
-    description: `Summarize the total bird counts by conservation status.
+    title: 'LCB Executive Dashboard',
+    description: `The CEO requests a single-row summary KPI dashboard for the Board pack. Compute all key metrics in one query using subqueries within a SELECT.
 
-Return conservation_status, species_count, and total_individuals.`,
-    hint: "Group observations by conservation_status. Use COUNT for species and SUM for total individuals.",
-    seedQuery: `SELECT s.conservation_status,
-       COUNT(DISTINCT s.species_id) AS species_count,
-       SUM(o.bird_count) AS total_individuals
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
- GROUP BY s.conservation_status
- ORDER BY total_individuals DESC`,
-    solutionQuery: `SELECT s.conservation_status,
-       COUNT(DISTINCT s.species_id) AS species_count,
-       SUM(o.bird_count) AS total_individuals
-  FROM species_dim AS s
-       JOIN observations_fact AS o
-       ON s.species_id = o.species_id
- GROUP BY s.conservation_status
- ORDER BY total_individuals DESC`,
-    epoch: "Expert",
-    difficulty: 3,
+Return these columns:
+- \`total_customers\`
+- \`active_accounts\`
+- \`total_deposits_sgd\` (rounded)
+- \`total_loans_sgd\` (rounded)
+- \`net_position_sgd\` (deposits minus loans, rounded)
+- \`june_transactions\`
+- \`salary_inflow_sgd\` (rounded)`,
+    hint: 'Use scalar subqueries in the SELECT list — each subquery computes one KPI. No FROM or GROUP BY needed in the outer query.',
+    seedQuery: `SELECT
+  (SELECT COUNT(*)          FROM customers)                                                             AS total_customers,
+  (SELECT COUNT(*)          FROM accounts        WHERE status = 'Active')                              AS active_accounts,
+  (SELECT ROUND(SUM(balance), 0) FROM accounts   WHERE status = 'Active')                             AS total_deposits_sgd,
+  (SELECT ROUND(SUM(principal_amount), 0) FROM loans WHERE status = 'Active')                         AS total_loans_sgd,
+  (SELECT ROUND(SUM(balance), 0) FROM accounts WHERE status = 'Active')
+    - (SELECT ROUND(SUM(principal_amount), 0) FROM loans WHERE status = 'Active')                     AS net_position_sgd,
+  (SELECT COUNT(*) FROM transactions WHERE transaction_date >= '2024-06-01')                           AS june_transactions,
+  (SELECT ROUND(SUM(amount), 0) FROM transactions WHERE merchant_category = 'Salary Credit')          AS salary_inflow_sgd`,
+    solutionQuery: `SELECT
+  (SELECT COUNT(*)          FROM customers)                                                             AS total_customers,
+  (SELECT COUNT(*)          FROM accounts        WHERE status = 'Active')                              AS active_accounts,
+  (SELECT ROUND(SUM(balance), 0) FROM accounts   WHERE status = 'Active')                             AS total_deposits_sgd,
+  (SELECT ROUND(SUM(principal_amount), 0) FROM loans WHERE status = 'Active')                         AS total_loans_sgd,
+  (SELECT ROUND(SUM(balance), 0) FROM accounts WHERE status = 'Active')
+    - (SELECT ROUND(SUM(principal_amount), 0) FROM loans WHERE status = 'Active')                     AS net_position_sgd,
+  (SELECT COUNT(*) FROM transactions WHERE transaction_date >= '2024-06-01')                           AS june_transactions,
+  (SELECT ROUND(SUM(amount), 0) FROM transactions WHERE merchant_category = 'Salary Credit')          AS salary_inflow_sgd`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
 ];
-
-export const getLevel = (id: number): Level | undefined => {
-  return levels.find((level) => level.id === id);
-};
-
-export const getLevelsByEpoch = (epoch: string): Level[] => {
-  return levels.filter((level) => level.epoch === epoch);
-};

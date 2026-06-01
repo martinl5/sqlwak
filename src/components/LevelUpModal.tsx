@@ -4,48 +4,38 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore, selectBoidSpecies, selectCurrentEpoch } from '@/store/useGameStore';
-import { X, Feather, Sparkles, ArrowUp } from 'lucide-react';
+import { X, Anchor, ArrowRight } from 'lucide-react';
+
+const EPOCH_TITLE: Record<string, string> = {
+  Foundational: 'Graduate Analyst',
+  Intermediate: 'Senior Analyst',
+  Advanced:     'VP, Data & Analytics',
+  Expert:       'Managing Director',
+};
+
+const EPOCH_NEXT_HINT: Record<number, string> = {
+  10: 'Continue mastering SELECT and WHERE filters',
+  20: 'Unlock JOINs and multi-table aggregation',
+  30: 'Master GROUP BY, HAVING and subqueries',
+  40: 'Command CTEs and window functions',
+  50: 'Reach Advanced window analytics',
+};
 
 export default function LevelUpModal() {
-  const {
-    showLevelUp,
-    setShowLevelUp,
-    currentLevel,
-    completeLevel,
-    flockSize,
-  } = useGameStore();
+  const { showLevelUp, setShowLevelUp, currentLevel, completeLevel, flockSize } = useGameStore();
 
-  const species = selectBoidSpecies(currentLevel);
+  const ship  = selectBoidSpecies(currentLevel);
   const epoch = selectCurrentEpoch(currentLevel);
 
-  // Trigger confetti on level complete
   useEffect(() => {
-    if (showLevelUp) {
-      const duration = 2000;
-      const end = Date.now() + duration;
-
-      const frame = () => {
-        confetti({
-          particleCount: 3,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 0.7 },
-          colors: ['#60A5FA', '#34D399', '#F472B6', '#FBBF24', '#A78BFA'],
-        });
-        confetti({
-          particleCount: 3,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 0.7 },
-          colors: ['#60A5FA', '#34D399', '#F472B6', '#FBBF24', '#A78BFA'],
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      };
-      frame();
-    }
+    if (!showLevelUp) return;
+    const end = Date.now() + 1800;
+    const frame = () => {
+      confetti({ particleCount: 2, angle: 60,  spread: 55, origin: { x: 0, y: 0.7 }, colors: ['#c9a84c','#e8e6e0','#22c55e'] });
+      confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ['#c9a84c','#e8e6e0','#22c55e'] });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
   }, [showLevelUp]);
 
   const handleClose = () => {
@@ -53,23 +43,13 @@ export default function LevelUpModal() {
     completeLevel(currentLevel);
   };
 
-  // Handle escape key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showLevelUp) {
-        handleClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && showLevelUp) handleClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, currentLevel]);
 
-  const epochColors: Record<string, string> = {
-    Foundational: 'from-sky-400 to-blue-500',
-    Intermediate: 'from-cyan-500 to-sky-600',
-    Advanced: 'from-indigo-400 to-purple-500',
-    Expert: 'from-violet-500 to-purple-700',
-  };
+  const nextHintKey = [10, 20, 30, 40, 50].find((k) => currentLevel < k) ?? 50;
 
   return (
     <AnimatePresence>
@@ -80,112 +60,149 @@ export default function LevelUpModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0"
+            style={{ background: 'rgba(0,0,0,0.7)' }}
             onClick={handleClose}
           />
 
-          {/* Modal */}
+          {/* Card */}
           <motion.div
-            initial={{ scale: 0.8, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.8, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="relative w-full max-w-md"
+            initial={{ scale: 0.88, opacity: 0, y: 16 }}
+            animate={{ scale: 1,    opacity: 1, y: 0  }}
+            exit={{   scale: 0.88, opacity: 0, y: 16  }}
+            transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+            className="relative w-full max-w-sm overflow-hidden"
+            style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 8, borderTop: '3px solid var(--lcb-gold)' }}
           >
-            <div className="p-6 text-center overflow-hidden rounded-2xl" style={{ backgroundColor: 'rgba(13, 31, 53, 0.95)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-              {/* Glow Effect */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${epochColors[epoch]} opacity-20`} />
-              
-              {/* Content */}
-              <div className="relative">
-                {/* Success Icon */}
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.2, type: 'spring', damping: 15 }}
-                  className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center mb-4"
-                >
-                  <Sparkles className="w-10 h-10 text-white" />
-                </motion.div>
-
-                {/* Title */}
-                <motion.h2
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-2xl font-bold text-white mb-2"
-                >
-                  Level {currentLevel} Complete!
-                </motion.h2>
-
-                {/* Species Info */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${epochColors[epoch]} mb-4`}
-                >
-                  <Feather className="w-4 h-4 text-white" />
-                  <span className="text-white font-medium">{species.species} Joined!</span>
-                </motion.div>
-
-                {/* Stats */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="grid grid-cols-2 gap-4 mb-6"
-                >
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <p className="text-white/50 text-xs">Flock Size</p>
-                    <p className="text-2xl font-bold text-white">{flockSize}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5">
-                    <p className="text-white/50 text-xs">Current Era</p>
-                    <p className="text-lg font-bold text-white">{epoch}</p>
-                  </div>
-                </motion.div>
-
-                {/* Next Level Preview */}
-                {currentLevel < 50 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="p-3 rounded-lg bg-white/5 mb-4"
-                  >
-                    <p className="text-white/50 text-xs mb-1">Next: Level {currentLevel + 1}</p>
-                    <p className="text-white text-sm">
-                      {currentLevel < 10 && 'Continue mastering SELECT and WHERE'}
-                      {currentLevel >= 10 && currentLevel < 20 && 'Learn JOINs and aggregation'}
-                      {currentLevel >= 20 && currentLevel < 30 && 'Master GROUP BY and HAVING'}
-                      {currentLevel >= 30 && currentLevel < 40 && 'Unlock the power of CTEs'}
-                      {currentLevel >= 40 && currentLevel < 50 && 'Ascend with Window Functions'}
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* Continue Button */}
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
-                  onClick={handleClose}
-                  className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-semibold flex items-center justify-center gap-2 hover:from-blue-600 hover:to-cyan-500 transition-all"
-                >
-                  <span>Continue</span>
-                  <ArrowUp className="w-4 h-4" />
-                </motion.button>
-              </div>
-
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/10 transition-colors"
+            {/* Top accent row */}
+            <div className="px-6 pt-5 pb-4" style={{ borderBottom: '1px solid var(--lcb-border)' }}>
+              {/* Ship icon */}
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.15, type: 'spring', damping: 18 }}
+                className="w-14 h-14 mx-auto mb-3 flex items-center justify-center"
+                style={{ background: 'rgba(201,168,76,0.12)', border: '1px solid var(--lcb-gold)', borderRadius: 6 }}
               >
-                <X className="w-5 h-5 text-white/50" />
-              </button>
+                <Anchor className="w-7 h-7" style={{ color: 'var(--lcb-gold)' }} />
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-center text-xs tracking-widest uppercase mb-1"
+                style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-muted)' }}
+              >
+                Query Accepted
+              </motion.p>
+              <motion.h2
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="text-center text-2xl font-bold"
+                style={{ fontFamily: 'var(--font-playfair)', color: 'var(--lcb-white)' }}
+              >
+                Level {currentLevel} Complete
+              </motion.h2>
             </div>
+
+            {/* Ship docked badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.32 }}
+              className="mx-6 mt-4 flex items-center gap-2 px-3 py-2"
+              style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid var(--lcb-gold-dim)', borderRadius: 4 }}
+            >
+              <span className="text-lg">🚢</span>
+              <span className="text-xs" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-gold)' }}>
+                {ship.species} docked in the harbour
+              </span>
+            </motion.div>
+
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.38 }}
+              className="grid grid-cols-2 gap-2 mx-6 mt-3"
+            >
+              {[
+                { label: 'Fleet Size', value: flockSize },
+                { label: 'Current Tier', value: epoch },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="px-3 py-2 text-center"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--lcb-border)', borderRadius: 4 }}
+                >
+                  <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>{label}</p>
+                  <p className="text-lg font-bold mt-0.5" style={{ fontFamily: 'var(--font-playfair)', color: 'var(--lcb-white)' }}>{value}</p>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Career tier */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.44 }}
+              className="mx-6 mt-2 px-3 py-2"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--lcb-border)', borderRadius: 4 }}
+            >
+              <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+                LCB Career Level
+              </p>
+              <p className="text-sm font-semibold mt-0.5" style={{ fontFamily: 'var(--font-playfair)', color: 'var(--lcb-gold)' }}>
+                {EPOCH_TITLE[epoch]}
+              </p>
+            </motion.div>
+
+            {/* Next level hint */}
+            {currentLevel < 50 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="mx-6 mt-2 px-3 py-2"
+                style={{ borderLeft: '2px solid var(--lcb-border)', background: 'rgba(255,255,255,0.02)' }}
+              >
+                <p className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+                  Next → Level {currentLevel + 1}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--lcb-white)', opacity: 0.7, fontFamily: 'var(--font-ibm-plex-mono)' }}>
+                  {EPOCH_NEXT_HINT[nextHintKey]}
+                </p>
+              </motion.div>
+            )}
+
+            {/* Continue button */}
+            <motion.button
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.56 }}
+              onClick={handleClose}
+              className="w-[calc(100%-48px)] mx-6 mt-4 mb-5 py-2.5 flex items-center justify-center gap-2 text-xs font-semibold tracking-widest uppercase transition-opacity hover:opacity-85"
+              style={{
+                background: 'var(--lcb-gold)',
+                color: 'var(--lcb-black)',
+                borderRadius: 4,
+                fontFamily: 'var(--font-ibm-plex-mono)',
+              }}
+            >
+              Proceed to Next Level
+              <ArrowRight className="w-3 h-3" />
+            </motion.button>
+
+            {/* Close */}
+            <button
+              onClick={handleClose}
+              className="absolute top-3 right-3 p-1 transition-opacity hover:opacity-60"
+              style={{ color: 'var(--lcb-muted)' }}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </motion.div>
         </div>
       )}

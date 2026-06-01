@@ -10,10 +10,7 @@ async function loadSqlJsFromCDN(): Promise<SqlJsStatic> {
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js';
     script.onload = () => {
       const initSqlJs = (window as any).initSqlJs;
-      if (!initSqlJs) {
-        reject(new Error('initSqlJs not found on window'));
-        return;
-      }
+      if (!initSqlJs) { reject(new Error('initSqlJs not found on window')); return; }
       initSqlJs({
         locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
       }).then(resolve).catch(reject);
@@ -26,250 +23,299 @@ async function loadSqlJsFromCDN(): Promise<SqlJsStatic> {
 export async function initDatabase(): Promise<Database> {
   if (db) return db;
   if (initPromise) return initPromise;
-  
-  initPromise = (async () => {
-    console.log('[DB] Initializing SQL.js...');
-    
-    if (!SQL) {
-      try {
-        SQL = await loadSqlJsFromCDN();
-        console.log('[DB] SQL.js initialized successfully');
-      } catch (error) {
-        console.error('[DB] Failed to initialize SQL.js:', error);
-        throw error;
-      }
-    }
 
-    try {
-      if (!SQL) throw new Error('SQL.js not initialized');
-      db = new SQL.Database();
-      console.log('[DB] Database created, seeding...');
-      await seedDatabase(db);
-      console.log('[DB] Database seeded successfully');
-      return db;
-    } catch (error) {
-      console.error('[DB] Failed to seed database:', error);
-      throw error;
-    }
+  initPromise = (async () => {
+    if (!SQL) SQL = await loadSqlJsFromCDN();
+    db = new SQL.Database();
+    await seedDatabase(db);
+    return db;
   })();
-  
+
   return initPromise;
 }
 
 async function seedDatabase(database: Database): Promise<void> {
-  console.log('[DB] Creating tables...');
-  
-  /* Species dimension table */
+  // ── Products ──────────────────────────────────────────────────────────────
   database.run(`
-    CREATE TABLE IF NOT EXISTS species_dim (
-        species_id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        common_name         TEXT NOT NULL,
-        scientific_name     TEXT NOT NULL,
-        conservation_status TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS products (
+      product_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_name  TEXT    NOT NULL,
+      product_type  TEXT    NOT NULL,
+      interest_rate REAL,
+      min_balance   REAL    NOT NULL DEFAULT 0
     );
   `);
 
-  /* Observers dimension table */
+  // ── Customers ─────────────────────────────────────────────────────────────
   database.run(`
-    CREATE TABLE IF NOT EXISTS observers_dim (
-        observer_id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        observer_name      TEXT NOT NULL,
-        expertise_level    TEXT NOT NULL,
-        join_date           TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS customers (
+      customer_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT    NOT NULL,
+      segment       TEXT    NOT NULL,
+      credit_score  INTEGER NOT NULL,
+      join_date     TEXT    NOT NULL,
+      email         TEXT
     );
   `);
 
-  /* Locations dimension table */
+  // ── Branches ──────────────────────────────────────────────────────────────
   database.run(`
-    CREATE TABLE IF NOT EXISTS locations_dim (
-        location_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-        locality_name    TEXT NOT NULL,
-        latitude         REAL NOT NULL,
-        longitude        REAL NOT NULL,
-        elevation        REAL NOT NULL,
-        habitat_type     TEXT NOT NULL,
-        state             TEXT NOT NULL,
-        region            TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS branches (
+      branch_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+      branch_name TEXT    NOT NULL,
+      city        TEXT    NOT NULL,
+      region      TEXT    NOT NULL,
+      branch_type TEXT    NOT NULL
     );
   `);
 
-  /* Checklists fact table */
+  // ── Accounts ──────────────────────────────────────────────────────────────
   database.run(`
-    CREATE TABLE IF NOT EXISTS checklists_fact (
-        checklist_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-        observer_id        INTEGER NOT NULL,
-        location_id        INTEGER NOT NULL,
-        observation_date   TEXT NOT NULL,
-        start_time         TEXT NOT NULL,
-        duration_minutes   INTEGER,
-        protocol_type      TEXT NOT NULL,
-        distance_km        REAL,
-        FOREIGN KEY (observer_id)  REFERENCES observers_dim (observer_id),
-        FOREIGN KEY (location_id)  REFERENCES locations_dim (location_id)
+    CREATE TABLE IF NOT EXISTS accounts (
+      account_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      product_id  INTEGER NOT NULL,
+      branch_id   INTEGER NOT NULL,
+      balance     REAL    NOT NULL,
+      opened_date TEXT    NOT NULL,
+      status      TEXT    NOT NULL DEFAULT 'Active',
+      FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+      FOREIGN KEY (product_id)  REFERENCES products(product_id),
+      FOREIGN KEY (branch_id)   REFERENCES branches(branch_id)
     );
   `);
 
-  /* Observations fact table */
+  // ── Transactions ──────────────────────────────────────────────────────────
   database.run(`
-    CREATE TABLE IF NOT EXISTS observations_fact (
-        obs_id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        checklist_id   INTEGER NOT NULL,
-        species_id     INTEGER NOT NULL,
-        bird_count     INTEGER NOT NULL,
-        gender         TEXT,
-        FOREIGN KEY (checklist_id) REFERENCES checklists_fact (checklist_id),
-        FOREIGN KEY (species_id)   REFERENCES species_dim (species_id)
+    CREATE TABLE IF NOT EXISTS transactions (
+      transaction_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      account_id        INTEGER NOT NULL,
+      amount            REAL    NOT NULL,
+      transaction_type  TEXT    NOT NULL,
+      transaction_date  TEXT    NOT NULL,
+      merchant_category TEXT    NOT NULL,
+      channel           TEXT    NOT NULL,
+      FOREIGN KEY (account_id) REFERENCES accounts(account_id)
     );
   `);
 
-  /* Environmental metrics table */
+  // ── Loans ─────────────────────────────────────────────────────────────────
   database.run(`
-    CREATE TABLE IF NOT EXISTS environmental_metrics (
-        env_id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-        checklist_id            INTEGER NOT NULL,
-        temperature_celsius    REAL NOT NULL,
-        wind_speed_kmh         REAL NOT NULL,
-        precipitation_mm       REAL,
-        weather_description    TEXT NOT NULL,
-        FOREIGN KEY (checklist_id) REFERENCES checklists_fact (checklist_id)
+    CREATE TABLE IF NOT EXISTS loans (
+      loan_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id      INTEGER NOT NULL,
+      product_id       INTEGER NOT NULL,
+      principal_amount REAL    NOT NULL,
+      interest_rate    REAL    NOT NULL,
+      term_months      INTEGER NOT NULL,
+      start_date       TEXT    NOT NULL,
+      status           TEXT    NOT NULL,
+      risk_grade       TEXT    NOT NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+      FOREIGN KEY (product_id)  REFERENCES products(product_id)
     );
   `);
 
-  console.log('[DB] Inserting seed data...');
-  
-  // Insert species
-  const speciesData = [
-    { name: 'California Condor', scientific: 'Gymnogyps californianus', status: 'Critically Endangered' },
-    { name: 'Whooping Crane', scientific: 'Grus americana', status: 'Endangered' },
-    { name: 'Peregrine Falcon', scientific: 'Falco peregrinus', status: 'Least Concern' },
-    { name: 'Bald Eagle', scientific: 'Haliaeetus leucocephalus', status: 'Least Concern' },
-    { name: 'Snowy Owl', scientific: 'Bubo scandiacus', status: 'Vulnerable' },
-    { name: 'Atlantic Puffin', scientific: 'Fratercula arctica', status: 'Vulnerable' },
-    { name: 'Wood Thrush', scientific: 'Hylocichla mustelina', status: 'Near Threatened' },
-    { name: 'Piping Plover', scientific: 'Charadrius melodus', status: 'Near Threatened' },
-    { name: 'Yellow-rumped Warbler', scientific: 'Setophaga coronata', status: 'Least Concern' },
-    { name: 'Northern Cardinal', scientific: 'Cardinalis cardinalis', status: 'Least Concern' },
-    { name: 'American Robin', scientific: 'Turdus migratorius', status: 'Least Concern' },
-    { name: 'Blue Jay', scientific: 'Cyanocitta cristata', status: 'Least Concern' },
-    { name: 'Red-tailed Hawk', scientific: 'Buteo jamaicensis', status: 'Least Concern' },
-    { name: 'Great Blue Heron', scientific: 'Ardea herodias', status: 'Least Concern' },
-    { name: 'Ruby-throated Hummingbird', scientific: 'Archilochus colubris', status: 'Least Concern' },
+  // ── Seed: Products ────────────────────────────────────────────────────────
+  const products = [
+    { name: 'LCB EasySave Account',        type: 'Savings',       rate: 0.50,  min: 500    },
+    { name: 'LCB Premier Savings',          type: 'Savings',       rate: 1.20,  min: 5000   },
+    { name: 'LCB 360 Current Account',      type: 'Current',       rate: 0.10,  min: 0      },
+    { name: 'LCB Fixed Deposit (12M)',       type: 'Fixed Deposit', rate: 3.50,  min: 1000   },
+    { name: 'LCB CPF Investment Account',   type: 'Investment',    rate: 4.00,  min: 0      },
+    { name: 'LCB SRS Account',              type: 'Investment',    rate: 3.00,  min: 0      },
+    { name: 'LCB HDB Home Loan',            type: 'Loan',          rate: 2.50,  min: 0      },
+    { name: 'LCB Car Loan',                 type: 'Loan',          rate: 2.78,  min: 0      },
+    { name: 'LCB Personal Line of Credit',  type: 'Loan',          rate: 5.50,  min: 0      },
+    { name: 'LCB Credit Card (Platinum)',   type: 'Credit Card',   rate: 26.90, min: 0      },
+    { name: 'LCB Business Current Account', type: 'Current',       rate: 0.20,  min: 1000   },
+    { name: 'LCB Trade Finance',            type: 'Investment',    rate: 3.80,  min: 0      },
+    { name: 'LCB Wealth Management',        type: 'Investment',    rate: null,  min: 250000 },
+    { name: 'LCB PayNow Wallet',            type: 'Current',       rate: 0.00,  min: 0      },
+    { name: 'LCB Junior Savings',           type: 'Savings',       rate: 0.80,  min: 0      },
   ];
-  
-  speciesData.forEach((s) => {
+  products.forEach(p =>
     database.run(
-      `INSERT INTO species_dim (common_name, scientific_name, conservation_status) VALUES (?, ?, ?)`,
-      [s.name, s.scientific, s.status]
-    );
-  });
+      `INSERT INTO products (product_name, product_type, interest_rate, min_balance) VALUES (?, ?, ?, ?)`,
+      [p.name, p.type, p.rate, p.min]
+    )
+  );
 
-  // Insert observers
-  const expertiseLevels = ['Beginner', 'Amateur', 'Intermediate', 'Professional', 'Expert'];
-  const observerNames = [
-    'Alice Chen', 'Bob Martinez', 'Carol Johnson', 'David Kim', 'Emma Wilson',
-    'Frank Brown', 'Grace Lee', 'Henry Davis', 'Iris Taylor', 'Jack Anderson',
-    'Karen White', 'Leo Garcia', 'Maria Rodriguez', 'Nathan Moore', 'Olivia Thomas'
+  // ── Seed: Customers ───────────────────────────────────────────────────────
+  const customers = [
+    { name: 'Tan Wei Ling',       segment: 'Priority', score: 780, join: '2019-03-15' },
+    { name: 'Rajesh Nair',        segment: 'Mass',     score: 650, join: '2020-07-22' },
+    { name: 'Aisha Binte Yusof',  segment: 'Priority', score: 720, join: '2018-11-10' },
+    { name: 'James Lim',          segment: 'Private',  score: 820, join: '2015-05-01' },
+    { name: 'Priya Krishnamurthy',segment: 'Mass',     score: 590, join: '2021-09-14' },
+    { name: 'Zhang Wei',          segment: 'SME',      score: 700, join: '2017-06-30' },
+    { name: 'Muhammad Farhan',    segment: 'Mass',     score: 620, join: '2022-01-18' },
+    { name: 'Chen Mei Ling',      segment: 'Priority', score: 760, join: '2019-08-05' },
+    { name: 'Suresh Pillai',      segment: 'SME',      score: 680, join: '2016-04-12' },
+    { name: 'Lee Hui Min',        segment: 'Mass',     score: 550, join: '2023-02-28' },
+    { name: 'Kavitha Rajan',      segment: 'Priority', score: 740, join: '2020-11-20' },
+    { name: 'Wong Ah Kow',        segment: 'Private',  score: 850, join: '2014-01-07' },
+    { name: 'Nur Hidayah',        segment: 'Mass',     score: 610, join: '2021-05-30' },
+    { name: 'David Chua',         segment: 'SME',      score: 710, join: '2018-08-15' },
+    { name: 'Siti Rahimah',       segment: 'Mass',     score: 570, join: '2022-07-09' },
+    { name: 'Lim Boon Keng',      segment: 'Priority', score: 790, join: '2017-03-22' },
+    { name: 'Anand Krishnaswamy', segment: 'Private',  score: 830, join: '2013-12-01' },
+    { name: 'Fiona Tan',          segment: 'Mass',     score: 640, join: '2021-10-17' },
+    { name: 'Rajan Selvam',       segment: 'SME',      score: 690, join: '2019-06-25' },
+    { name: 'Michelle Koh',       segment: 'Priority', score: 755, join: '2020-04-11' },
   ];
-  
+  customers.forEach(c =>
+    database.run(
+      `INSERT INTO customers (customer_name, segment, credit_score, join_date) VALUES (?, ?, ?, ?)`,
+      [c.name, c.segment, c.score, c.join]
+    )
+  );
+
+  // ── Seed: Branches ────────────────────────────────────────────────────────
+  const branches = [
+    { name: 'LCB Marina Bay HQ',        region: 'Central', type: 'HQ'              },
+    { name: 'LCB Orchard Road',         region: 'Central', type: 'High Street'     },
+    { name: 'LCB Jurong East',          region: 'West',    type: 'Community'       },
+    { name: 'LCB Tampines Hub',         region: 'East',    type: 'Community'       },
+    { name: 'LCB Woodlands',            region: 'North',   type: 'Community'       },
+    { name: 'LCB Bugis',                region: 'Central', type: 'High Street'     },
+    { name: 'LCB Toa Payoh',            region: 'Central', type: 'Community'       },
+    { name: 'LCB Changi Business Park', region: 'East',    type: 'Business Centre' },
+    { name: 'LCB One-North',            region: 'West',    type: 'Business Centre' },
+    { name: 'LCB Raffles Place',        region: 'Central', type: 'Business Centre' },
+  ];
+  branches.forEach(b =>
+    database.run(
+      `INSERT INTO branches (branch_name, city, region, branch_type) VALUES (?, ?, ?, ?)`,
+      [b.name, 'Singapore', b.region, b.type]
+    )
+  );
+
+  // ── Seed: Accounts ────────────────────────────────────────────────────────
+  // 2 accounts per customer (40 total). Primary product varies by segment; secondary is often
+  // a PayNow Wallet or Fixed Deposit. A handful are Dormant / Closed.
+  const primaryProducts = [2, 1, 2, 13, 1, 11, 1, 2, 11, 1, 2, 13, 1, 11, 1, 2, 13, 1, 11, 2];
+  const secondaryProducts = [4, 14, 6, 10, 14, 3, 14, 4, 3, 14, 4, 6, 14, 3, 14, 4, 6, 14, 3, 4];
+  const primaryBalances = [
+    45230.50, 1200.00,   88760.00, 1850000.00, 520.00,
+    125000.00, 890.00,   67500.00, 98000.00,    180.00,
+    42100.00, 2250000.00, 750.00,  55000.00,    310.00,
+    112000.00, 3100000.00, 2100.00, 78500.00,  89000.00,
+  ];
+  const secondaryBalances = [
+    5000.00, 300.00,  12000.00, 0.00,    0.00,
+    8500.00, 100.00,  9800.00,  15000.00, 50.00,
+    7200.00, 50000.00, 200.00, 12000.00,  0.00,
+    18000.00, 75000.00, 600.00, 11000.00, 14000.00,
+  ];
+  const openDates = [
+    '2019-04-01','2020-08-10','2018-12-01','2015-06-15','2021-10-05',
+    '2017-07-20','2022-02-01','2019-09-01','2016-05-01','2023-03-15',
+    '2020-12-01','2014-02-01','2021-06-15','2018-09-01','2022-08-01',
+    '2017-04-10','2014-01-15','2021-11-01','2019-07-01','2020-05-01',
+  ];
+  const primaryStatuses = [
+    'Active','Active','Active','Active','Dormant',
+    'Active','Dormant','Active','Active','Dormant',
+    'Active','Active','Dormant','Active','Active',
+    'Active','Active','Dormant','Active','Active',
+  ];
+  // Secondary statuses: a few Closed
+  const closedSecondary = new Set([3, 9, 14]); // 0-indexed
+
+  for (let i = 0; i < 20; i++) {
+    const cid = i + 1;
+    const primaryBranch = (i % 10) + 1;
+    const secondaryBranch = ((i + 3) % 10) + 1;
+    // primary account
+    database.run(
+      `INSERT INTO accounts (customer_id, product_id, branch_id, balance, opened_date, status) VALUES (?, ?, ?, ?, ?, ?)`,
+      [cid, primaryProducts[i], primaryBranch, primaryBalances[i], openDates[i], primaryStatuses[i]]
+    );
+    // secondary account
+    const secondaryDate = openDates[i].replace(/^(\d{4})/, (y) => String(parseInt(y) + 1));
+    const secondaryStatus = closedSecondary.has(i) ? 'Closed' : 'Active';
+    database.run(
+      `INSERT INTO accounts (customer_id, product_id, branch_id, balance, opened_date, status) VALUES (?, ?, ?, ?, ?, ?)`,
+      [cid, secondaryProducts[i], secondaryBranch, secondaryBalances[i], secondaryDate, secondaryStatus]
+    );
+  }
+
+  // ── Seed: Transactions ────────────────────────────────────────────────────
+  // 150 transactions spread across Jan–Jun 2024
+  const categories = [
+    'Hawker Centre','MRT Top-up','Grab','HDB Town Council','Salary Credit',
+    'NTUC FairPrice','Overseas','Dining','Retail','Utilities',
+  ];
+  const channels = ['ATM','PayNow','FAST','GIRO','Branch','Card','Online'];
+
+  for (let i = 0; i < 150; i++) {
+    const accountId = (i % 40) + 1;
+    const category  = categories[i % categories.length];
+    const channel   = channels[i % channels.length];
+    const month     = Math.floor(i / 25) + 1;
+    const day       = (i % 28) + 1;
+    const date      = `2024-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+    const txType = (category === 'Salary Credit' || i % 3 === 0) ? 'Credit' : 'Debit';
+
+    let amount: number;
+    if (category === 'Salary Credit')      amount = 3000 + accountId * 150;
+    else if (category === 'HDB Town Council') amount = 450.00;
+    else if (category === 'Utilities')     amount = 180 + (i % 50);
+    else if (category === 'Overseas')      amount = 500 + (i * 23) % 2000;
+    else if (category === 'Retail')        amount = 50 + (i * 17) % 500;
+    else if (category === 'Dining')        amount = 20 + (i * 7) % 150;
+    else if (category === 'MRT Top-up')    amount = 50.00;
+    else if (category === 'Grab')          amount = 8 + (i % 30);
+    else                                   amount = 10 + (i * 11) % 200;
+
+    database.run(
+      `INSERT INTO transactions (account_id, amount, transaction_type, transaction_date, merchant_category, channel) VALUES (?, ?, ?, ?, ?, ?)`,
+      [accountId, amount, txType, date, category, channel]
+    );
+  }
+
+  // ── Seed: Loans ───────────────────────────────────────────────────────────
+  // 15 loans for customers 1–15 only; customers 16–20 have no loan
+  const loanProductIds  = [7, 8, 9, 7, 8, 9, 7, 8, 9, 7, 8, 9, 7, 8, 9];
+  const principals      = [380000,85000,15000,420000,70000,25000,350000,60000,10000,450000,95000,20000,280000,55000,8000];
+  const loanRates       = [2.50,2.78,5.50,2.50,2.78,5.50,2.50,2.78,5.50,2.50,2.78,5.50,2.50,2.78,5.50];
+  const termMonths      = [300,60,36,300,60,36,240,60,24,300,72,48,240,60,24];
+  const loanStartDates  = [
+    '2022-01-15','2021-06-01','2023-03-10','2020-07-20','2022-11-05',
+    '2023-08-01','2019-04-15','2021-02-28','2023-11-01','2018-09-30',
+    '2022-05-15','2023-06-01','2020-10-20','2021-09-01','2024-01-15',
+  ];
+  const loanStatuses    = ['Active','Active','Active','Active','Paid Off','Active','Active','Default','Active','Active','Active','Paid Off','Active','Active','Active'];
+  const riskGrades      = ['A','B','C','A','B','C','A','D','B','A','B','C','A','B','C'];
+
   for (let i = 0; i < 15; i++) {
-    const joinDate = new Date(2020 + Math.floor(i / 3), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
     database.run(
-      `INSERT INTO observers_dim (observer_name, expertise_level, join_date) VALUES (?, ?, ?)`,
-      [observerNames[i], expertiseLevels[i % expertiseLevels.length], joinDate.toISOString().split('T')[0]]
+      `INSERT INTO loans (customer_id, product_id, principal_amount, interest_rate, term_months, start_date, status, risk_grade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [i + 1, loanProductIds[i], principals[i], loanRates[i], termMonths[i], loanStartDates[i], loanStatuses[i], riskGrades[i]]
     );
   }
 
-  // Insert locations
-  const habitats = ['Forest', 'Wetland', 'Grassland', 'Coastal', 'Mountain', 'Urban'];
-  const states = ['California', 'Texas', 'Florida', 'New York', 'Colorado', 'Washington'];
-  const locationNames = [
-    'Yosemite Valley', 'Everglades', 'Central Park', 'Rocky Mountain NP', 'Olympic Peninsula',
-    'Great Smoky Mountains', 'Grand Canyon', 'Yellowstone', 'Acadia', 'Zion',
-    'Sequoia National Park', 'Death Valley', 'Shenandoah', ' Glacier National Park', 'Big Bend'
-  ];
-  
-  for (let i = 0; i < 15; i++) {
-    const lat = 25 + Math.random() * 25;
-    const lon = -120 + Math.random() * 50;
-    const elev = Math.floor(Math.random() * 3000);
-    database.run(
-      `INSERT INTO locations_dim (locality_name, latitude, longitude, elevation, habitat_type, state, region) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [locationNames[i], lat, lon, elev, habitats[i % habitats.length], states[i % states.length], 'USA']
-    );
-  }
-
-  // Insert checklists and observations
-  const protocols = ['Stationary', 'Traveling', 'Driving'];
-  const baseDate = new Date('2024-01-01');
-  
-  for (let i = 0; i < 50; i++) {
-    const observerId = (i % 15) + 1;
-    const locationId = (i % 15) + 1;
-    const date = new Date(baseDate.getTime() + i * 86400000);
-    const dateStr = date.toISOString().split('T')[0];
-    const startTime = `${String(Math.floor(Math.random() * 12) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`;
-    const duration = Math.floor(Math.random() * 120) + 15;
-    const protocol = protocols[i % protocols.length];
-    const distance = protocol === 'Stationary' ? 0 : Math.random() * 10;
-    
-    database.run(
-      `INSERT INTO checklists_fact (observer_id, location_id, observation_date, start_time, duration_minutes, protocol_type, distance_km) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [observerId, locationId, dateStr, startTime, duration, protocol, distance]
-    );
-    
-    // Add environmental metrics for this checklist
-    const temp = Math.random() * 35 - 5;
-    const wind = Math.random() * 50;
-    const precip = Math.random() * 20;
-    const weather = ['Clear', 'Cloudy', 'Rainy', 'Stormy', 'Foggy'][Math.floor(Math.random() * 5)];
-    
-    database.run(
-      `INSERT INTO environmental_metrics (checklist_id, temperature_celsius, wind_speed_kmh, precipitation_mm, weather_description) VALUES (?, ?, ?, ?, ?)`,
-      [i + 1, temp, wind, precip, weather]
-    );
-    
-    // Add 2-4 observations per checklist
-    const numObs = Math.floor(Math.random() * 3) + 2;
-    for (let j = 0; j < numObs; j++) {
-      const speciesId = (Math.floor(Math.random() * speciesData.length)) + 1;
-      const count = Math.floor(Math.random() * 10) + 1;
-      const gender = Math.random() > 0.5 ? (Math.random() > 0.5 ? 'Male' : 'Female') : null;
-      
-      database.run(
-        `INSERT INTO observations_fact (checklist_id, species_id, bird_count, gender) VALUES (?, ?, ?, ?)`,
-        [i + 1, speciesId, count, gender]
-      );
-    }
-  }
-
-  // Create indexes
-  database.run('CREATE INDEX IF NOT EXISTS idx_species_status ON species_dim(conservation_status)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_observers_expertise ON observers_dim(expertise_level)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_locations_habitat ON locations_dim(habitat_type)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_checklists_observer ON checklists_fact(observer_id)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_checklists_location ON checklists_fact(location_id)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_checklists_date ON checklists_fact(observation_date)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_observations_checklist ON observations_fact(checklist_id)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_observations_species ON observations_fact(species_id)');
-  database.run('CREATE INDEX IF NOT EXISTS idx_env_checklist ON environmental_metrics(checklist_id)');
-  
-  console.log('[DB] Seed data inserted successfully');
+  // ── Indexes ───────────────────────────────────────────────────────────────
+  database.run('CREATE INDEX IF NOT EXISTS idx_accounts_customer  ON accounts(customer_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_accounts_product   ON accounts(product_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_accounts_branch    ON accounts(branch_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_accounts_status    ON accounts(status)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_transactions_acct  ON transactions(account_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_transactions_date  ON transactions(transaction_date)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_transactions_type  ON transactions(transaction_type)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_loans_customer     ON loans(customer_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_loans_status       ON loans(status)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_customers_segment  ON customers(segment)');
 }
 
 export function executeQuery(sql: string): { columns: string[]; values: unknown[][] } {
-  if (!db) {
-    throw new Error('Database not initialized');
-  }
-
+  if (!db) throw new Error('Database not initialized');
   try {
     const results = db.exec(sql);
-    if (results.length === 0) {
-      return { columns: [], values: [] };
-    }
-    return {
-      columns: results[0].columns,
-      values: results[0].values,
-    };
+    if (results.length === 0) return { columns: [], values: [] };
+    return { columns: results[0].columns, values: results[0].values };
   } catch (error) {
     throw error;
   }

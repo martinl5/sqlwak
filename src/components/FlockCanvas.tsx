@@ -4,31 +4,19 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useGameStore, selectBoidSpecies } from '@/store/useGameStore';
 import type { Boid } from '@/types';
 
-interface BoidEntity {
+interface ShipEntity {
   id: number;
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  ax: number;
-  ay: number;
-  level: number;
-  species: string;
+  vx: number;        // horizontal speed (positive = right, negative = left)
+  heading: 1 | -1;  // 1 = right, -1 = left
+  type: 'tugboat' | 'cargo' | 'container' | 'supertanker' | 'ambient';
   color: string;
   size: number;
-  trail: { x: number; y: number }[];
-  // Smooth movement properties
-  targetVx: number;
-  targetVy: number;
-  wanderAngle: number;
+  lane: number;      // normalised y offset within water band (0–1)
+  wakeOffset: number;
 }
 
-interface FlockCanvasProps {
-  width: number;
-  height: number;
-}
-
-// Spawn effect particle
 interface SpawnEffect {
   id: number;
   x: number;
@@ -38,551 +26,256 @@ interface SpawnEffect {
   maxAge: number;
 }
 
+interface FlockCanvasProps {
+  width: number;
+  height: number;
+}
+
 export default function FlockCanvas({ width, height }: FlockCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const boidsRef = useRef<BoidEntity[]>([]);
-  const ambientBirdsRef = useRef<BoidEntity[]>([]);
-  const spawnEffectsRef = useRef<SpawnEffect[]>([]);
-  const animationRef = useRef<number>(0);
-  const lastSpawnRef = useRef<{ x: number; y: number } | null>(null);
-  const initializedRef = useRef<boolean>(false);
-  const prevBoidsLengthRef = useRef<number>(0);
+  const canvasRef              = useRef<HTMLCanvasElement>(null);
+  const shipsRef               = useRef<ShipEntity[]>([]);
+  const ambientShipsRef        = useRef<ShipEntity[]>([]);
+  const spawnEffectsRef        = useRef<SpawnEffect[]>([]);
+  const animationRef           = useRef<number>(0);
+  const frameRef               = useRef<number>(0);
+  const initializedRef         = useRef<boolean>(false);
+  const prevBoidsLengthRef     = useRef<number>(0);
 
   const { boids, currentLevel, addBoid, lastSpawnedBird } = useGameStore();
 
-  // Initialize ambient birds that always fly around
+  // Horizon line splits sky (above) from water (below)
+  const horizonY = useCallback(() => height * 0.58, [height]);
+
+  // ── Ambient background ships ──────────────────────────────────────────────
   useEffect(() => {
     if (initializedRef.current || width === 0 || height === 0) return;
     initializedRef.current = true;
-    
-    // Create 15 ambient birds that fly freely in the background
-    const ambientBirds: BoidEntity[] = [];
-    const birdHues = [15, 25, 35, 340, 350, 5]; // Warm/orange tones to stand out against blue sky
-    
-    for (let i = 0; i < 15; i++) {
-      ambientBirds.push({
+
+    const hz = height * 0.58;
+    const waterH = height - hz;
+
+    const ambient: ShipEntity[] = [];
+    for (let i = 0; i < 8; i++) {
+      const heading: 1 | -1 = i % 2 === 0 ? 1 : -1;
+      ambient.push({
         id: -1000 - i,
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 1.5,
-        ax: 0,
-        ay: 0,
-        level: 1,
-        species: 'Ambient',
-        color: `hsl(${birdHues[i % birdHues.length]}, ${60 + Math.random() * 20}%, ${50 + Math.random() * 15}%)`,
-        size: 6 + Math.random() * 4,
-        trail: [],
-        targetVx: 0,
-        targetVy: 0,
-        wanderAngle: Math.random() * Math.PI * 2,
+        x: (i / 8) * width,
+        y: hz + waterH * (0.15 + (i % 4) * 0.18),
+        vx: heading * (0.15 + (i % 3) * 0.08),
+        heading,
+        type: 'ambient',
+        color: '#c9a84c',
+        size: 10,
+        lane: 0.15 + (i % 4) * 0.18,
+        wakeOffset: Math.random() * Math.PI * 2,
       });
     }
-    ambientBirdsRef.current = ambientBirds;
+    ambientShipsRef.current = ambient;
   }, [width, height]);
 
-  // Convert store boids to simulation entities
-  const syncBoids = useCallback(() => {
-    const currentIds = new Set(boidsRef.current.map((b) => b.id));
-    
+  // ── Sync store boids → ShipEntity list ───────────────────────────────────
+  const syncShips = useCallback(() => {
+    const currentIds = new Set(shipsRef.current.map((s) => s.id));
+    const hz = height * 0.58;
+    const waterH = height - hz;
+
     boids.forEach((boid) => {
-      if (!currentIds.has(boid.id)) {
-        const speciesInfo = selectBoidSpecies(boid.level);
-        
-        // Create spawn effect at bird's position
-        const spawnX = boid.x || Math.random() * width;
-        const spawnY = boid.y || Math.random() * height;
-        
-        // Create multiple particles for spawn effect
-        for (let i = 0; i < 12; i++) {
-          const angle = (Math.PI * 2 / 12) * i;
-          spawnEffectsRef.current.push({
-            id: Date.now() + i,
-            x: spawnX,
-            y: spawnY,
-            color: speciesInfo.color,
-            age: 0,
-            maxAge: 40,
-          });
-        }
-        
-        boidsRef.current.push({
-          id: boid.id,
-          x: spawnX,
-          y: spawnY,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2,
-          ax: 0,
-          ay: 0,
-          level: boid.level,
-          species: speciesInfo.species,
-          color: speciesInfo.color,
-          size: speciesInfo.size,
-          trail: [],
-          targetVx: (Math.random() - 0.5) * 2,
-          targetVy: (Math.random() - 0.5) * 2,
-          wanderAngle: Math.random() * Math.PI * 2,
+      if (currentIds.has(boid.id)) return;
+      const info = selectBoidSpecies(boid.level);
+      const laneIdx = shipsRef.current.length % 5;
+      const laneY = hz + waterH * (0.12 + laneIdx * 0.17);
+
+      for (let i = 0; i < 8; i++) {
+        const angle = (Math.PI * 2 / 8) * i;
+        spawnEffectsRef.current.push({
+          id: Date.now() + i,
+          x: boid.x || width * 0.5,
+          y: laneY,
+          color: info.color,
+          age: 0,
+          maxAge: 50,
         });
       }
+
+      shipsRef.current.push({
+        id: boid.id,
+        x: boid.x || 0,
+        y: laneY,
+        vx: 0.4 + Math.random() * 0.3,
+        heading: 1,
+        type: levelToShipType(boid.level),
+        color: info.color,
+        size: info.size,
+        lane: 0.12 + laneIdx * 0.17,
+        wakeOffset: Math.random() * Math.PI * 2,
+      });
     });
 
-    // Remove boids that are no longer in store
     const storeIds = new Set(boids.map((b) => b.id));
-    boidsRef.current = boidsRef.current.filter((b) => storeIds.has(b.id));
+    shipsRef.current = shipsRef.current.filter((s) => storeIds.has(s.id));
   }, [boids, width, height]);
 
-  // Handle new bird spawning
+  // ── Handle newly spawned ship ─────────────────────────────────────────────
+  const lastSpawnRef = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
-    if (lastSpawnedBird && !lastSpawnRef.current) {
-      lastSpawnRef.current = lastSpawnedBird;
-      
-      const speciesInfo = selectBoidSpecies(currentLevel);
-      const newBoid: BoidEntity = {
-        id: Date.now(),
-        x: lastSpawnedBird.x,
-        y: lastSpawnedBird.y,
-        vx: (Math.random() - 0.5) * 3,
-        vy: -3,
-        ax: 0,
-        ay: 0,
-        level: currentLevel,
-        species: speciesInfo.species,
-        color: speciesInfo.color,
-        size: speciesInfo.size,
-        trail: [],
-        targetVx: (Math.random() - 0.5) * 3,
-        targetVy: -3,
-        wanderAngle: Math.random() * Math.PI * 2,
-      };
-      
-      boidsRef.current.push(newBoid);
-      
-      // Add to store
-      addBoid({
-        id: newBoid.id,
-        x: newBoid.x,
-        y: newBoid.y,
-        vx: newBoid.vx,
-        vy: newBoid.vy,
-        level: newBoid.level,
-        species: newBoid.species,
-        color: newBoid.color,
-        size: newBoid.size,
-        trail: [],
-      });
+    if (!lastSpawnedBird || lastSpawnRef.current) return;
+    lastSpawnRef.current = lastSpawnedBird;
 
-      setTimeout(() => {
-        lastSpawnRef.current = null;
-      }, 100);
-    }
-  }, [lastSpawnedBird, currentLevel, addBoid]);
+    const info = selectBoidSpecies(currentLevel);
+    const hz = height * 0.58;
+    const waterH = height - hz;
+    const laneIdx = shipsRef.current.length % 5;
+    const laneY = hz + waterH * (0.12 + laneIdx * 0.17);
 
-  // Boids algorithm parameters based on level
-  const getBoidWeights = useCallback(() => {
-    const progress = currentLevel / 50;
-    
-    // As level increases, weights shift toward more cohesive movement
-    return {
-      separation: 1.5 - progress * 0.3, // Decrease separation
-      alignment: 1.0 + progress * 0.5, // Increase alignment
-      cohesion: 1.0 + progress * 0.8,   // Increase cohesion significantly
-      maxSpeed: 3 + progress * 2,
-      maxForce: 0.05 + progress * 0.03,
+    const newShip: ShipEntity = {
+      id: Date.now(),
+      x: -60,
+      y: laneY,
+      vx: 0.5 + Math.random() * 0.3,
+      heading: 1,
+      type: levelToShipType(currentLevel),
+      color: info.color,
+      size: info.size,
+      lane: 0.12 + laneIdx * 0.17,
+      wakeOffset: 0,
     };
-  }, [currentLevel]);
 
-  // Boid behaviors
-  const separation = useCallback((boid: BoidEntity, neighbors: BoidEntity[], weight: number) => {
-    let steerX = 0;
-    let steerY = 0;
-    let count = 0;
-    const desiredSeparation = 25 + boid.size;
-
-    neighbors.forEach((other) => {
-      if (other.id === boid.id) return;
-      const dx = boid.x - other.x;
-      const dy = boid.y - other.y;
-      const d = Math.sqrt(dx * dx + dy * dy);
-
-      if (d > 0 && d < desiredSeparation) {
-        const diffX = dx / d;
-        const diffY = dy / d;
-        steerX += diffX;
-        steerY += diffY;
-        count++;
-      }
+    shipsRef.current.push(newShip);
+    addBoid({
+      id: newShip.id,
+      x: newShip.x,
+      y: newShip.y,
+      vx: newShip.vx,
+      vy: 0,
+      level: currentLevel,
+      species: info.species,
+      color: info.color,
+      size: info.size,
+      trail: [],
     });
 
-    if (count > 0) {
-      steerX /= count;
-      steerY /= count;
-      const len = Math.sqrt(steerX * steerX + steerY * steerY);
-      if (len > 0) {
-        steerX = (steerX / len) * weight;
-        steerY = (steerY / len) * weight;
-      }
-    }
+    setTimeout(() => { lastSpawnRef.current = null; }, 100);
+  }, [lastSpawnedBird, currentLevel, addBoid, height]);
 
-    return { x: steerX, y: steerY };
-  }, []);
-
-  const alignment = useCallback((boid: BoidEntity, neighbors: BoidEntity[], weight: number) => {
-    let avgVX = 0;
-    let avgVY = 0;
-    let count = 0;
-    const neighborDist = 50 + boid.size * 2;
-
-    neighbors.forEach((other) => {
-      if (other.id === boid.id) return;
-      const dx = boid.x - other.x;
-      const dy = boid.y - other.y;
-      const d = Math.sqrt(dx * dx + dy * dy);
-
-      if (d > 0 && d < neighborDist) {
-        avgVX += other.vx;
-        avgVY += other.vy;
-        count++;
-      }
-    });
-
-    if (count > 0) {
-      avgVX /= count;
-      avgVY /= count;
-      const len = Math.sqrt(avgVX * avgVX + avgVY * avgVY);
-      if (len > 0) {
-        avgVX = (avgVX / len) * weight;
-        avgVY = (avgVY / len) * weight;
-      }
-    }
-
-    return { x: avgVX - boid.vx, y: avgVY - boid.vy };
-  }, []);
-
-  const cohesion = useCallback((boid: BoidEntity, neighbors: BoidEntity[], weight: number) => {
-    let centerX = 0;
-    let centerY = 0;
-    let count = 0;
-    const neighborDist = 50 + boid.size * 2;
-
-    neighbors.forEach((other) => {
-      if (other.id === boid.id) return;
-      const dx = boid.x - other.x;
-      const dy = boid.y - other.y;
-      const d = Math.sqrt(dx * dx + dy * dy);
-
-      if (d > 0 && d < neighborDist) {
-        centerX += other.x;
-        centerY += other.y;
-        count++;
-      }
-    });
-
-    if (count > 0) {
-      centerX /= count;
-      centerY /= count;
-      return { x: (centerX - boid.x) * 0.01 * weight, y: (centerY - boid.y) * 0.01 * weight };
-    }
-
-    return { x: 0, y: 0 };
-  }, []);
-
-  // Smooth wander behavior for natural movement
-  const wander = useCallback((boid: BoidEntity) => {
-    // Slowly change the wander angle
-    boid.wanderAngle += (Math.random() - 0.5) * 0.3;
-    
-    // Calculate target velocity from wander angle
-    const speed = 2.5;
-    boid.targetVx = Math.cos(boid.wanderAngle) * speed;
-    boid.targetVy = Math.sin(boid.wanderAngle) * speed;
-    
-    return { x: boid.targetVx, y: boid.targetVy };
-  }, []);
-
-  // Smooth steering toward target velocity
-  const smoothSteer = useCallback((boid: BoidEntity, targetX: number, targetY: number, turnSpeed: number) => {
-    const steerX = (targetX - boid.vx) * turnSpeed;
-    const steerY = (targetY - boid.vy) * turnSpeed;
-    return { x: steerX, y: steerY };
-  }, []);
-
-  const borders = useCallback((boid: BoidEntity, width: number, height: number) => {
-    const margin = 50;
-    let turnX = 0;
-    let turnY = 0;
-
-    if (boid.x < margin) turnX = 1;
-    if (boid.x > width - margin) turnX = -1;
-    if (boid.y < margin) turnY = 1;
-    if (boid.y > height - margin) turnY = -1;
-
-    return { x: turnX, y: turnY };
-  }, []);
-
-  // Sky gradient colors based on level
+  // ── Sky gradient progression ──────────────────────────────────────────────
   const getSkyColors = useCallback(() => {
-    const progress = currentLevel / 50;
-    
-    // Dawn (Level 1) to Night (Level 50) - now blue tones
-    const dawn = { r: 135, g: 206, b: 250 };   // Light sky blue
-    const noon = { r: 70, g: 130, b: 180 };    // Steel blue
-    const dusk = { r: 25, g: 25, b: 95 };      // Deep blue
-    const night = { r: 5, g: 5, b: 30 };        // Dark navy
+    const p = currentLevel / 50;
+    const dawn  = { r: 255, g: 200, b: 100 };
+    const day   = { r: 100, g: 160, b: 230 };
+    const dusk  = { r:  60, g:  60, b: 130 };
+    const night = { r:   8, g:  12, b:  35 };
 
-    if (progress < 0.25) {
-      const t = progress / 0.25;
-      return {
-        top: lerpColor(dawn, night, t * 0.2),
-        bottom: lerpColor(dawn, noon, t),
-      };
-    } else if (progress < 0.5) {
-      const t = (progress - 0.25) / 0.25;
-      return {
-        top: lerpColor(lerpColor(dawn, night, 0.2), { r: 20, g: 20, b: 60 }, t),
-        bottom: lerpColor(noon, dusk, t),
-      };
-    } else if (progress < 0.75) {
-      const t = (progress - 0.5) / 0.25;
-      return {
-        top: lerpColor({ r: 20, g: 20, b: 60 }, night, t * 0.5),
-        bottom: lerpColor(dusk, night, t),
-      };
-    } else {
-      const t = (progress - 0.75) / 0.25;
-      return {
-        top: lerpColor(lerpColor({ r: 20, g: 20, b: 60 }, night, 0.5), night, t),
-        bottom: lerpColor(night, { r: 3, g: 3, b: 15 }, t),
-      };
-    }
+    if (p < 0.25) return { top: lerp(dawn, night, p * 0.3),   bottom: lerp(dawn, day,   p / 0.25) };
+    if (p < 0.5)  return { top: lerp(night, dusk, (p - 0.25) / 0.25 * 0.5), bottom: lerp(day, dusk, (p - 0.25) / 0.25) };
+    if (p < 0.75) return { top: lerp(dusk, night, (p - 0.5) / 0.25),  bottom: lerp(dusk, night, (p - 0.5) / 0.25) };
+    return { top: night, bottom: night };
   }, [currentLevel]);
 
-  // Animation loop
+  // ── Main animation loop ───────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const weights = getBoidWeights();
-    const colors = getSkyColors();
+    const draw = () => {
+      frameRef.current++;
+      const frame = frameRef.current;
+      const hz = horizonY();
+      const waterH = height - hz;
+      const sky = getSkyColors();
 
-    const animate = () => {
-      // Draw sky gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, `rgb(${colors.top.r}, ${colors.top.g}, ${colors.top.b})`);
-      gradient.addColorStop(1, `rgb(${colors.bottom.r}, ${colors.bottom.g}, ${colors.bottom.b})`);
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
+      // ── Sky ──────────────────────────────────────────────────────────────
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, hz);
+      skyGrad.addColorStop(0, rgb(sky.top));
+      skyGrad.addColorStop(1, rgb(sky.bottom));
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, width, hz);
 
-      // Draw stars for night levels
+      // ── Stars ────────────────────────────────────────────────────────────
       if (currentLevel > 30) {
-        const starAlpha = Math.min(1, (currentLevel - 30) / 20);
-        ctx.fillStyle = `rgba(255, 255, 255, ${starAlpha * 0.8})`;
-        for (let i = 0; i < 50; i++) {
+        const alpha = Math.min(1, (currentLevel - 30) / 20) * 0.85;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        for (let i = 0; i < 60; i++) {
           const sx = (i * 137.5) % width;
-          const sy = (i * 73.3) % (height * 0.6);
-          const size = (i % 3) + 1;
+          const sy = (i * 61.3) % (hz * 0.75);
+          const sz = (i % 3 === 0) ? 1.5 : 0.8;
           ctx.beginPath();
-          ctx.arc(sx, sy, size, 0, Math.PI * 2);
+          ctx.arc(sx, sy, sz, 0, Math.PI * 2);
           ctx.fill();
         }
       }
 
-      // Update and draw boids
-      syncBoids();
+      // ── Singapore skyline silhouette ────────────────────────────────────
+      drawSkyline(ctx, width, hz, currentLevel);
 
-      boidsRef.current.forEach((boid) => {
-        // Find neighbors
-        const neighbors = boidsRef.current;
+      // ── Water ────────────────────────────────────────────────────────────
+      const waterGrad = ctx.createLinearGradient(0, hz, 0, height);
+      waterGrad.addColorStop(0, '#0a2840');
+      waterGrad.addColorStop(0.5, '#071e32');
+      waterGrad.addColorStop(1, '#040f1a');
+      ctx.fillStyle = waterGrad;
+      ctx.fillRect(0, hz, width, waterH);
 
-        // Get wander target
-        const wanderTarget = wander(boid);
-
-        // Apply behaviors
-        const sep = separation(boid, neighbors, weights.separation);
-        const ali = alignment(boid, neighbors, weights.alignment);
-        const coh = cohesion(boid, neighbors, weights.cohesion);
-        const border = borders(boid, width, height);
-
-        // Apply smooth steering - blend between current velocity and target
-        const wanderSteer = smoothSteer(boid, wanderTarget.x, wanderTarget.y, 0.02);
-
-        // Update acceleration with smoother weights
-        boid.ax = sep.x * 0.8 + ali.x * 0.5 + coh.x * 0.3 + border.x * 0.4 + wanderSteer.x * 0.6;
-        boid.ay = sep.y * 0.8 + ali.y * 0.5 + coh.y * 0.3 + border.y * 0.4 + wanderSteer.y * 0.6;
-
-        // Add some damping to prevent erratic changes
-        boid.vx *= 0.98;
-        boid.vy *= 0.98;
-
-        // Update velocity
-        boid.vx += boid.ax;
-        boid.vy += boid.ay;
-
-        // Limit speed
-        const speed = Math.sqrt(boid.vx * boid.vx + boid.vy * boid.vy);
-        if (speed > weights.maxSpeed) {
-          boid.vx = (boid.vx / speed) * weights.maxSpeed;
-          boid.vy = (boid.vy / speed) * weights.maxSpeed;
+      // ── Water shimmer lines ──────────────────────────────────────────────
+      for (let i = 0; i < 12; i++) {
+        const shimmerY  = hz + waterH * (0.05 + i * 0.08);
+        const shimmerOff = ((frame * 0.3 + i * 47) % width);
+        ctx.strokeStyle = `rgba(100,180,255,${0.04 + (i % 3) * 0.02})`;
+        ctx.lineWidth   = 1;
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 4) {
+          const y = shimmerY + Math.sin((x + shimmerOff) * 0.03) * 2;
+          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
+        ctx.stroke();
+      }
 
-        // Ensure minimum speed for smooth movement
-        const minSpeed = 1.5;
-        if (speed < minSpeed) {
-          const scale = minSpeed / (speed || 1);
-          boid.vx *= scale;
-          boid.vy *= scale;
-        }
+      // ── Sync + move player ships ─────────────────────────────────────────
+      syncShips();
+      shipsRef.current.forEach((ship) => {
+        ship.x += ship.vx * ship.heading;
+        // Wrap around
+        const hull = hullWidth(ship.type, ship.size);
+        if (ship.heading === 1  && ship.x > width + hull) ship.x = -hull;
+        if (ship.heading === -1 && ship.x < -hull)        ship.x = width + hull;
 
-        // Update position
-        boid.x += boid.vx;
-        boid.y += boid.vy;
-
-        // Update trail
-        if (currentLevel >= 31) {
-          boid.trail.push({ x: boid.x, y: boid.y });
-          if (boid.trail.length > 20) boid.trail.shift();
-        }
-
-        // Draw trail (for Phoenix)
-        if (boid.trail.length > 1 && currentLevel >= 31) {
-          ctx.beginPath();
-          ctx.moveTo(boid.trail[0].x, boid.trail[0].y);
-          for (let i = 1; i < boid.trail.length; i++) {
-            ctx.lineTo(boid.trail[i].x, boid.trail[i].y);
-          }
-          ctx.strokeStyle = `rgba(255, ${Math.min(255, 100 + boid.level)}, 0, 0.4)`;
-          ctx.lineWidth = boid.size * 0.5;
-          ctx.stroke();
-        }
-
-        // Draw bird based on level
-        drawBird(ctx, boid, currentLevel);
+        drawWake(ctx, ship, frame);
+        drawShip(ctx, ship);
       });
 
-      // Update and draw ambient background birds
-      if (ambientBirdsRef.current.length > 0) {
-        const ambientWeights = { separation: 1.2, alignment: 0.8, cohesion: 0.6, maxSpeed: 1.8, maxForce: 0.03 };
-        
-        ambientBirdsRef.current.forEach((bird) => {
-          // Get wander target for smooth movement
-          const wanderTarget = wander(bird);
-          
-          // Simple flocking for ambient birds
-          const neighbors = ambientBirdsRef.current;
-          const sep = separation(bird, neighbors, ambientWeights.separation);
-          const ali = alignment(bird, neighbors, ambientWeights.alignment);
-          const coh = cohesion(bird, neighbors, ambientWeights.cohesion);
-          const border = borders(bird, width, height);
-          
-          // Apply smooth steering
-          const wanderSteer = smoothSteer(bird, wanderTarget.x, wanderTarget.y, 0.015);
-          
-          // Gentle movement with smooth blending
-          bird.ax = sep.x * 0.4 + ali.x * 0.25 + coh.x * 0.15 + border.x * 0.25 + wanderSteer.x * 0.5;
-          bird.ay = sep.y * 0.4 + ali.y * 0.25 + coh.y * 0.15 + border.y * 0.25 + wanderSteer.y * 0.5;
-          
-          // Velocity damping for smoothness
-          bird.vx *= 0.97;
-          bird.vy *= 0.97;
-          
-          // Update velocity
-          bird.vx += bird.ax;
-          bird.vy += bird.ay;
-          
-          // Limit speed
-          const speed = Math.sqrt(bird.vx * bird.vx + bird.vy * bird.vy);
-          if (speed > ambientWeights.maxSpeed) {
-            bird.vx = (bird.vx / speed) * ambientWeights.maxSpeed;
-            bird.vy = (bird.vy / speed) * ambientWeights.maxSpeed;
-          }
-          
-          // Ensure minimum speed
-          const minSpeed = 0.8;
-          if (speed < minSpeed) {
-            const scale = minSpeed / (speed || 1);
-            bird.vx *= scale;
-            bird.vy *= scale;
-          }
-          
-          // Update position
-          bird.x += bird.vx;
-          bird.y += bird.vy;
-          
-          // Soft borders - gently steer back
-          const margin = 80;
-          if (bird.x < margin) bird.vx += 0.08;
-          if (bird.x > width - margin) bird.vx -= 0.08;
-          if (bird.y < margin) bird.vy += 0.08;
-          if (bird.y > height - margin) bird.vy -= 0.08;
-          
-          // Draw as simple silhouettes
-          ctx.save();
-          ctx.translate(bird.x, bird.y);
-          ctx.rotate(Math.atan2(bird.vy, bird.vx));
-          ctx.globalAlpha = 0.5; // Semi-transparent
-          ctx.fillStyle = bird.color;
-          
-          // Simple V-shape
-          ctx.beginPath();
-          ctx.moveTo(bird.size, 0);
-          ctx.lineTo(-bird.size * 0.6, -bird.size * 0.5);
-          ctx.lineTo(-bird.size * 0.3, 0);
-          ctx.lineTo(-bird.size * 0.6, bird.size * 0.5);
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
-        });
-      }
+      // ── Ambient ships ────────────────────────────────────────────────────
+      ambientShipsRef.current.forEach((ship) => {
+        ship.x += ship.vx;
+        const hull = hullWidth('ambient', ship.size);
+        if (ship.vx > 0 && ship.x > width + hull) ship.x = -hull;
+        if (ship.vx < 0 && ship.x < -hull)        ship.x = width + hull;
+        drawWake(ctx, ship, frame);
+        drawShip(ctx, ship);
+      });
 
-      // Draw and update spawn effects (particles)
-      spawnEffectsRef.current = spawnEffectsRef.current.filter((effect) => {
-        effect.age++;
-        const progress = effect.age / effect.maxAge;
-        
-        if (progress >= 1) return false;
-        
-        // Draw particle
-        const particleRadius = 4 * (1 - progress);
-        const alpha = 1 - progress;
-        const expansion = progress * 30;
-        
+      // ── Spawn effects (horn rings) ───────────────────────────────────────
+      spawnEffectsRef.current = spawnEffectsRef.current.filter((eff) => {
+        eff.age++;
+        const t = eff.age / eff.maxAge;
+        if (t >= 1) return false;
         ctx.save();
-        ctx.globalAlpha = alpha;
-        
-        // Expanding ring
+        ctx.globalAlpha = (1 - t) * 0.8;
+        ctx.strokeStyle = eff.color;
+        ctx.lineWidth   = 2;
         ctx.beginPath();
-        ctx.arc(effect.x, effect.y, expansion, 0, Math.PI * 2);
-        ctx.strokeStyle = effect.color;
-        ctx.lineWidth = 2;
+        ctx.arc(eff.x, eff.y, t * 50, 0, Math.PI * 2);
         ctx.stroke();
-        
-        // Center glow
-        const gradient = ctx.createRadialGradient(effect.x, effect.y, 0, effect.x, effect.y, particleRadius * 3);
-        gradient.addColorStop(0, effect.color);
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(effect.x, effect.y, particleRadius * 3, 0, Math.PI * 2);
-        ctx.fill();
-        
         ctx.restore();
-        
         return true;
       });
 
-      animationRef.current = requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(draw);
     };
 
-    animate();
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [width, height, currentLevel, getBoidWeights, getSkyColors, syncBoids, separation, alignment, cohesion, borders]);
+    draw();
+    return () => { if (animationRef.current) cancelAnimationFrame(animationRef.current); };
+  }, [width, height, currentLevel, getSkyColors, syncShips, horizonY]);
 
   return (
     <canvas
@@ -595,68 +288,257 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
   );
 }
 
-// Helper functions
-function lerpColor(c1: { r: number; g: number; b: number }, c2: { r: number; g: number; b: number }, t: number): { r: number; g: number; b: number } {
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function levelToShipType(level: number): ShipEntity['type'] {
+  if (level <= 15) return 'tugboat';
+  if (level <= 30) return 'cargo';
+  if (level <= 40) return 'container';
+  return 'supertanker';
+}
+
+function hullWidth(type: ShipEntity['type'], size: number): number {
+  if (type === 'supertanker') return size * 5;
+  if (type === 'container')   return size * 4;
+  if (type === 'cargo')       return size * 3.5;
+  return size * 2.5;
+}
+
+function lerp(a: {r:number;g:number;b:number}, b: {r:number;g:number;b:number}, t: number) {
   return {
-    r: Math.round(c1.r + (c2.r - c1.r) * t),
-    g: Math.round(c1.g + (c2.g - c1.g) * t),
-    b: Math.round(c1.b + (c2.b - c1.b) * t),
+    r: Math.round(a.r + (b.r - a.r) * t),
+    g: Math.round(a.g + (b.g - a.g) * t),
+    b: Math.round(a.b + (b.b - a.b) * t),
   };
 }
 
-function drawBird(ctx: CanvasRenderingContext2D, boid: BoidEntity, level: number) {
-  const angle = Math.atan2(boid.vy, boid.vx);
-  const size = boid.size;
+function rgb(c: {r:number;g:number;b:number}) {
+  return `rgb(${c.r},${c.g},${c.b})`;
+}
 
+function drawWake(ctx: CanvasRenderingContext2D, ship: ShipEntity, frame: number) {
+  const stern = ship.heading === 1 ? ship.x - hullWidth(ship.type, ship.size) * 0.5 : ship.x + hullWidth(ship.type, ship.size) * 0.5;
+  for (let i = 0; i < 3; i++) {
+    const wx = stern - ship.heading * (i * 12 + 8);
+    const wy = ship.y + Math.sin((frame * 0.05 + ship.wakeOffset + i) * 2) * 1.5;
+    ctx.save();
+    ctx.globalAlpha = 0.12 - i * 0.03;
+    ctx.strokeStyle = '#7dd3fc';
+    ctx.lineWidth   = ship.size * 0.25 - i * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(wx - 8, wy);
+    ctx.lineTo(wx + 8, wy);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawShip(ctx: CanvasRenderingContext2D, ship: ShipEntity) {
   ctx.save();
-  ctx.translate(boid.x, boid.y);
-  ctx.rotate(angle);
+  ctx.translate(ship.x, ship.y);
+  if (ship.heading === -1) ctx.scale(-1, 1);
 
-  // All birds are simple pointer/chevron shapes - clean and consistent
-  ctx.fillStyle = boid.color;
-  
-  // Pointer shape pointing right (direction of movement)
-  ctx.beginPath();
-  ctx.moveTo(size * 1.2, 0);           // Pointed nose
-  ctx.lineTo(-size * 0.8, -size * 0.6); // Top wing
-  ctx.lineTo(-size * 0.3, 0);           // Inner notch
-  ctx.lineTo(-size * 0.8, size * 0.6);  // Bottom wing
-  ctx.closePath();
-  ctx.fill();
+  const s = ship.size;
+  const alpha = ship.type === 'ambient' ? 0.45 : 0.9;
+  ctx.globalAlpha = alpha;
+
+  switch (ship.type) {
+    case 'ambient':
+    case 'tugboat':
+      drawTugboat(ctx, s, ship.color);
+      break;
+    case 'cargo':
+      drawCargo(ctx, s, ship.color);
+      break;
+    case 'container':
+      drawContainer(ctx, s, ship.color);
+      break;
+    case 'supertanker':
+      drawSupertanker(ctx, s, ship.color);
+      break;
+  }
 
   ctx.restore();
 }
 
-function parseHSL(color: string): { h: number; s: number; l: number } {
-  // Simple parser for hsl strings
-  const match = color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
-  if (match) {
-    return {
-      h: parseInt(match[1]),
-      s: parseInt(match[2]),
-      l: parseInt(match[3]),
-    };
-  }
-  // Handle hex
-  const hex = color.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2 / 255;
+function drawTugboat(ctx: CanvasRenderingContext2D, s: number, color: string) {
+  // Hull
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-s * 1.2, 0);
+  ctx.lineTo( s * 1.2, 0);
+  ctx.lineTo( s * 1.0, s * 0.7);
+  ctx.lineTo(-s * 1.0, s * 0.7);
+  ctx.closePath();
+  ctx.fill();
+  // Cabin
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(-s * 0.3, -s * 0.9, s * 0.7, s * 0.9);
+  // Funnel
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(s * 0.1, -s * 1.4, s * 0.2, s * 0.55);
+}
 
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
+function drawCargo(ctx: CanvasRenderingContext2D, s: number, color: string) {
+  // Hull
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-s * 1.7, 0);
+  ctx.lineTo( s * 1.7, 0);
+  ctx.lineTo( s * 1.4, s * 0.8);
+  ctx.lineTo(-s * 1.4, s * 0.8);
+  ctx.closePath();
+  ctx.fill();
+  // Superstructure
+  ctx.fillStyle = lighten(color, 0.25);
+  ctx.fillRect(-s * 0.5, -s * 1.1, s * 1.0, s * 1.1);
+  // Crane arm
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = s * 0.1;
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.1, -s * 1.1);
+  ctx.lineTo(-s * 1.0, -s * 1.9);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-s * 1.0, -s * 1.9);
+  ctx.lineTo(-s * 1.0, -s * 1.1);
+  ctx.stroke();
+}
+
+function drawContainer(ctx: CanvasRenderingContext2D, s: number, color: string) {
+  const containerColors = ['#ef4444','#3b82f6','#f59e0b','#10b981','#8b5cf6','#ec4899'];
+  // Hull
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-s * 2.0, 0);
+  ctx.lineTo( s * 2.0, 0);
+  ctx.lineTo( s * 1.7, s * 0.8);
+  ctx.lineTo(-s * 1.7, s * 0.8);
+  ctx.closePath();
+  ctx.fill();
+  // Stacked containers (2 rows of 4)
+  const boxW = s * 0.65, boxH = s * 0.45;
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 4; col++) {
+      ctx.fillStyle = containerColors[(row * 4 + col) % containerColors.length];
+      ctx.fillRect(-s * 1.9 + col * (boxW + 1), -s * 0.1 - row * (boxH + 1) - boxH, boxW, boxH);
     }
   }
+  // Bridge
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(s * 1.1, -s * 1.4, s * 0.7, s * 1.4);
+}
 
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+function drawSupertanker(ctx: CanvasRenderingContext2D, s: number, color: string) {
+  // Very long low hull
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-s * 2.5, 0);
+  ctx.lineTo( s * 2.5, 0);
+  ctx.lineTo( s * 2.2, s * 0.9);
+  ctx.lineTo(-s * 2.2, s * 0.9);
+  ctx.closePath();
+  ctx.fill();
+  // Deck stripe
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(-s * 2.4, -s * 0.1, s * 4.8, s * 0.15);
+  // Superstructure at stern
+  ctx.fillStyle = lighten(color, 0.3);
+  ctx.fillRect(s * 1.6, -s * 1.6, s * 0.8, s * 1.6);
+  // "LCB" text
+  ctx.fillStyle = 'rgba(201,168,76,0.9)';
+  ctx.font = `bold ${Math.max(6, s * 0.35)}px "IBM Plex Mono", monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillText('LCB', -s * 0.3, s * 0.55);
+  // Funnel
+  ctx.fillStyle = '#c9a84c';
+  ctx.fillRect(s * 1.75, -s * 2.0, s * 0.25, s * 0.45);
+}
+
+function lighten(hex: string, amount: number): string {
+  // Convert hex or named colour to lighter version by blending with white
+  let r = 100, g = 100, b = 100;
+  if (hex.startsWith('#') && hex.length === 7) {
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
+  return `rgb(${Math.min(255, r + (255 - r) * amount)},${Math.min(255, g + (255 - g) * amount)},${Math.min(255, b + (255 - b) * amount)})`;
+}
+
+// ── Singapore skyline ─────────────────────────────────────────────────────────
+// Stylised silhouette of Marina Bay skyline drawn as filled shapes
+function drawSkyline(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  horizonY: number,
+  level: number,
+) {
+  const nightAlpha = Math.min(1, level / 40);
+  const baseColor  = `rgba(10,18,40,${0.6 + nightAlpha * 0.35})`;
+
+  // Buildings defined as { x_pct, w_pct, h_pct of horizonY }
+  const buildings = [
+    // Financial district skyscrapers
+    { x: 0.55, w: 0.015, h: 0.55 },
+    { x: 0.57, w: 0.022, h: 0.70 },
+    { x: 0.60, w: 0.018, h: 0.60 },
+    { x: 0.63, w: 0.025, h: 0.80 },  // tallest CBD tower
+    { x: 0.66, w: 0.020, h: 0.65 },
+    { x: 0.69, w: 0.018, h: 0.55 },
+    { x: 0.72, w: 0.022, h: 0.70 },
+    // Marina Bay Sands — 3 towers + skypark bar
+    { x: 0.43, w: 0.018, h: 0.62 },
+    { x: 0.46, w: 0.018, h: 0.62 },
+    { x: 0.49, w: 0.018, h: 0.62 },
+    // Short foreground buildings
+    { x: 0.75, w: 0.03,  h: 0.40 },
+    { x: 0.79, w: 0.025, h: 0.45 },
+    { x: 0.35, w: 0.025, h: 0.42 },
+    { x: 0.38, w: 0.030, h: 0.50 },
+    { x: 0.31, w: 0.020, h: 0.35 },
+    { x: 0.27, w: 0.022, h: 0.38 },
+  ];
+
+  ctx.fillStyle = baseColor;
+  buildings.forEach(b => {
+    const bx = b.x * width;
+    const bw = b.w * width;
+    const bh = b.h * horizonY;
+    ctx.fillRect(bx - bw / 2, horizonY - bh, bw, bh);
+  });
+
+  // Marina Bay Sands skypark (connecting bar across the 3 towers)
+  ctx.fillStyle = baseColor;
+  ctx.fillRect(0.43 * width, horizonY - 0.66 * horizonY, 0.075 * width, 0.06 * horizonY);
+
+  // Windows: tiny gold dots for lit levels > 10
+  if (level > 10) {
+    const winAlpha = Math.min(0.8, (level - 10) / 20);
+    ctx.fillStyle = `rgba(201,168,76,${winAlpha * 0.5})`;
+    buildings.forEach(b => {
+      const bx = b.x * width;
+      const bw = b.w * width;
+      const bh = b.h * horizonY;
+      const cols = Math.max(1, Math.floor(bw / 4));
+      const rows = Math.max(1, Math.floor(bh / 6));
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if ((r + c) % 3 === 0) continue; // skip some for realism
+          ctx.fillRect(
+            bx - bw / 2 + c * 4 + 1,
+            horizonY - bh + r * 6 + 2,
+            1.5, 2
+          );
+        }
+      }
+    });
+  }
+
+  // Reflection strip at waterline
+  const reflGrad = ctx.createLinearGradient(0, horizonY, 0, horizonY + 30);
+  reflGrad.addColorStop(0, 'rgba(201,168,76,0.15)');
+  reflGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = reflGrad;
+  ctx.fillRect(0, horizonY, width, 30);
 }
