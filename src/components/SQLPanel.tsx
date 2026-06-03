@@ -139,6 +139,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
   }, [handleExecute]);
 
   useEffect(() => {
+    setQuery('');
     const editor = editorRef.current as { focus?: () => void } | null;
     if (editor?.focus) setTimeout(() => editor.focus?.(), 50);
   }, [currentLevel]);

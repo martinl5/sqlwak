@@ -12,10 +12,9 @@ export const levels: Level[] = [
 
 Return the \`customer_name\` and \`segment\` for every customer in the \`Priority\` segment.`,
     hint: 'SELECT from customers WHERE segment equals the Priority segment.',
-    seedQuery: `SELECT customer_name,
-       segment
+    seedQuery: `SELECT
   FROM customers
- WHERE segment = 'Priority'`,
+ WHERE `,
     solutionQuery: `SELECT customer_name,
        segment
   FROM customers
@@ -30,7 +29,7 @@ Return the \`customer_name\` and \`segment\` for every customer in the \`Priorit
 
 Return a single value aliased as \`total_customers\`.`,
     hint: 'Use COUNT(DISTINCT customer_id) on the customers table.',
-    seedQuery: `SELECT COUNT(DISTINCT customer_id) AS total_customers
+    seedQuery: `SELECT
   FROM customers`,
     solutionQuery: `SELECT COUNT(DISTINCT customer_id) AS total_customers
   FROM customers`,
@@ -44,10 +43,9 @@ Return a single value aliased as \`total_customers\`.`,
 
 Return \`branch_name\` and \`branch_type\`.`,
     hint: 'Filter the branches table WHERE region equals Central.',
-    seedQuery: `SELECT branch_name,
-       branch_type
+    seedQuery: `SELECT
   FROM branches
- WHERE region = 'Central'`,
+ WHERE `,
     solutionQuery: `SELECT branch_name,
        branch_type
   FROM branches
@@ -62,11 +60,9 @@ Return \`branch_name\` and \`branch_type\`.`,
 
 Return \`transaction_id\`, \`transaction_date\`, and \`merchant_category\` for all transactions between 1 Feb and 29 Feb 2024.`,
     hint: 'Use BETWEEN on transaction_date in the transactions table.',
-    seedQuery: `SELECT transaction_id,
-       transaction_date,
-       merchant_category
+    seedQuery: `SELECT
   FROM transactions
- WHERE transaction_date BETWEEN '2024-02-01' AND '2024-02-29'`,
+ WHERE `,
     solutionQuery: `SELECT transaction_id,
        transaction_date,
        merchant_category
@@ -82,11 +78,9 @@ Return \`transaction_id\`, \`transaction_date\`, and \`merchant_category\` for a
 
 Return \`transaction_id\`, \`amount\`, and \`transaction_date\`.`,
     hint: 'Filter transactions WHERE channel equals PayNow.',
-    seedQuery: `SELECT transaction_id,
-       amount,
-       transaction_date
+    seedQuery: `SELECT
   FROM transactions
- WHERE channel = 'PayNow'`,
+ WHERE `,
     solutionQuery: `SELECT transaction_id,
        amount,
        transaction_date
@@ -102,9 +96,9 @@ Return \`transaction_id\`, \`amount\`, and \`transaction_date\`.`,
 
 Return a single value aliased as \`total_salary_credits\` for all transactions where \`merchant_category\` is \`Salary Credit\`.`,
     hint: 'SUM the amount column filtered by merchant_category = Salary Credit.',
-    seedQuery: `SELECT SUM(amount) AS total_salary_credits
+    seedQuery: `SELECT
   FROM transactions
- WHERE merchant_category = 'Salary Credit'`,
+ WHERE `,
     solutionQuery: `SELECT SUM(amount) AS total_salary_credits
   FROM transactions
  WHERE merchant_category = 'Salary Credit'`,
@@ -118,7 +112,7 @@ Return a single value aliased as \`total_salary_credits\` for all transactions w
 
 Return a single value aliased as \`avg_credit_score\`.`,
     hint: 'Use AVG(credit_score) on the customers table.',
-    seedQuery: `SELECT AVG(credit_score) AS avg_credit_score
+    seedQuery: `SELECT
   FROM customers`,
     solutionQuery: `SELECT AVG(credit_score) AS avg_credit_score
   FROM customers`,
@@ -132,11 +126,9 @@ Return a single value aliased as \`avg_credit_score\`.`,
 
 Return \`account_id\`, \`customer_id\`, and \`balance\` for all accounts with a status of \`Dormant\`.`,
     hint: 'Filter the accounts table WHERE status equals Dormant.',
-    seedQuery: `SELECT account_id,
-       customer_id,
-       balance
+    seedQuery: `SELECT
   FROM accounts
- WHERE status = 'Dormant'`,
+ WHERE `,
     solutionQuery: `SELECT account_id,
        customer_id,
        balance
@@ -152,11 +144,9 @@ Return \`account_id\`, \`customer_id\`, and \`balance\` for all accounts with a 
 
 Return \`product_name\`, \`product_type\`, and \`interest_rate\` for all products whose name contains the text \`CPF\`.`,
     hint: 'Use a LIKE filter with % wildcards on product_name.',
-    seedQuery: `SELECT product_name,
-       product_type,
-       interest_rate
+    seedQuery: `SELECT
   FROM products
- WHERE product_name LIKE '%CPF%'`,
+ WHERE `,
     solutionQuery: `SELECT product_name,
        product_type,
        interest_rate
@@ -172,11 +162,9 @@ Return \`product_name\`, \`product_type\`, and \`interest_rate\` for all product
 
 Return \`product_name\`, \`product_type\`, and \`interest_rate\` for all products whose name contains \`Home Loan\`.`,
     hint: 'Filter products with a LIKE pattern matching Home Loan in the product_name.',
-    seedQuery: `SELECT product_name,
-       product_type,
-       interest_rate
+    seedQuery: `SELECT
   FROM products
- WHERE product_name LIKE '%Home Loan%'`,
+ WHERE `,
     solutionQuery: `SELECT product_name,
        product_type,
        interest_rate
@@ -192,12 +180,10 @@ Return \`product_name\`, \`product_type\`, and \`interest_rate\` for all product
 
 Return \`account_id\`, \`balance\`, and \`status\` from accounts where the customer has no matching row in loans.`,
     hint: 'Use a LEFT JOIN between accounts and loans on customer_id, then filter WHERE the loan side IS NULL.',
-    seedQuery: `SELECT a.account_id,
-       a.balance,
-       a.status
+    seedQuery: `SELECT
   FROM accounts a
-  LEFT JOIN loans l ON a.customer_id = l.customer_id
- WHERE l.loan_id IS NULL`,
+  LEFT JOIN loans l ON
+ WHERE `,
     solutionQuery: `SELECT a.account_id,
        a.balance,
        a.status
@@ -214,11 +200,9 @@ Return \`account_id\`, \`balance\`, and \`status\` from accounts where the custo
 
 Return \`account_id\`, \`customer_id\`, and \`balance\`, ordered from highest to lowest balance.`,
     hint: 'SELECT from accounts and use ORDER BY balance DESC.',
-    seedQuery: `SELECT account_id,
-       customer_id,
-       balance
+    seedQuery: `SELECT
   FROM accounts
- ORDER BY balance DESC`,
+ ORDER BY `,
     solutionQuery: `SELECT account_id,
        customer_id,
        balance
@@ -234,12 +218,10 @@ Return \`account_id\`, \`customer_id\`, and \`balance\`, ordered from highest to
 
 Return the top 5 accounts by \`balance\`, showing \`account_id\`, \`customer_id\`, and \`balance\`.`,
     hint: 'Order by balance DESC and use LIMIT 5.',
-    seedQuery: `SELECT account_id,
-       customer_id,
-       balance
+    seedQuery: `SELECT
   FROM accounts
- ORDER BY balance DESC
- LIMIT 5`,
+ ORDER BY
+ LIMIT `,
     solutionQuery: `SELECT account_id,
        customer_id,
        balance
@@ -256,11 +238,10 @@ Return the top 5 accounts by \`balance\`, showing \`account_id\`, \`customer_id\
 
 Return \`channel\` and the count as \`transaction_count\`, ordered by count descending.`,
     hint: 'GROUP BY channel and COUNT(*), then ORDER BY the count DESC.',
-    seedQuery: `SELECT channel,
-       COUNT(*) AS transaction_count
+    seedQuery: `SELECT
   FROM transactions
- GROUP BY channel
- ORDER BY transaction_count DESC`,
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT channel,
        COUNT(*) AS transaction_count
   FROM transactions
@@ -276,12 +257,10 @@ Return \`channel\` and the count as \`transaction_count\`, ordered by count desc
 
 Return \`customer_name\`, \`account_id\`, and \`balance\` by joining \`accounts\` with \`customers\`, ordered by balance descending.`,
     hint: 'JOIN accounts and customers on customer_id. Use table aliases a and c.',
-    seedQuery: `SELECT c.customer_name,
-       a.account_id,
-       a.balance
+    seedQuery: `SELECT
   FROM accounts a
-  JOIN customers c ON a.customer_id = c.customer_id
- ORDER BY a.balance DESC`,
+  JOIN customers c ON
+ ORDER BY `,
     solutionQuery: `SELECT c.customer_name,
        a.account_id,
        a.balance
@@ -303,13 +282,11 @@ Return \`customer_name\`, \`account_id\`, and \`balance\` by joining \`accounts\
 
 Return \`branch_name\`, the number of accounts as \`account_count\`, and \`SUM(balance)\` as \`total_balance\`, ordered by total_balance descending.`,
     hint: 'LEFT JOIN branches to accounts on branch_id, then GROUP BY branch_id and branch_name.',
-    seedQuery: `SELECT b.branch_name,
-       COUNT(a.account_id) AS account_count,
-       SUM(a.balance)      AS total_balance
+    seedQuery: `SELECT
   FROM branches b
-  LEFT JOIN accounts a ON b.branch_id = a.branch_id
- GROUP BY b.branch_id, b.branch_name
- ORDER BY total_balance DESC`,
+  LEFT JOIN accounts a ON
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT b.branch_name,
        COUNT(a.account_id) AS account_count,
        SUM(a.balance)      AS total_balance
@@ -327,12 +304,11 @@ Return \`branch_name\`, the number of accounts as \`account_count\`, and \`SUM(b
 
 Return \`segment\` and \`avg_balance\` (rounded to 2dp), ordered by avg_balance descending.`,
     hint: 'JOIN accounts to customers, GROUP BY c.segment, and use AVG(a.balance).',
-    seedQuery: `SELECT c.segment,
-       ROUND(AVG(a.balance), 2) AS avg_balance
+    seedQuery: `SELECT
   FROM accounts a
-  JOIN customers c ON a.customer_id = c.customer_id
- GROUP BY c.segment
- ORDER BY avg_balance DESC`,
+  JOIN customers c ON
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT c.segment,
        ROUND(AVG(a.balance), 2) AS avg_balance
   FROM accounts a
@@ -349,13 +325,12 @@ Return \`segment\` and \`avg_balance\` (rounded to 2dp), ordered by avg_balance 
 
 Return \`segment\` and \`account_count\` where the count exceeds 10, ordered by account_count descending.`,
     hint: 'GROUP BY segment with a HAVING COUNT(*) > 10 clause.',
-    seedQuery: `SELECT c.segment,
-       COUNT(a.account_id) AS account_count
+    seedQuery: `SELECT
   FROM accounts a
-  JOIN customers c ON a.customer_id = c.customer_id
- GROUP BY c.segment
-HAVING COUNT(a.account_id) > 10
- ORDER BY account_count DESC`,
+  JOIN customers c ON
+ GROUP BY
+HAVING
+ ORDER BY `,
     solutionQuery: `SELECT c.segment,
        COUNT(a.account_id) AS account_count
   FROM accounts a
@@ -373,12 +348,10 @@ HAVING COUNT(a.account_id) > 10
 
 Return \`risk_grade\`, \`loan_count\`, and \`total_principal\` (rounded to 0dp), ordered by risk_grade.`,
     hint: 'GROUP BY risk_grade on the loans table using COUNT and SUM.',
-    seedQuery: `SELECT risk_grade,
-       COUNT(*)                      AS loan_count,
-       ROUND(SUM(principal_amount), 0) AS total_principal
+    seedQuery: `SELECT
   FROM loans
- GROUP BY risk_grade
- ORDER BY risk_grade`,
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT risk_grade,
        COUNT(*)                      AS loan_count,
        ROUND(SUM(principal_amount), 0) AS total_principal
@@ -395,13 +368,12 @@ Return \`risk_grade\`, \`loan_count\`, and \`total_principal\` (rounded to 0dp),
 
 Return \`customer_name\` and \`account_count\` for customers with more than 1 account, ordered by account_count descending.`,
     hint: 'JOIN customers to accounts, GROUP BY customer, HAVING COUNT > 1.',
-    seedQuery: `SELECT c.customer_name,
-       COUNT(a.account_id) AS account_count
+    seedQuery: `SELECT
   FROM customers c
-  JOIN accounts a ON c.customer_id = a.customer_id
- GROUP BY c.customer_id, c.customer_name
-HAVING COUNT(a.account_id) > 1
- ORDER BY account_count DESC`,
+  JOIN accounts a ON
+ GROUP BY
+HAVING
+ ORDER BY `,
     solutionQuery: `SELECT c.customer_name,
        COUNT(a.account_id) AS account_count
   FROM customers c
@@ -419,12 +391,10 @@ HAVING COUNT(a.account_id) > 1
 
 Return \`account_id\`, \`customer_id\`, and \`balance\`, ordered by balance descending.`,
     hint: 'Use a subquery: WHERE balance > (SELECT AVG(balance) FROM accounts).',
-    seedQuery: `SELECT account_id,
-       customer_id,
-       balance
+    seedQuery: `SELECT
   FROM accounts
- WHERE balance > (SELECT AVG(balance) FROM accounts)
- ORDER BY balance DESC`,
+ WHERE balance > ( )
+ ORDER BY `,
     solutionQuery: `SELECT account_id,
        customer_id,
        balance
@@ -441,13 +411,10 @@ Return \`account_id\`, \`customer_id\`, and \`balance\`, ordered by balance desc
 
 Return \`customer_name\`, \`segment\`, \`principal_amount\`, and \`risk_grade\` for defaulted loans.`,
     hint: 'JOIN customers to loans on customer_id, filtering WHERE l.status = Default.',
-    seedQuery: `SELECT c.customer_name,
-       c.segment,
-       l.principal_amount,
-       l.risk_grade
+    seedQuery: `SELECT
   FROM customers c
-  JOIN loans l ON c.customer_id = l.customer_id
- WHERE l.status = 'Default'`,
+  JOIN loans l ON
+ WHERE `,
     solutionQuery: `SELECT c.customer_name,
        c.segment,
        l.principal_amount,
@@ -465,12 +432,10 @@ Return \`customer_name\`, \`segment\`, \`principal_amount\`, and \`risk_grade\` 
 
 Return \`month\` (as YYYY-MM), \`total_amount\`, and \`transaction_count\`, ordered by month.`,
     hint: 'Use strftime(\'%Y-%m\', transaction_date) and GROUP BY the result.',
-    seedQuery: `SELECT strftime('%Y-%m', transaction_date) AS month,
-       ROUND(SUM(amount), 2)                AS total_amount,
-       COUNT(*)                              AS transaction_count
+    seedQuery: `SELECT
   FROM transactions
- GROUP BY strftime('%Y-%m', transaction_date)
- ORDER BY month`,
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT strftime('%Y-%m', transaction_date) AS month,
        ROUND(SUM(amount), 2)                AS total_amount,
        COUNT(*)                              AS transaction_count
@@ -487,14 +452,14 @@ Return \`month\` (as YYYY-MM), \`total_amount\`, and \`transaction_count\`, orde
 
 Return \`product_name\` and \`product_type\` for products of type \`Savings\` UNION those of type \`Investment\`, ordered by product_type then product_name.`,
     hint: 'Write two SELECT statements connected by UNION and ORDER BY at the end.',
-    seedQuery: `SELECT product_name, product_type
+    seedQuery: `SELECT
   FROM products
- WHERE product_type = 'Savings'
+ WHERE
 UNION
-SELECT product_name, product_type
+SELECT
   FROM products
- WHERE product_type = 'Investment'
- ORDER BY product_type, product_name`,
+ WHERE
+ ORDER BY `,
     solutionQuery: `SELECT product_name, product_type
   FROM products
  WHERE product_type = 'Savings'
@@ -513,11 +478,10 @@ SELECT product_name, product_type
 
 Return \`status\` and \`account_count\` for Active and Dormant accounts only.`,
     hint: 'Filter WHERE status IN (Active, Dormant), then GROUP BY status.',
-    seedQuery: `SELECT status,
-       COUNT(*) AS account_count
+    seedQuery: `SELECT
   FROM accounts
- WHERE status IN ('Active', 'Dormant')
- GROUP BY status`,
+ WHERE status IN ( )
+ GROUP BY `,
     solutionQuery: `SELECT status,
        COUNT(*) AS account_count
   FROM accounts
@@ -533,14 +497,11 @@ Return \`status\` and \`account_count\` for Active and Dormant accounts only.`,
 
 Return \`customer_name\`, \`merchant_category\`, \`amount\`, and \`transaction_date\`, ordered by transaction_date descending. Limit to 20 rows.`,
     hint: 'JOIN transactions → accounts → customers using account_id and customer_id.',
-    seedQuery: `SELECT c.customer_name,
-       t.merchant_category,
-       t.amount,
-       t.transaction_date
+    seedQuery: `SELECT
   FROM transactions t
-  JOIN accounts a  ON t.account_id   = a.account_id
-  JOIN customers c ON a.customer_id  = c.customer_id
- ORDER BY t.transaction_date DESC
+  JOIN accounts a  ON
+  JOIN customers c ON
+ ORDER BY
  LIMIT 20`,
     solutionQuery: `SELECT c.customer_name,
        t.merchant_category,
@@ -561,14 +522,12 @@ Return \`customer_name\`, \`merchant_category\`, \`amount\`, and \`transaction_d
 
 Return \`branch_name\`, \`tx_count\`, and \`total_volume\` (rounded to 2dp), ordered by total_volume descending.`,
     hint: 'Chain JOINs: branches → accounts → transactions, then GROUP BY branch.',
-    seedQuery: `SELECT b.branch_name,
-       COUNT(t.transaction_id)       AS tx_count,
-       ROUND(SUM(t.amount), 2)        AS total_volume
+    seedQuery: `SELECT
   FROM branches b
-  JOIN accounts a     ON b.branch_id    = a.branch_id
-  JOIN transactions t ON a.account_id   = t.account_id
- GROUP BY b.branch_id, b.branch_name
- ORDER BY total_volume DESC`,
+  JOIN accounts a     ON
+  JOIN transactions t ON
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT b.branch_name,
        COUNT(t.transaction_id)       AS tx_count,
        ROUND(SUM(t.amount), 2)        AS total_volume
@@ -597,11 +556,11 @@ Order by credit_score descending.`,
     seedQuery: `SELECT customer_name,
        credit_score,
        CASE
-         WHEN credit_score >= 800 THEN 'Excellent'
-         WHEN credit_score >= 740 THEN 'Very Good'
-         WHEN credit_score >= 670 THEN 'Good'
-         WHEN credit_score >= 580 THEN 'Fair'
-         ELSE 'Poor'
+         WHEN  THEN ''
+         WHEN  THEN ''
+         WHEN  THEN ''
+         WHEN  THEN ''
+         ELSE ''
        END AS credit_band
   FROM customers
  ORDER BY credit_score DESC`,
@@ -626,15 +585,13 @@ Order by credit_score descending.`,
 
 Return \`customer_name\`, \`merchant_category\`, and \`total_spend\` for all Debit transactions, grouped by customer and category, ordered by total_spend descending. Limit 10 rows.`,
     hint: 'Three-table JOIN (transactions → accounts → customers) filtered by transaction_type = Debit, then GROUP BY customer and category.',
-    seedQuery: `SELECT c.customer_name,
-       t.merchant_category,
-       ROUND(SUM(t.amount), 2) AS total_spend
+    seedQuery: `SELECT
   FROM transactions t
-  JOIN accounts a  ON t.account_id  = a.account_id
-  JOIN customers c ON a.customer_id = c.customer_id
- WHERE t.transaction_type = 'Debit'
- GROUP BY c.customer_id, c.customer_name, t.merchant_category
- ORDER BY total_spend DESC
+  JOIN accounts a  ON
+  JOIN customers c ON
+ WHERE
+ GROUP BY
+ ORDER BY
  LIMIT 10`,
     solutionQuery: `SELECT c.customer_name,
        t.merchant_category,
@@ -656,14 +613,10 @@ Return \`customer_name\`, \`merchant_category\`, and \`total_spend\` for all Deb
 
 Return \`status\`, \`risk_grade\`, \`loan_count\`, \`avg_rate\` (2dp), and \`total_exposure\` (rounded), ordered by status then risk_grade.`,
     hint: 'GROUP BY two columns (status and risk_grade) simultaneously.',
-    seedQuery: `SELECT status,
-       risk_grade,
-       COUNT(*)                        AS loan_count,
-       ROUND(AVG(interest_rate), 2)    AS avg_rate,
-       ROUND(SUM(principal_amount), 0) AS total_exposure
+    seedQuery: `SELECT
   FROM loans
- GROUP BY status, risk_grade
- ORDER BY status, risk_grade`,
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `SELECT status,
        risk_grade,
        COUNT(*)                        AS loan_count,
@@ -689,7 +642,7 @@ Return \`account_id\`, \`balance\`, and \`running_total\` using SUM() OVER, orde
     hint: 'Use SUM(balance) OVER (ORDER BY balance DESC) as running_total.',
     seedQuery: `SELECT account_id,
        balance,
-       SUM(balance) OVER (ORDER BY balance DESC) AS running_total
+       SUM(balance) OVER (ORDER BY ) AS running_total
   FROM accounts
  ORDER BY balance DESC`,
     solutionQuery: `SELECT account_id,
@@ -707,16 +660,10 @@ Return \`account_id\`, \`balance\`, and \`running_total\` using SUM() OVER, orde
 
 Return \`customer_name\`, \`segment\`, \`balance\`, and \`rank_in_segment\` using RANK() OVER PARTITION BY segment, ordered by segment then rank.`,
     hint: 'Use RANK() OVER (PARTITION BY c.segment ORDER BY a.balance DESC).',
-    seedQuery: `SELECT c.customer_name,
-       c.segment,
-       a.balance,
-       RANK() OVER (
-         PARTITION BY c.segment
-             ORDER BY a.balance DESC
-       ) AS rank_in_segment
+    seedQuery: `SELECT
   FROM accounts a
-  JOIN customers c ON a.customer_id = c.customer_id
- ORDER BY c.segment, rank_in_segment`,
+  JOIN customers c ON
+ ORDER BY `,
     solutionQuery: `SELECT c.customer_name,
        c.segment,
        a.balance,
@@ -739,16 +686,13 @@ Return \`month\`, \`total_amount\`, \`prev_month_amount\`, and \`growth_pct\` (r
     hint: 'Wrap a GROUP BY subquery, then apply LAG(total_amount) OVER (ORDER BY month) in the outer query.',
     seedQuery: `SELECT month,
        total_amount,
-       LAG(total_amount) OVER (ORDER BY month)                                           AS prev_month_amount,
-       ROUND(
-         (total_amount - LAG(total_amount) OVER (ORDER BY month))
-         / LAG(total_amount) OVER (ORDER BY month) * 100
-       , 2)                                                                               AS growth_pct
+       LAG(total_amount) OVER (ORDER BY month) AS prev_month_amount,
+        AS growth_pct
   FROM (
-    SELECT strftime('%Y-%m', transaction_date) AS month,
-           ROUND(SUM(amount), 2)               AS total_amount
+    SELECT  AS month,
+             AS total_amount
       FROM transactions
-     GROUP BY strftime('%Y-%m', transaction_date)
+     GROUP BY
   )
  ORDER BY month`,
     solutionQuery: `SELECT month,
@@ -776,18 +720,15 @@ Return \`month\`, \`total_amount\`, \`prev_month_amount\`, and \`growth_pct\` (r
 Return \`segment\`, \`account_count\`, and \`avg_balance\` (2dp), ordered by avg_balance descending.`,
     hint: 'Define a WITH high_balance AS (...) CTE that filters balance > 50000 and joins customers, then aggregate in the outer query.',
     seedQuery: `WITH high_balance AS (
-  SELECT a.account_id, a.balance, c.segment
+  SELECT
     FROM accounts a
-    JOIN customers c ON a.customer_id = c.customer_id
-   WHERE a.balance > 50000
-     AND a.status = 'Active'
+    JOIN customers c ON
+   WHERE
 )
-SELECT segment,
-       COUNT(*)                   AS account_count,
-       ROUND(AVG(balance), 2)     AS avg_balance
+SELECT
   FROM high_balance
- GROUP BY segment
- ORDER BY avg_balance DESC`,
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `WITH high_balance AS (
   SELECT a.account_id, a.balance, c.segment
     FROM accounts a
@@ -812,21 +753,14 @@ SELECT segment,
 Return \`customer_name\`, \`segment\`, \`principal_amount\`, \`interest_rate\`, \`risk_grade\`, and \`status\`, ordered by principal_amount descending.`,
     hint: 'Build a WITH at_risk AS (...) CTE joining loans and customers, filtering by status = Default OR risk_grade = D.',
     seedQuery: `WITH at_risk AS (
-  SELECT l.loan_id, l.principal_amount, l.interest_rate, l.risk_grade, l.status,
-         c.customer_name, c.segment
+  SELECT
     FROM loans l
-    JOIN customers c ON l.customer_id = c.customer_id
-   WHERE l.status = 'Default'
-      OR l.risk_grade = 'D'
+    JOIN customers c ON
+   WHERE
 )
-SELECT customer_name,
-       segment,
-       principal_amount,
-       interest_rate,
-       risk_grade,
-       status
+SELECT
   FROM at_risk
- ORDER BY principal_amount DESC`,
+ ORDER BY `,
     solutionQuery: `WITH at_risk AS (
   SELECT l.loan_id, l.principal_amount, l.interest_rate, l.risk_grade, l.status,
          c.customer_name, c.segment
@@ -853,13 +787,11 @@ SELECT customer_name,
 
 Return \`customer_name\`, \`balance\`, and \`quartile\`, ordered by balance descending.`,
     hint: 'Use NTILE(4) OVER (ORDER BY a.balance DESC) as quartile.',
-    seedQuery: `SELECT c.customer_name,
-       a.balance,
-       NTILE(4) OVER (ORDER BY a.balance DESC) AS quartile
+    seedQuery: `SELECT
   FROM accounts a
-  JOIN customers c ON a.customer_id = c.customer_id
- WHERE a.status = 'Active'
- ORDER BY a.balance DESC`,
+  JOIN customers c ON
+ WHERE
+ ORDER BY `,
     solutionQuery: `SELECT c.customer_name,
        a.balance,
        NTILE(4) OVER (ORDER BY a.balance DESC) AS quartile
@@ -882,13 +814,10 @@ Return \`account_id\`, \`transaction_date\`, \`amount\`, and \`merchant_category
        amount,
        merchant_category
   FROM (
-    SELECT account_id,
-           transaction_date,
-           amount,
-           merchant_category,
+    SELECT
            ROW_NUMBER() OVER (
-             PARTITION BY account_id
-                 ORDER BY transaction_date
+             PARTITION BY
+                 ORDER BY
            ) AS rn
       FROM transactions
   )
@@ -921,13 +850,10 @@ Return \`account_id\`, \`transaction_date\`, \`amount\`, and \`merchant_category
 
 Return \`account_id\`, \`customer_name\`, \`opened_date\`, and \`days_open\`, ordered by days_open descending.`,
     hint: 'Use CAST(julianday(\'2024-06-30\') - julianday(opened_date) AS INTEGER) AS days_open.',
-    seedQuery: `SELECT a.account_id,
-       c.customer_name,
-       a.opened_date,
-       CAST(julianday('2024-06-30') - julianday(a.opened_date) AS INTEGER) AS days_open
+    seedQuery: `SELECT
   FROM accounts a
-  JOIN customers c ON a.customer_id = c.customer_id
- ORDER BY days_open DESC`,
+  JOIN customers c ON
+ ORDER BY `,
     solutionQuery: `SELECT a.account_id,
        c.customer_name,
        a.opened_date,
@@ -945,20 +871,17 @@ Return \`account_id\`, \`customer_name\`, \`opened_date\`, and \`days_open\`, or
 
 Return \`transaction_id\`, \`customer_name\`, \`amount\`, and \`merchant_category\` for such transactions, ordered by amount descending. Limit 20 rows.`,
     hint: 'Use a correlated subquery in the WHERE clause: WHERE t.amount > (SELECT AVG(...) WHERE account belongs to same customer).',
-    seedQuery: `SELECT t.transaction_id,
-       c.customer_name,
-       t.amount,
-       t.merchant_category
+    seedQuery: `SELECT
   FROM transactions t
-  JOIN accounts a  ON t.account_id  = a.account_id
-  JOIN customers c ON a.customer_id = c.customer_id
+  JOIN accounts a  ON
+  JOIN customers c ON
  WHERE t.amount > (
-   SELECT AVG(t2.amount)
+   SELECT
      FROM transactions t2
-     JOIN accounts a2 ON t2.account_id = a2.account_id
-    WHERE a2.customer_id = a.customer_id
+     JOIN accounts a2 ON
+    WHERE
  )
- ORDER BY t.amount DESC
+ ORDER BY
  LIMIT 20`,
     solutionQuery: `SELECT t.transaction_id,
        c.customer_name,
@@ -985,17 +908,15 @@ Return \`transaction_id\`, \`customer_name\`, \`amount\`, and \`merchant_categor
 
 Return \`customer_name\`, \`segment\`, and \`credit_score\`, ordered by credit_score descending.`,
     hint: 'Use NOT IN with a subquery that finds customer_ids who have an Investment product in their accounts.',
-    seedQuery: `SELECT c.customer_name,
-       c.segment,
-       c.credit_score
+    seedQuery: `SELECT
   FROM customers c
  WHERE c.customer_id NOT IN (
-   SELECT DISTINCT a.customer_id
+   SELECT
      FROM accounts a
-     JOIN products p ON a.product_id = p.product_id
-    WHERE p.product_type = 'Investment'
+     JOIN products p ON
+    WHERE
  )
- ORDER BY c.credit_score DESC`,
+ ORDER BY `,
     solutionQuery: `SELECT c.customer_name,
        c.segment,
        c.credit_score
@@ -1026,25 +947,21 @@ Use two CTEs — one for account balances, one for transaction totals — then c
 Return \`customer_name\`, \`segment\`, \`total_balance\`, \`total_transacted\`, and \`estimated_ltv\` (2dp), ordered by estimated_ltv descending.`,
     hint: 'Define two CTEs: one summing balances per customer, one summing transaction amounts per customer. Join them in the final SELECT.',
     seedQuery: `WITH balance_totals AS (
-  SELECT customer_id, SUM(balance) AS total_balance
+  SELECT
     FROM accounts
-   GROUP BY customer_id
+   GROUP BY
 ),
 tx_totals AS (
-  SELECT a.customer_id, ROUND(SUM(t.amount), 2) AS total_transacted
+  SELECT
     FROM transactions t
-    JOIN accounts a ON t.account_id = a.account_id
-   GROUP BY a.customer_id
+    JOIN accounts a ON
+   GROUP BY
 )
-SELECT c.customer_name,
-       c.segment,
-       ROUND(bt.total_balance,    2) AS total_balance,
-       ROUND(tt.total_transacted, 2) AS total_transacted,
-       ROUND(bt.total_balance * 0.015 + tt.total_transacted * 0.001, 2) AS estimated_ltv
+SELECT
   FROM customers c
-  JOIN balance_totals bt ON c.customer_id = bt.customer_id
-  LEFT JOIN tx_totals tt ON c.customer_id = tt.customer_id
- ORDER BY estimated_ltv DESC`,
+  JOIN balance_totals bt ON
+  LEFT JOIN tx_totals tt ON
+ ORDER BY `,
     solutionQuery: `WITH balance_totals AS (
   SELECT customer_id, SUM(balance) AS total_balance
     FROM accounts
@@ -1076,22 +993,16 @@ SELECT c.customer_name,
 Return \`customer_name\`, \`segment\`, \`avg_transaction\`, \`largest_transaction\`, and \`anomaly_ratio\` (1dp) for customers meeting this threshold, ordered by anomaly_ratio descending.`,
     hint: 'Use a CTE to compute AVG and MAX per customer via a join chain, then filter in the outer query.',
     seedQuery: `WITH spend_stats AS (
-  SELECT a.customer_id,
-         ROUND(AVG(t.amount), 2) AS avg_tx,
-         MAX(t.amount)           AS max_tx
+  SELECT
     FROM transactions t
-    JOIN accounts a ON t.account_id = a.account_id
-   GROUP BY a.customer_id
+    JOIN accounts a ON
+   GROUP BY
 )
-SELECT c.customer_name,
-       c.segment,
-       s.avg_tx                              AS avg_transaction,
-       s.max_tx                              AS largest_transaction,
-       ROUND(s.max_tx / s.avg_tx, 1)         AS anomaly_ratio
+SELECT
   FROM customers c
-  JOIN spend_stats s ON c.customer_id = s.customer_id
- WHERE s.max_tx > s.avg_tx * 3
- ORDER BY anomaly_ratio DESC`,
+  JOIN spend_stats s ON
+ WHERE
+ ORDER BY `,
     solutionQuery: `WITH spend_stats AS (
   SELECT a.customer_id,
          ROUND(AVG(t.amount), 2) AS avg_tx,
@@ -1120,13 +1031,10 @@ SELECT c.customer_name,
 Aggregate daily debit totals, then compute a 30-day rolling sum using a window frame. Return \`transaction_date\`, \`daily_amount\`, and \`rolling_30d\` (rounded to 2dp), ordered by date. Limit to 30 rows.`,
     hint: 'GROUP BY date first for daily_amount, then use SUM(...) OVER (ORDER BY transaction_date ROWS BETWEEN 29 PRECEDING AND CURRENT ROW).',
     seedQuery: `SELECT transaction_date,
-       ROUND(SUM(amount), 2)        AS daily_amount,
-       ROUND(SUM(SUM(amount)) OVER (
-         ORDER BY transaction_date
-         ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
-       ), 2)                         AS rolling_30d
+        AS daily_amount,
+        AS rolling_30d
   FROM transactions
- WHERE transaction_type = 'Debit'
+ WHERE
  GROUP BY transaction_date
  ORDER BY transaction_date
  LIMIT 30`,
@@ -1155,9 +1063,9 @@ Return \`month_num\` and \`remaining_balance\` (2dp) for months 1 through 12.`,
   SELECT 1, 380000.0
   UNION ALL
   SELECT month_num + 1,
-         ROUND(balance * (1.0 + 0.025 / 12) - 1760.0, 2)
+
     FROM schedule
-   WHERE month_num < 12
+   WHERE
 )
 SELECT month_num,
        balance AS remaining_balance
@@ -1185,17 +1093,14 @@ Return \`cohort_year\`, \`customers_acquired\`, \`total_accounts\`, and \`avg_ba
     hint: 'Use strftime(\'%Y\', join_date) to extract the cohort year, then aggregate with a join to accounts.',
     seedQuery: `WITH cohorts AS (
   SELECT customer_id,
-         strftime('%Y', join_date) AS cohort_year
+          AS cohort_year
     FROM customers
 )
-SELECT c.cohort_year,
-       COUNT(DISTINCT c.customer_id)                            AS customers_acquired,
-       COUNT(a.account_id)                                      AS total_accounts,
-       ROUND(SUM(a.balance) / COUNT(DISTINCT c.customer_id), 2) AS avg_balance_per_customer
+SELECT
   FROM cohorts c
-  JOIN accounts a ON c.customer_id = a.customer_id
- GROUP BY c.cohort_year
- ORDER BY c.cohort_year`,
+  JOIN accounts a ON
+ GROUP BY
+ ORDER BY `,
     solutionQuery: `WITH cohorts AS (
   SELECT customer_id,
          strftime('%Y', join_date) AS cohort_year
@@ -1222,24 +1127,17 @@ Use two CTEs — one for per-grade totals, one for the portfolio grand total —
 Return \`risk_grade\`, \`loan_count\`, \`total_exposure\`, \`avg_rate\` (2dp), and \`portfolio_pct\` (1dp), ordered by risk_grade.`,
     hint: 'First CTE groups by risk_grade. Second CTE selects the grand total. Cross-join them in the final SELECT to compute the percentage.',
     seedQuery: `WITH grade_totals AS (
-  SELECT risk_grade,
-         COUNT(*)                        AS loan_count,
-         ROUND(SUM(principal_amount), 0) AS total_exposure,
-         ROUND(AVG(interest_rate), 2)    AS avg_rate
+  SELECT
     FROM loans
-   GROUP BY risk_grade
+   GROUP BY
 ),
 portfolio AS (
-  SELECT SUM(principal_amount) AS grand_total
+  SELECT
     FROM loans
 )
-SELECT g.risk_grade,
-       g.loan_count,
-       g.total_exposure,
-       g.avg_rate,
-       ROUND(g.total_exposure * 100.0 / p.grand_total, 1) AS portfolio_pct
+SELECT
   FROM grade_totals g, portfolio p
- ORDER BY g.risk_grade`,
+ ORDER BY `,
     solutionQuery: `WITH grade_totals AS (
   SELECT risk_grade,
          COUNT(*)                        AS loan_count,
@@ -1272,30 +1170,23 @@ Use two CTEs (last_tx and dormant_check) and a LEFT JOIN to combine signals.
 Return \`customer_name\`, \`segment\`, \`join_date\`, \`last_transaction\`, and \`dormant_accounts\`, ordered by segment then customer_name.`,
     hint: 'CTE 1: MAX transaction date per customer. CTE 2: COUNT dormant accounts per customer. Join both to customers with LEFT JOIN, filter in WHERE.',
     seedQuery: `WITH last_tx AS (
-  SELECT a.customer_id,
-         MAX(t.transaction_date) AS last_transaction
+  SELECT
     FROM transactions t
-    JOIN accounts a ON t.account_id = a.account_id
-   GROUP BY a.customer_id
+    JOIN accounts a ON
+   GROUP BY
 ),
 dormant_check AS (
-  SELECT customer_id,
-         COUNT(*) AS dormant_accounts
+  SELECT
     FROM accounts
-   WHERE status = 'Dormant'
-   GROUP BY customer_id
+   WHERE
+   GROUP BY
 )
-SELECT c.customer_name,
-       c.segment,
-       c.join_date,
-       lt.last_transaction,
-       COALESCE(dc.dormant_accounts, 0) AS dormant_accounts
+SELECT
   FROM customers c
-  LEFT JOIN last_tx       lt ON c.customer_id = lt.customer_id
-  LEFT JOIN dormant_check dc ON c.customer_id = dc.customer_id
- WHERE COALESCE(dc.dormant_accounts, 0) > 0
-    OR lt.last_transaction < '2024-03-01'
- ORDER BY c.segment, c.customer_name`,
+  LEFT JOIN last_tx       lt ON
+  LEFT JOIN dormant_check dc ON
+ WHERE
+ ORDER BY `,
     solutionQuery: `WITH last_tx AS (
   SELECT a.customer_id,
          MAX(t.transaction_date) AS last_transaction
@@ -1332,17 +1223,11 @@ SELECT c.customer_name,
 
 Return \`loan_id\`, \`customer_name\`, \`principal_amount\`, \`interest_rate\`, \`term_months\`, \`total_interest\` (2dp), and \`total_repayment\` (2dp), ordered by total_interest descending. Limit 10.`,
     hint: 'Calculate total_interest as ROUND(principal * rate / 100.0 / 12 * term_months, 2) and total_repayment as principal + that value.',
-    seedQuery: `SELECT l.loan_id,
-       c.customer_name,
-       l.principal_amount,
-       l.interest_rate,
-       l.term_months,
-       ROUND(l.principal_amount * l.interest_rate / 100.0 / 12 * l.term_months, 2) AS total_interest,
-       ROUND(l.principal_amount + l.principal_amount * l.interest_rate / 100.0 / 12 * l.term_months, 2) AS total_repayment
+    seedQuery: `SELECT
   FROM loans l
-  JOIN customers c ON l.customer_id = c.customer_id
- WHERE l.status = 'Active'
- ORDER BY total_interest DESC
+  JOIN customers c ON
+ WHERE
+ ORDER BY
  LIMIT 10`,
     solutionQuery: `SELECT l.loan_id,
        c.customer_name,
@@ -1371,26 +1256,15 @@ Return \`transaction_id\`, \`account_id\`, \`amount\`, \`merchant_category\`, \`
     seedQuery: `WITH account_stats AS (
   SELECT account_id,
          AVG(amount) AS avg_amt,
-         SUM((amount - (SELECT AVG(a2.amount) FROM transactions a2 WHERE a2.account_id = transactions.account_id))
-           * (amount - (SELECT AVG(a2.amount) FROM transactions a2 WHERE a2.account_id = transactions.account_id)))
-           / COUNT(*) AS variance
+          AS variance
     FROM transactions
    GROUP BY account_id
 )
-SELECT t.transaction_id,
-       t.account_id,
-       t.amount,
-       t.merchant_category,
-       ROUND(s.avg_amt, 2) AS account_avg,
-       CASE WHEN s.variance > 0
-            THEN ROUND((t.amount - s.avg_amt) / SQRT(s.variance), 2)
-            ELSE 0
-       END AS z_score
+SELECT
   FROM transactions t
-  JOIN account_stats s ON t.account_id = s.account_id
- WHERE s.variance > 0
-   AND ABS((t.amount - s.avg_amt) / SQRT(s.variance)) > 1.5
- ORDER BY z_score DESC
+  JOIN account_stats s ON
+ WHERE
+ ORDER BY
  LIMIT 15`,
     solutionQuery: `WITH account_stats AS (
   SELECT account_id,
@@ -1434,14 +1308,14 @@ Return these columns:
 - \`salary_inflow_sgd\` (rounded)`,
     hint: 'Use scalar subqueries in the SELECT list — each subquery computes one KPI. No FROM or GROUP BY needed in the outer query.',
     seedQuery: `SELECT
-  (SELECT COUNT(*)          FROM customers)                                                             AS total_customers,
-  (SELECT COUNT(*)          FROM accounts        WHERE status = 'Active')                              AS active_accounts,
-  (SELECT ROUND(SUM(balance), 0) FROM accounts   WHERE status = 'Active')                             AS total_deposits_sgd,
-  (SELECT ROUND(SUM(principal_amount), 0) FROM loans WHERE status = 'Active')                         AS total_loans_sgd,
-  (SELECT ROUND(SUM(balance), 0) FROM accounts WHERE status = 'Active')
-    - (SELECT ROUND(SUM(principal_amount), 0) FROM loans WHERE status = 'Active')                     AS net_position_sgd,
-  (SELECT COUNT(*) FROM transactions WHERE transaction_date >= '2024-06-01')                           AS june_transactions,
-  (SELECT ROUND(SUM(amount), 0) FROM transactions WHERE merchant_category = 'Salary Credit')          AS salary_inflow_sgd`,
+  (SELECT  FROM customers)                      AS total_customers,
+  (SELECT  FROM accounts   WHERE )              AS active_accounts,
+  (SELECT  FROM accounts   WHERE )              AS total_deposits_sgd,
+  (SELECT  FROM loans      WHERE )              AS total_loans_sgd,
+  (SELECT  FROM accounts   WHERE )
+    - (SELECT  FROM loans   WHERE )             AS net_position_sgd,
+  (SELECT  FROM transactions WHERE )            AS june_transactions,
+  (SELECT  FROM transactions WHERE )            AS salary_inflow_sgd`,
     solutionQuery: `SELECT
   (SELECT COUNT(*)          FROM customers)                                                             AS total_customers,
   (SELECT COUNT(*)          FROM accounts        WHERE status = 'Active')                              AS active_accounts,
