@@ -23,7 +23,7 @@ export default function GameProvider() {
   const [dimensions, setDimensions]             = useState({ width: 0, height: 0 });
   const [activeRightTab, setActiveRightTab]     = useState<'schema' | 'data'>('schema');
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
-  const { currentLevel } = useGameStore();
+  const { currentLevel, totalXp, currentStreak } = useGameStore();
 
   useEffect(() => {
     setIsClient(true);
@@ -127,7 +127,35 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 55</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 57</span>
+
+          {/* XP bar */}
+          <div className="flex items-center gap-1.5">
+            <span style={{ color: 'var(--lcb-muted)' }}>XP</span>
+            <span style={{ color: 'var(--lcb-gold)' }}>{totalXp}</span>
+            <div className="w-16 h-1 overflow-hidden" style={{ background: 'var(--lcb-border)', borderRadius: 2 }}>
+              <div
+                className="h-full transition-all duration-500"
+                style={{
+                  width: `${((totalXp % 100) / 100) * 100}%`,
+                  background: 'var(--lcb-gold)',
+                  borderRadius: 2,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Streak */}
+          {currentStreak > 0 && (
+            <div
+              className="flex items-center gap-1 px-1.5 py-0.5"
+              style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: 3 }}
+            >
+              <span style={{ fontSize: 10 }}>🔥</span>
+              <span style={{ color: '#f97316', fontWeight: 600 }}>{currentStreak}</span>
+            </div>
+          )}
+
           <span className="w-1 h-1 rounded-full inline-block" style={{ background: 'var(--lcb-green)' }} />
           <span style={{ color: 'var(--lcb-green)' }}>LIVE</span>
         </div>

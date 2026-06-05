@@ -1507,4 +1507,97 @@ SELECT port,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // SENIOR DS PATTERNS (Levels 56–57)
+  // Moving average with explicit window frame; top-N per group
+  // ============================================================
+  {
+    id: 56,
+    title: 'Voyage Revenue 7-Day Moving Average',
+    description: `Treasury's Risk desk needs a rolling 7-voyage moving average of daily cargo revenue to smooth out scheduling noise and spot revenue trends.
+
+Step 1: Use a CTE to compute \`daily_revenue_usd\` by grouping \`cargo_shipments\` by \`departure_date\`.
+Step 2: Apply \`AVG(daily_revenue_usd) OVER (ORDER BY departure_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)\` in the outer SELECT.
+
+Return \`departure_date\`, \`daily_revenue_usd\`, and \`revenue_7d_avg_usd\` (rounded to 0 dp), ordered by \`departure_date\`.`,
+    hint: 'Use WITH daily AS (SELECT departure_date, ROUND(SUM(cargo_value_usd),0) ... GROUP BY departure_date), then in the outer SELECT apply AVG(...) OVER (ORDER BY departure_date ROWS BETWEEN 6 PRECEDING AND CURRENT ROW).',
+    seedQuery: `WITH daily AS (
+  SELECT departure_date,
+         ROUND(SUM(cargo_value_usd), 0) AS daily_revenue_usd
+    FROM cargo_shipments
+   GROUP BY
+)
+SELECT departure_date,
+       daily_revenue_usd,
+        AS revenue_7d_avg_usd
+  FROM daily
+ ORDER BY departure_date`,
+    solutionQuery: `WITH daily AS (
+  SELECT departure_date,
+         ROUND(SUM(cargo_value_usd), 0) AS daily_revenue_usd
+    FROM cargo_shipments
+   GROUP BY departure_date
+)
+SELECT departure_date,
+       daily_revenue_usd,
+       ROUND(AVG(daily_revenue_usd) OVER (
+         ORDER BY departure_date
+         ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+       ), 0) AS revenue_7d_avg_usd
+  FROM daily
+ ORDER BY departure_date`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+  {
+    id: 57,
+    title: 'Top-2 Voyages per Cargo Type',
+    description: `The Fleet Analytics team wants to spotlight the two highest-value voyages for every cargo category — a classic top-N-per-group pattern used in product analytics and portfolio reporting.
+
+Use a CTE with \`DENSE_RANK() OVER (PARTITION BY cargo_type ORDER BY cargo_value_usd DESC)\`, join to \`vessels\` for the vessel name, then filter in the outer query where \`revenue_rank <= 2\`.
+
+Return \`cargo_type\`, \`vessel_name\`, \`cargo_value_usd\`, \`departure_date\`, and \`revenue_rank\`, ordered by \`cargo_type\` then \`revenue_rank\`.`,
+    hint: 'CTE: JOIN cargo_shipments s to vessels v ON vessel_id, compute DENSE_RANK() OVER (PARTITION BY s.cargo_type ORDER BY s.cargo_value_usd DESC) AS revenue_rank. Outer query: SELECT ... WHERE revenue_rank <= 2.',
+    seedQuery: `WITH ranked_voyages AS (
+  SELECT s.shipment_id,
+         v.vessel_name,
+         s.cargo_type,
+         s.cargo_value_usd,
+         s.departure_date,
+         DENSE_RANK() OVER (
+           PARTITION BY
+               ORDER BY
+         ) AS revenue_rank
+    FROM cargo_shipments s
+    JOIN vessels v ON
+)
+SELECT cargo_type, vessel_name, cargo_value_usd, departure_date, revenue_rank
+  FROM ranked_voyages
+ WHERE
+ ORDER BY cargo_type, revenue_rank`,
+    solutionQuery: `WITH ranked_voyages AS (
+  SELECT s.shipment_id,
+         v.vessel_name,
+         s.cargo_type,
+         s.cargo_value_usd,
+         s.departure_date,
+         DENSE_RANK() OVER (
+           PARTITION BY s.cargo_type
+               ORDER BY s.cargo_value_usd DESC
+         ) AS revenue_rank
+    FROM cargo_shipments s
+    JOIN vessels v ON s.vessel_id = v.vessel_id
+)
+SELECT cargo_type,
+       vessel_name,
+       cargo_value_usd,
+       departure_date,
+       revenue_rank
+  FROM ranked_voyages
+ WHERE revenue_rank <= 2
+ ORDER BY cargo_type, revenue_rank`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

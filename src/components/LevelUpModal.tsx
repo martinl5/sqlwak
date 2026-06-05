@@ -18,7 +18,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   20: 'Unlock JOINs and multi-table aggregation',
   30: 'Master GROUP BY, HAVING and subqueries',
   40: 'Command CTEs and window functions',
-  50: 'Reach Advanced window analytics',
+  50: 'Tackle the Maritime Trade Finance division',
+  57: 'Senior DS patterns: moving averages, top-N, cohort analysis',
 };
 
 export default function LevelUpModal() {
@@ -49,7 +50,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, currentLevel]);
 
-  const nextHintKey = [10, 20, 30, 40, 50].find((k) => currentLevel < k) ?? 50;
+  const nextHintKey = [10, 20, 30, 40, 50, 57].find((k) => currentLevel < k) ?? 57;
 
   return (
     <AnimatePresence>
@@ -160,7 +161,7 @@ export default function LevelUpModal() {
             </motion.div>
 
             {/* Next level hint */}
-            {currentLevel < 50 && (
+            {currentLevel < 57 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
