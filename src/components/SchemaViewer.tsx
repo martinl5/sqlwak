@@ -94,6 +94,48 @@ const SCHEMA: Record<string, TableSchema> = {
     ],
     sample: 'SELECT * FROM loans;',
   },
+  vessels: {
+    description: 'Merchant vessels financed by LCB Trade Finance division',
+    columns: [
+      { name: 'vessel_id',         type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'vessel_name',       type: 'TEXT',    description: 'Vessel name (e.g. MV Lion Prosperity)' },
+      { name: 'vessel_type',       type: 'TEXT',    description: 'Container / Bulk Carrier / Tanker / RORO' },
+      { name: 'flag_state',        type: 'TEXT',    description: 'Flag registry (SGP / PAN / LBR / MHL / BHS)' },
+      { name: 'dwt_tonnes',        type: 'INTEGER', description: 'Deadweight tonnage (cargo capacity)' },
+      { name: 'year_built',        type: 'INTEGER', description: 'Year of construction' },
+      { name: 'owner_customer_id', type: 'INTEGER', description: 'FK → customers (nullable)', foreignKey: 'customers.customer_id' },
+    ],
+    sample: 'SELECT * FROM vessels;',
+  },
+  cargo_shipments: {
+    description: 'Individual cargo voyages on LCB-financed vessels',
+    columns: [
+      { name: 'shipment_id',      type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'vessel_id',        type: 'INTEGER', description: 'FK → vessels', foreignKey: 'vessels.vessel_id' },
+      { name: 'origin_port',      type: 'TEXT',    description: 'Departure port (e.g. Singapore, Port Klang)' },
+      { name: 'destination_port', type: 'TEXT',    description: 'Arrival port (e.g. Rotterdam, Shanghai)' },
+      { name: 'cargo_type',       type: 'TEXT',    description: 'Electronics / Crude Oil / Grain / Steel / Chemicals / Consumer Goods' },
+      { name: 'cargo_value_usd',  type: 'REAL',    description: 'Declared cargo value (USD)' },
+      { name: 'departure_date',   type: 'TEXT',    description: 'Date vessel departed (YYYY-MM-DD)' },
+      { name: 'arrival_date',     type: 'TEXT',    description: 'Date vessel arrived — NULL if still at sea' },
+      { name: 'status',           type: 'TEXT',    description: 'In Transit / Arrived / Delayed' },
+    ],
+    sample: 'SELECT * FROM cargo_shipments LIMIT 5;',
+  },
+  trade_finance_facilities: {
+    description: 'LCB trade finance credit lines tied to customers and vessels',
+    columns: [
+      { name: 'facility_id',     type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'customer_id',     type: 'INTEGER', description: 'FK → customers', foreignKey: 'customers.customer_id' },
+      { name: 'vessel_id',       type: 'INTEGER', description: 'FK → vessels (nullable)', foreignKey: 'vessels.vessel_id' },
+      { name: 'facility_type',   type: 'TEXT',    description: 'Letter of Credit / Shipping Guarantee / Trade Loan / Bills Discount' },
+      { name: 'facility_amount', type: 'REAL',    description: 'Total approved facility (USD)' },
+      { name: 'utilised_amount', type: 'REAL',    description: 'Amount currently drawn down (USD)' },
+      { name: 'expiry_date',     type: 'TEXT',    description: 'Facility expiry date (YYYY-MM-DD)' },
+      { name: 'status',          type: 'TEXT',    description: 'Active / Expired / Cancelled' },
+    ],
+    sample: 'SELECT * FROM trade_finance_facilities;',
+  },
 };
 
 export default function SchemaViewer() {
@@ -216,7 +258,7 @@ export default function SchemaViewer() {
         className="px-3 py-2 text-xs"
         style={{ borderTop: '1px solid var(--lcb-border)', color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)', background: 'var(--lcb-panel-2)' }}
       >
-        {Object.keys(SCHEMA).length} tables · Click table to expand · Click query to copy
+        {Object.keys(SCHEMA).length} tables · Click to expand · Click query to copy
       </div>
     </div>
   );
