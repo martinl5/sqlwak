@@ -127,7 +127,7 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 50</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 55</span>
           <span className="w-1 h-1 rounded-full inline-block" style={{ background: 'var(--lcb-green)' }} />
           <span style={{ color: 'var(--lcb-green)' }}>LIVE</span>
         </div>

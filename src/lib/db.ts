@@ -297,6 +297,136 @@ async function seedDatabase(database: Database): Promise<void> {
     );
   }
 
+  // ── Vessels ───────────────────────────────────────────────────────────────
+  database.run(`
+    CREATE TABLE IF NOT EXISTS vessels (
+      vessel_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      vessel_name       TEXT    NOT NULL,
+      vessel_type       TEXT    NOT NULL,
+      flag_state        TEXT    NOT NULL,
+      dwt_tonnes        INTEGER NOT NULL,
+      year_built        INTEGER NOT NULL,
+      owner_customer_id INTEGER,
+      FOREIGN KEY (owner_customer_id) REFERENCES customers(customer_id)
+    );
+  `);
+
+  // ── Cargo Shipments ───────────────────────────────────────────────────────
+  database.run(`
+    CREATE TABLE IF NOT EXISTS cargo_shipments (
+      shipment_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+      vessel_id        INTEGER NOT NULL,
+      origin_port      TEXT    NOT NULL,
+      destination_port TEXT    NOT NULL,
+      cargo_type       TEXT    NOT NULL,
+      cargo_value_usd  REAL    NOT NULL,
+      departure_date   TEXT    NOT NULL,
+      arrival_date     TEXT,
+      status           TEXT    NOT NULL,
+      FOREIGN KEY (vessel_id) REFERENCES vessels(vessel_id)
+    );
+  `);
+
+  // ── Trade Finance Facilities ──────────────────────────────────────────────
+  database.run(`
+    CREATE TABLE IF NOT EXISTS trade_finance_facilities (
+      facility_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id     INTEGER NOT NULL,
+      vessel_id       INTEGER,
+      facility_type   TEXT    NOT NULL,
+      facility_amount REAL    NOT NULL,
+      utilised_amount REAL    NOT NULL,
+      expiry_date     TEXT    NOT NULL,
+      status          TEXT    NOT NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
+      FOREIGN KEY (vessel_id)   REFERENCES vessels(vessel_id)
+    );
+  `);
+
+  // ── Seed: Vessels ──────────────────────────────────────────────────────────
+  const vesselData = [
+    { name: 'MV Lion Prosperity',  type: 'Container',    flag: 'SGP', dwt: 45000, built: 2018, owner: 6  },
+    { name: 'MV Straits Eagle',    type: 'Bulk Carrier', flag: 'SGP', dwt: 75000, built: 2015, owner: 9  },
+    { name: 'MV Marina Star',      type: 'Tanker',       flag: 'SGP', dwt: 55000, built: 2020, owner: 14 },
+    { name: 'MV Pacific Triumph',  type: 'Container',    flag: 'PAN', dwt: 62000, built: 2017, owner: 19 },
+    { name: 'MV Golden Lion',      type: 'RORO',         flag: 'SGP', dwt: 28000, built: 2019, owner: 4  },
+    { name: 'MV Harbour Grace',    type: 'Bulk Carrier', flag: 'SGP', dwt: 82000, built: 2014, owner: 17 },
+    { name: 'MV Ocean Venture',    type: 'Container',    flag: 'LBR', dwt: 50000, built: 2016, owner: null },
+    { name: 'MV Coral Princess',   type: 'Tanker',       flag: 'MHL', dwt: 40000, built: 2021, owner: null },
+    { name: 'MV Trade Winds',      type: 'Bulk Carrier', flag: 'PAN', dwt: 68000, built: 2013, owner: null },
+    { name: 'MV Eastern Promise',  type: 'Container',    flag: 'BHS', dwt: 35000, built: 2022, owner: null },
+    { name: 'MV Raffles Mariner',  type: 'RORO',         flag: 'SGP', dwt: 22000, built: 2023, owner: 6  },
+    { name: 'MV Sentosa Spirit',   type: 'Tanker',       flag: 'SGP', dwt: 48000, built: 2012, owner: 9  },
+  ];
+  vesselData.forEach(v =>
+    database.run(
+      `INSERT INTO vessels (vessel_name, vessel_type, flag_state, dwt_tonnes, year_built, owner_customer_id) VALUES (?, ?, ?, ?, ?, ?)`,
+      [v.name, v.type, v.flag, v.dwt, v.built, v.owner]
+    )
+  );
+
+  // ── Seed: Cargo Shipments ─────────────────────────────────────────────────
+  type ShipmentRow = [number, string, string, string, number, string, string | null, string];
+  const shipmentData: ShipmentRow[] = [
+    [1,  'Singapore',        'Rotterdam',      'Electronics',    2500000, '2024-01-05', '2024-02-15', 'Arrived'   ],
+    [2,  'Port Klang',       'Shanghai',       'Grain',           800000, '2024-01-10', '2024-01-25', 'Arrived'   ],
+    [3,  'Singapore',        'Dubai',          'Crude Oil',      4200000, '2024-01-15', '2024-02-28', 'Arrived'   ],
+    [4,  'Bangkok',          'Los Angeles',    'Consumer Goods', 1800000, '2024-02-01', '2024-03-20', 'Arrived'   ],
+    [5,  'Jakarta',          'Sydney',         'Steel',           950000, '2024-02-10', null,          'Delayed'   ],
+    [6,  'Singapore',        'Hamburg',        'Grain',          1100000, '2024-02-15', '2024-04-01', 'Arrived'   ],
+    [7,  'Ho Chi Minh City', 'Rotterdam',      'Electronics',    3200000, '2024-02-20', '2024-04-10', 'Arrived'   ],
+    [8,  'Singapore',        'Busan',          'Crude Oil',      5100000, '2024-03-01', '2024-03-10', 'Arrived'   ],
+    [9,  'Port Klang',       'Dubai',          'Steel',          1400000, '2024-03-05', null,          'In Transit'],
+    [10, 'Bangkok',          'Sydney',         'Consumer Goods',  760000, '2024-03-10', '2024-04-05', 'Arrived'   ],
+    [1,  'Singapore',        'Shanghai',       'Electronics',    2100000, '2024-03-15', '2024-03-28', 'Arrived'   ],
+    [2,  'Jakarta',          'Busan',          'Grain',           620000, '2024-03-20', '2024-03-30', 'Arrived'   ],
+    [3,  'Singapore',        'Los Angeles',    'Crude Oil',      6800000, '2024-04-01', null,          'Delayed'   ],
+    [4,  'Ho Chi Minh City', 'Hamburg',        'Consumer Goods', 2300000, '2024-04-05', '2024-05-25', 'Arrived'   ],
+    [5,  'Port Klang',       'Rotterdam',      'Steel',          1700000, '2024-04-10', '2024-05-30', 'Arrived'   ],
+    [11, 'Singapore',        'Sydney',         'Consumer Goods',  890000, '2024-04-15', '2024-05-20', 'Arrived'   ],
+    [12, 'Singapore',        'Dubai',          'Crude Oil',      7200000, '2024-04-20', null,          'In Transit'],
+    [6,  'Bangkok',          'Shanghai',       'Grain',           740000, '2024-04-25', '2024-05-10', 'Arrived'   ],
+    [7,  'Jakarta',          'Busan',          'Electronics',    1950000, '2024-05-01', '2024-05-15', 'Arrived'   ],
+    [8,  'Singapore',        'Rotterdam',      'Crude Oil',      8500000, '2024-05-05', null,          'In Transit'],
+    [9,  'Ho Chi Minh City', 'Los Angeles',    'Steel',          2800000, '2024-05-10', null,          'Delayed'   ],
+    [10, 'Port Klang',       'Busan',          'Consumer Goods',  430000, '2024-05-15', '2024-05-25', 'Arrived'   ],
+    [1,  'Singapore',        'Hamburg',        'Electronics',    3100000, '2024-05-20', null,          'In Transit'],
+    [2,  'Bangkok',          'Dubai',          'Grain',           550000, '2024-05-25', '2024-06-10', 'Arrived'   ],
+    [3,  'Singapore',        'Sydney',         'Crude Oil',      4900000, '2024-06-01', null,          'In Transit'],
+  ];
+  shipmentData.forEach(([vid, orig, dest, cargo, val, dep, arr, stat]) =>
+    database.run(
+      `INSERT INTO cargo_shipments (vessel_id, origin_port, destination_port, cargo_type, cargo_value_usd, departure_date, arrival_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [vid, orig, dest, cargo, val, dep, arr, stat]
+    )
+  );
+
+  // ── Seed: Trade Finance Facilities ────────────────────────────────────────
+  type FacilityRow = [number, number | null, string, number, number, string, string];
+  const facilityData: FacilityRow[] = [
+    [6,  1,    'Letter of Credit',   5000000, 4200000, '2024-12-31', 'Active'  ],
+    [9,  2,    'Shipping Guarantee', 2000000, 1850000, '2024-09-30', 'Active'  ],
+    [14, 3,    'Trade Loan',         3500000, 2100000, '2025-03-31', 'Active'  ],
+    [19, 4,    'Letter of Credit',   4200000, 3800000, '2024-08-31', 'Active'  ],
+    [4,  5,    'Bills Discount',     1500000,  750000, '2024-11-30', 'Active'  ],
+    [17, 6,    'Trade Loan',         6000000, 5400000, '2025-01-31', 'Active'  ],
+    [6,  11,   'Shipping Guarantee',  800000,  600000, '2024-07-31', 'Active'  ],
+    [9,  12,   'Letter of Credit',   3200000, 2400000, '2024-10-31', 'Active'  ],
+    [14, null, 'Bills Discount',     1800000,  900000, '2025-06-30', 'Active'  ],
+    [19, null, 'Trade Loan',         2500000, 1250000, '2025-02-28', 'Active'  ],
+    [4,  null, 'Letter of Credit',   2000000, 2000000, '2023-12-31', 'Expired' ],
+    [17, null, 'Shipping Guarantee', 4500000,       0, '2023-09-30', 'Expired' ],
+    [1,  null, 'Bills Discount',      500000,  450000, '2024-12-31', 'Active'  ],
+    [16, null, 'Trade Loan',          750000,  300000, '2025-03-31', 'Active'  ],
+    [3,  null, 'Letter of Credit',   1200000,  800000, '2024-11-30', 'Active'  ],
+  ];
+  facilityData.forEach(([cid, vid, ftype, famount, utilised, expiry, fstatus]) =>
+    database.run(
+      `INSERT INTO trade_finance_facilities (customer_id, vessel_id, facility_type, facility_amount, utilised_amount, expiry_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [cid, vid, ftype, famount, utilised, expiry, fstatus]
+    )
+  );
+
   // ── Indexes ───────────────────────────────────────────────────────────────
   database.run('CREATE INDEX IF NOT EXISTS idx_accounts_customer  ON accounts(customer_id)');
   database.run('CREATE INDEX IF NOT EXISTS idx_accounts_product   ON accounts(product_id)');
@@ -308,6 +438,11 @@ async function seedDatabase(database: Database): Promise<void> {
   database.run('CREATE INDEX IF NOT EXISTS idx_loans_customer     ON loans(customer_id)');
   database.run('CREATE INDEX IF NOT EXISTS idx_loans_status       ON loans(status)');
   database.run('CREATE INDEX IF NOT EXISTS idx_customers_segment  ON customers(segment)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_vessels_type       ON vessels(vessel_type)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_shipments_vessel   ON cargo_shipments(vessel_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_shipments_status   ON cargo_shipments(status)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_tff_customer       ON trade_finance_facilities(customer_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_tff_status         ON trade_finance_facilities(status)');
 }
 
 export function executeQuery(sql: string): { columns: string[]; values: unknown[][] } {
