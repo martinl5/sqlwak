@@ -25,6 +25,15 @@ export default function GameProvider() {
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
   const { currentLevel, totalXp, currentStreak } = useGameStore();
 
+  // Career-rank progression — mirrors a senior-DS ladder (Analyst → MD).
+  const getRankInfo = (pts: number) => {
+    if (pts < 1000) return { name: 'Analyst',           progress: pts / 1000,          xpToNext: 1000 - pts, nextName: 'Senior Analyst' };
+    if (pts < 3000) return { name: 'Senior Analyst',    progress: (pts - 1000) / 2000, xpToNext: 3000 - pts, nextName: 'VP Analytics'   };
+    if (pts < 7000) return { name: 'VP Analytics',      progress: (pts - 3000) / 4000, xpToNext: 7000 - pts, nextName: 'MD'             };
+    return                 { name: 'Managing Director', progress: 1,                   xpToNext: 0,          nextName: ''               };
+  };
+  const rank = getRankInfo(totalXp);
+
   useEffect(() => {
     setIsClient(true);
     setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -129,20 +138,23 @@ export default function GameProvider() {
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
           <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 57</span>
 
-          {/* XP bar */}
-          <div className="flex items-center gap-1.5">
-            <span style={{ color: 'var(--lcb-muted)' }}>XP</span>
+          {/* Rank + XP progress bar */}
+          <div className="flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
+            <span style={{ color: 'var(--lcb-muted)' }}>{rank.name}</span>
             <span style={{ color: 'var(--lcb-gold)' }}>{totalXp}</span>
             <div className="w-16 h-1 overflow-hidden" style={{ background: 'var(--lcb-border)', borderRadius: 2 }}>
               <div
                 className="h-full transition-all duration-500"
                 style={{
-                  width: `${((totalXp % 100) / 100) * 100}%`,
+                  width: `${Math.round(rank.progress * 100)}%`,
                   background: 'var(--lcb-gold)',
                   borderRadius: 2,
                 }}
               />
             </div>
+            {rank.xpToNext > 0 && (
+              <span style={{ color: 'var(--lcb-muted)', opacity: 0.7 }}>→ {rank.nextName}</span>
+            )}
           </div>
 
           {/* Streak */}
