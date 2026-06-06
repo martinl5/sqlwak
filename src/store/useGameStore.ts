@@ -7,24 +7,28 @@ interface GameState {
   currentLevel: number;
   completedLevels: number[];
   levelHistory: number[]; // Track all visited levels for back navigation
-  
+
+  // Gamification
+  totalXp: number;
+  currentStreak: number;
+
   // Flock
   boids: Boid[];
   flockSize: number;
-  
+
   // Query state
   queryResult: QueryResult | null;
   error: string | null;
   isExecuting: boolean;
   hasAttemptedCurrent: boolean;
-  
+
   // UI state
   showLevelUp: boolean;
   lastSpawnedBird: { x: number; y: number } | null;
-  
+
   // User
   userName: string | null;
-  
+
   // Actions
   setCurrentLevel: (level: number) => void;
   completeLevel: (level: number) => void;
@@ -47,6 +51,8 @@ export const useGameStore = create<GameState>()(
       currentLevel: 1,
       completedLevels: [],
       levelHistory: [],
+      totalXp: 0,
+      currentStreak: 0,
       boids: [],
       flockSize: 0,
       queryResult: null,
@@ -68,14 +74,19 @@ export const useGameStore = create<GameState>()(
         })),
 
       completeLevel: (level) =>
-        set((state) => ({
-          completedLevels: state.completedLevels.includes(level)
-            ? state.completedLevels
-            : [...state.completedLevels, level],
-          currentLevel: level + 1,
-          levelHistory: [...state.levelHistory, level + 1],
-          hasAttemptedCurrent: false,
-        })),
+        set((state) => {
+          const xpGain = level <= 15 ? 10 : level <= 30 ? 15 : level <= 40 ? 20 : 30;
+          return {
+            completedLevels: state.completedLevels.includes(level)
+              ? state.completedLevels
+              : [...state.completedLevels, level],
+            currentLevel: level + 1,
+            levelHistory: [...state.levelHistory, level + 1],
+            hasAttemptedCurrent: false,
+            totalXp: state.totalXp + xpGain,
+            currentStreak: state.currentStreak + 1,
+          };
+        }),
 
       addBoid: (boid) =>
         set((state) => ({
@@ -102,6 +113,8 @@ export const useGameStore = create<GameState>()(
           currentLevel: 1,
           completedLevels: [],
           levelHistory: [1],
+          totalXp: 0,
+          currentStreak: 0,
           boids: [],
           flockSize: 0,
           queryResult: null,
@@ -131,9 +144,8 @@ export const useGameStore = create<GameState>()(
         levelHistory: state.levelHistory,
         flockSize: state.flockSize,
         userName: state.userName,
-        // Intentionally NOT persisted:
-        // - hasAttemptedCurrent: prevents refresh-cheating by hiding hints until user attempts
-        // - queryResult/error: session-only state
+        totalXp: state.totalXp,
+        currentStreak: state.currentStreak,
       }),
     }
   )

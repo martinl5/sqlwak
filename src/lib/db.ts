@@ -54,7 +54,8 @@ async function seedDatabase(database: Database): Promise<void> {
       segment       TEXT    NOT NULL,
       credit_score  INTEGER NOT NULL,
       join_date     TEXT    NOT NULL,
-      email         TEXT
+      email         TEXT,
+      ab_test_group TEXT    NOT NULL DEFAULT 'A'
     );
   `);
 
@@ -143,31 +144,31 @@ async function seedDatabase(database: Database): Promise<void> {
 
   // ── Seed: Customers ───────────────────────────────────────────────────────
   const customers = [
-    { name: 'Tan Wei Ling',       segment: 'Priority', score: 780, join: '2019-03-15' },
-    { name: 'Rajesh Nair',        segment: 'Mass',     score: 650, join: '2020-07-22' },
-    { name: 'Aisha Binte Yusof',  segment: 'Priority', score: 720, join: '2018-11-10' },
-    { name: 'James Lim',          segment: 'Private',  score: 820, join: '2015-05-01' },
-    { name: 'Priya Krishnamurthy',segment: 'Mass',     score: 590, join: '2021-09-14' },
-    { name: 'Zhang Wei',          segment: 'SME',      score: 700, join: '2017-06-30' },
-    { name: 'Muhammad Farhan',    segment: 'Mass',     score: 620, join: '2022-01-18' },
-    { name: 'Chen Mei Ling',      segment: 'Priority', score: 760, join: '2019-08-05' },
-    { name: 'Suresh Pillai',      segment: 'SME',      score: 680, join: '2016-04-12' },
-    { name: 'Lee Hui Min',        segment: 'Mass',     score: 550, join: '2023-02-28' },
-    { name: 'Kavitha Rajan',      segment: 'Priority', score: 740, join: '2020-11-20' },
-    { name: 'Wong Ah Kow',        segment: 'Private',  score: 850, join: '2014-01-07' },
-    { name: 'Nur Hidayah',        segment: 'Mass',     score: 610, join: '2021-05-30' },
-    { name: 'David Chua',         segment: 'SME',      score: 710, join: '2018-08-15' },
-    { name: 'Siti Rahimah',       segment: 'Mass',     score: 570, join: '2022-07-09' },
-    { name: 'Lim Boon Keng',      segment: 'Priority', score: 790, join: '2017-03-22' },
-    { name: 'Anand Krishnaswamy', segment: 'Private',  score: 830, join: '2013-12-01' },
-    { name: 'Fiona Tan',          segment: 'Mass',     score: 640, join: '2021-10-17' },
-    { name: 'Rajan Selvam',       segment: 'SME',      score: 690, join: '2019-06-25' },
-    { name: 'Michelle Koh',       segment: 'Priority', score: 755, join: '2020-04-11' },
+    { name: 'Tan Wei Ling',       segment: 'Priority', score: 780, join: '2019-03-15', ab: 'A' },
+    { name: 'Rajesh Nair',        segment: 'Mass',     score: 650, join: '2020-07-22', ab: 'B' },
+    { name: 'Aisha Binte Yusof',  segment: 'Priority', score: 720, join: '2018-11-10', ab: 'A' },
+    { name: 'James Lim',          segment: 'Private',  score: 820, join: '2015-05-01', ab: 'B' },
+    { name: 'Priya Krishnamurthy',segment: 'Mass',     score: 590, join: '2021-09-14', ab: 'A' },
+    { name: 'Zhang Wei',          segment: 'SME',      score: 700, join: '2017-06-30', ab: 'B' },
+    { name: 'Muhammad Farhan',    segment: 'Mass',     score: 620, join: '2022-01-18', ab: 'A' },
+    { name: 'Chen Mei Ling',      segment: 'Priority', score: 760, join: '2019-08-05', ab: 'B' },
+    { name: 'Suresh Pillai',      segment: 'SME',      score: 680, join: '2016-04-12', ab: 'A' },
+    { name: 'Lee Hui Min',        segment: 'Mass',     score: 550, join: '2023-02-28', ab: 'B' },
+    { name: 'Kavitha Rajan',      segment: 'Priority', score: 740, join: '2020-11-20', ab: 'A' },
+    { name: 'Wong Ah Kow',        segment: 'Private',  score: 850, join: '2014-01-07', ab: 'B' },
+    { name: 'Nur Hidayah',        segment: 'Mass',     score: 610, join: '2021-05-30', ab: 'A' },
+    { name: 'David Chua',         segment: 'SME',      score: 710, join: '2018-08-15', ab: 'B' },
+    { name: 'Siti Rahimah',       segment: 'Mass',     score: 570, join: '2022-07-09', ab: 'A' },
+    { name: 'Lim Boon Keng',      segment: 'Priority', score: 790, join: '2017-03-22', ab: 'B' },
+    { name: 'Anand Krishnaswamy', segment: 'Private',  score: 830, join: '2013-12-01', ab: 'A' },
+    { name: 'Fiona Tan',          segment: 'Mass',     score: 640, join: '2021-10-17', ab: 'B' },
+    { name: 'Rajan Selvam',       segment: 'SME',      score: 690, join: '2019-06-25', ab: 'A' },
+    { name: 'Michelle Koh',       segment: 'Priority', score: 755, join: '2020-04-11', ab: 'B' },
   ];
   customers.forEach(c =>
     database.run(
-      `INSERT INTO customers (customer_name, segment, credit_score, join_date) VALUES (?, ?, ?, ?)`,
-      [c.name, c.segment, c.score, c.join]
+      `INSERT INTO customers (customer_name, segment, credit_score, join_date, ab_test_group) VALUES (?, ?, ?, ?, ?)`,
+      [c.name, c.segment, c.score, c.join, c.ab]
     )
   );
 
@@ -443,6 +444,8 @@ async function seedDatabase(database: Database): Promise<void> {
   database.run('CREATE INDEX IF NOT EXISTS idx_shipments_status   ON cargo_shipments(status)');
   database.run('CREATE INDEX IF NOT EXISTS idx_tff_customer       ON trade_finance_facilities(customer_id)');
   database.run('CREATE INDEX IF NOT EXISTS idx_tff_status         ON trade_finance_facilities(status)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_shipments_departure ON cargo_shipments(departure_date)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_customers_ab_group  ON customers(ab_test_group)');
 }
 
 export function executeQuery(sql: string): { columns: string[]; values: unknown[][] } {
