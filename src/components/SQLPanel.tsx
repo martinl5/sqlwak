@@ -6,6 +6,7 @@ import { Play, Lightbulb } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { validateQuery } from '@/lib/validator';
 import { levels } from '@/data/levels';
+import { epochXpGain } from '@/store/useGameStore';
 
 interface SQLPanelProps {
   onSuccess: () => void;
@@ -29,10 +30,11 @@ const EPOCH_LABEL: Record<string, string> = {
 };
 
 export default function SQLPanel({ onSuccess }: SQLPanelProps) {
-  const [query, setQuery]   = useState('');
-  const [error, setError]   = useState<string | null>(null);
-  const editorRef           = useRef<unknown>(null);
-  const monacoRef           = useRef<Monaco | null>(null);
+  const [query, setQuery]       = useState('');
+  const [error, setError]       = useState<string | null>(null);
+  const [rewardAnim, setRewardAnim] = useState<number | null>(null);
+  const editorRef               = useRef<unknown>(null);
+  const monacoRef               = useRef<Monaco | null>(null);
 
   const {
     currentLevel,
@@ -110,6 +112,9 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
       const result = validateQuery(activeQuery, level?.solutionQuery || '');
       if (result.success) {
         setQueryResult(result.userResult || null);
+        const gain = epochXpGain(currentLevel);
+        setRewardAnim(gain);
+        setTimeout(() => setRewardAnim(null), 1600);
         try {
           const editor = editorRef.current as { getPosition?: () => { lineNumber: number; column: number } | null } | null;
           if (editor && typeof editor.getPosition === 'function') {
@@ -128,7 +133,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     } finally {
       setIsExecuting(false);
     }
-  }, [query, level, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
+  }, [query, level, currentLevel, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -148,9 +153,35 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
 
   return (
     <div
-      className="h-full flex flex-col overflow-hidden fade-in-up"
+      className="h-full flex flex-col overflow-hidden fade-in-up relative"
       style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 6 }}
     >
+      <style>{`
+        @keyframes doubloonFloat {
+          0%   { opacity: 1; transform: translateY(0) scale(1); }
+          60%  { opacity: 1; transform: translateY(-40px) scale(1.1); }
+          100% { opacity: 0; transform: translateY(-70px) scale(0.9); }
+        }
+      `}</style>
+      {rewardAnim !== null && (
+        <div
+          className="absolute pointer-events-none z-50"
+          style={{ top: 56, right: 16, animation: 'doubloonFloat 1.6s ease-out forwards' }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-ibm-plex-mono)',
+              fontSize: 15,
+              fontWeight: 700,
+              color: 'var(--lcb-gold)',
+              textShadow: '0 0 12px rgba(201,168,76,0.6)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            +{rewardAnim} ⬡
+          </span>
+        </div>
+      )}
       {/* ── Panel header ────────────────────────────────────────────────── */}
       <div
         className="flex items-center justify-between px-4 py-3"

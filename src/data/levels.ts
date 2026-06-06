@@ -1507,4 +1507,112 @@ SELECT port,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // SENIOR-DS PATTERNS (Levels 56–57)
+  // Moving averages · NTILE risk tranching
+  // ============================================================
+  {
+    id: 56,
+    title: 'Voyage Revenue Moving Average',
+    description: `The Shipping Finance desk tracks freight revenue trends using a 3-voyage moving average. Freight revenue is approximated as 3% of cargo value.
+
+Using a CTE \`voyage_revenues\`, compute per-shipment \`freight_revenue\` (ROUND(cargo_value_usd * 0.03, 0)) for all **Arrived** shipments. In the outer query apply:
+\`AVG(freight_revenue) OVER (ORDER BY departure_date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)\`
+
+Return \`shipment_id\`, \`departure_date\`, \`route\` (origin_port || ' → ' || destination_port), \`freight_revenue\`, and \`ma3_revenue\` (ROUND to 0dp), ordered by \`departure_date\`.`,
+    hint: 'CTE: ROUND(cargo_value_usd * 0.03, 0) AS freight_revenue WHERE status = \'Arrived\'. Outer: ROUND(AVG(freight_revenue) OVER (ORDER BY departure_date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 0).',
+    seedQuery: `WITH voyage_revenues AS (
+  SELECT shipment_id,
+         departure_date,
+         origin_port || ' → ' || destination_port AS route,
+          AS freight_revenue
+    FROM cargo_shipments
+   WHERE
+)
+SELECT shipment_id,
+       departure_date,
+       route,
+       freight_revenue,
+       ROUND(AVG(         ) OVER (
+         ORDER BY departure_date
+         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+       ), 0) AS ma3_revenue
+  FROM voyage_revenues
+ ORDER BY departure_date`,
+    solutionQuery: `WITH voyage_revenues AS (
+  SELECT shipment_id,
+         departure_date,
+         origin_port || ' → ' || destination_port AS route,
+         ROUND(cargo_value_usd * 0.03, 0)          AS freight_revenue
+    FROM cargo_shipments
+   WHERE status = 'Arrived'
+)
+SELECT shipment_id,
+       departure_date,
+       route,
+       freight_revenue,
+       ROUND(AVG(freight_revenue) OVER (
+         ORDER BY departure_date
+         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+       ), 0) AS ma3_revenue
+  FROM voyage_revenues
+ ORDER BY departure_date`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+  {
+    id: 57,
+    title: 'Loan Book Risk Tranching',
+    description: `LCB's Structured Finance team must tranche the active loan book into four risk buckets — Senior, Mezzanine A, Mezzanine B, Junior — ordered by principal exposure (largest = Senior). This mirrors the waterfall structure used in ABS and CLO deals.
+
+Use \`NTILE(4) OVER (ORDER BY principal_amount DESC)\` in a CTE to assign each active loan a tranche. Then aggregate each tranche's count, total exposure, and average rate.
+
+Return \`tranche\`, \`tranche_name\` (CASE 1→'Senior', 2→'Mezzanine A', 3→'Mezzanine B', 4→'Junior'), \`loan_count\`, \`total_exposure\` (0dp), and \`avg_rate\` (2dp), ordered by \`tranche\`.`,
+    hint: 'CTE: NTILE(4) OVER (ORDER BY principal_amount DESC) AS tranche FROM loans WHERE status=\'Active\'. Outer: GROUP BY tranche, CASE for tranche_name, COUNT/SUM/AVG aggregates.',
+    seedQuery: `WITH loan_tranches AS (
+  SELECT loan_id,
+         principal_amount,
+         interest_rate,
+          AS tranche
+    FROM loans
+   WHERE
+)
+SELECT tranche,
+       CASE tranche
+         WHEN 1 THEN 'Senior'
+         WHEN 2 THEN
+         WHEN 3 THEN
+         WHEN 4 THEN 'Junior'
+       END AS tranche_name,
+       COUNT(*)                        AS loan_count,
+       ROUND(SUM(principal_amount), 0) AS total_exposure,
+        AS avg_rate
+  FROM loan_tranches
+ GROUP BY tranche
+ ORDER BY tranche`,
+    solutionQuery: `WITH loan_tranches AS (
+  SELECT loan_id,
+         principal_amount,
+         interest_rate,
+         NTILE(4) OVER (ORDER BY principal_amount DESC) AS tranche
+    FROM loans
+   WHERE status = 'Active'
+)
+SELECT tranche,
+       CASE tranche
+         WHEN 1 THEN 'Senior'
+         WHEN 2 THEN 'Mezzanine A'
+         WHEN 3 THEN 'Mezzanine B'
+         WHEN 4 THEN 'Junior'
+       END AS tranche_name,
+       COUNT(*)                        AS loan_count,
+       ROUND(SUM(principal_amount), 0) AS total_exposure,
+       ROUND(AVG(interest_rate), 2)    AS avg_rate
+  FROM loan_tranches
+ GROUP BY tranche
+ ORDER BY tranche`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

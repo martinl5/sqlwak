@@ -2,29 +2,40 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Level, Boid, QueryResult } from '@/types';
 
+export function epochXpGain(level: number): number {
+  if (level <= 15) return 100;
+  if (level <= 30) return 200;
+  if (level <= 40) return 300;
+  return 400;
+}
+
 interface GameState {
   // Level progression
   currentLevel: number;
   completedLevels: number[];
   levelHistory: number[]; // Track all visited levels for back navigation
-  
+
+  // Gamification
+  xp: number;
+  streak: number;
+
   // Flock
   boids: Boid[];
   flockSize: number;
-  
+
   // Query state
   queryResult: QueryResult | null;
   error: string | null;
   isExecuting: boolean;
   hasAttemptedCurrent: boolean;
-  
+
   // UI state
   showLevelUp: boolean;
   lastSpawnedBird: { x: number; y: number } | null;
-  
+
   // User
   userName: string | null;
-  
+
   // Actions
   setCurrentLevel: (level: number) => void;
   completeLevel: (level: number) => void;
@@ -47,6 +58,8 @@ export const useGameStore = create<GameState>()(
       currentLevel: 1,
       completedLevels: [],
       levelHistory: [],
+      xp: 0,
+      streak: 0,
       boids: [],
       flockSize: 0,
       queryResult: null,
@@ -57,25 +70,29 @@ export const useGameStore = create<GameState>()(
       lastSpawnedBird: null,
       userName: null,
 
-      setCurrentLevel: (level) => 
+      setCurrentLevel: (level) =>
         set((state) => ({
           currentLevel: level,
-          // Add to history when navigating to a new level
-          levelHistory: state.levelHistory.includes(level) 
-            ? state.levelHistory 
+          levelHistory: state.levelHistory.includes(level)
+            ? state.levelHistory
             : [...state.levelHistory, level],
           hasAttemptedCurrent: false,
+          streak: 0,
         })),
 
       completeLevel: (level) =>
-        set((state) => ({
-          completedLevels: state.completedLevels.includes(level)
-            ? state.completedLevels
-            : [...state.completedLevels, level],
-          currentLevel: level + 1,
-          levelHistory: [...state.levelHistory, level + 1],
-          hasAttemptedCurrent: false,
-        })),
+        set((state) => {
+          const alreadyDone = state.completedLevels.includes(level);
+          const gain = epochXpGain(level);
+          return {
+            completedLevels: alreadyDone ? state.completedLevels : [...state.completedLevels, level],
+            currentLevel: level + 1,
+            levelHistory: [...state.levelHistory, level + 1],
+            hasAttemptedCurrent: false,
+            xp: alreadyDone ? state.xp : state.xp + gain,
+            streak: alreadyDone ? state.streak : state.streak + 1,
+          };
+        }),
 
       addBoid: (boid) =>
         set((state) => ({
@@ -102,6 +119,8 @@ export const useGameStore = create<GameState>()(
           currentLevel: 1,
           completedLevels: [],
           levelHistory: [1],
+          xp: 0,
+          streak: 0,
           boids: [],
           flockSize: 0,
           queryResult: null,
@@ -131,9 +150,8 @@ export const useGameStore = create<GameState>()(
         levelHistory: state.levelHistory,
         flockSize: state.flockSize,
         userName: state.userName,
-        // Intentionally NOT persisted:
-        // - hasAttemptedCurrent: prevents refresh-cheating by hiding hints until user attempts
-        // - queryResult/error: session-only state
+        xp: state.xp,
+        streak: state.streak,
       }),
     }
   )

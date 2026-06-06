@@ -380,6 +380,18 @@ async function seedDatabase(database: Database): Promise<void> {
     [10, 'Bangkok',          'Sydney',         'Consumer Goods',  760000, '2024-03-10', '2024-04-05', 'Arrived'   ],
     [1,  'Singapore',        'Shanghai',       'Electronics',    2100000, '2024-03-15', '2024-03-28', 'Arrived'   ],
     [2,  'Jakarta',          'Busan',          'Grain',           620000, '2024-03-20', '2024-03-30', 'Arrived'   ],
+    // Historical Arrived shipments (2023) — supports Level 56 moving-average analysis
+    [1,  'Singapore',        'Rotterdam',      'Electronics',    4500000, '2023-07-01', '2023-08-10', 'Arrived'  ],
+    [2,  'Port Klang',       'Hamburg',        'Grain',           820000, '2023-07-15', '2023-08-25', 'Arrived'  ],
+    [3,  'Singapore',        'Los Angeles',    'Crude Oil',      5200000, '2023-08-01', '2023-09-05', 'Arrived'  ],
+    [5,  'Bangkok',          'Busan',          'Consumer Goods',  680000, '2023-08-20', '2023-09-15', 'Arrived'  ],
+    [6,  'Jakarta',          'Dubai',          'Steel',          1300000, '2023-09-01', '2023-10-01', 'Arrived'  ],
+    [7,  'Singapore',        'Sydney',         'Electronics',    2800000, '2023-09-15', '2023-10-20', 'Arrived'  ],
+    [8,  'Ho Chi Minh City', 'Rotterdam',      'Consumer Goods', 1600000, '2023-10-01', '2023-11-10', 'Arrived'  ],
+    [9,  'Port Klang',       'Los Angeles',    'Steel',          2100000, '2023-10-20', '2023-11-25', 'Arrived'  ],
+    [10, 'Singapore',        'Busan',          'Grain',           550000, '2023-11-01', '2023-11-20', 'Arrived'  ],
+    [12, 'Bangkok',          'Hamburg',        'Consumer Goods',  900000, '2023-11-15', '2023-12-20', 'Arrived'  ],
+    // 2024 data (original)
     [3,  'Singapore',        'Los Angeles',    'Crude Oil',      6800000, '2024-04-01', null,          'Delayed'   ],
     [4,  'Ho Chi Minh City', 'Hamburg',        'Consumer Goods', 2300000, '2024-04-05', '2024-05-25', 'Arrived'   ],
     [5,  'Port Klang',       'Rotterdam',      'Steel',          1700000, '2024-04-10', '2024-05-30', 'Arrived'   ],
@@ -443,6 +455,7 @@ async function seedDatabase(database: Database): Promise<void> {
   database.run('CREATE INDEX IF NOT EXISTS idx_shipments_status   ON cargo_shipments(status)');
   database.run('CREATE INDEX IF NOT EXISTS idx_tff_customer       ON trade_finance_facilities(customer_id)');
   database.run('CREATE INDEX IF NOT EXISTS idx_tff_status         ON trade_finance_facilities(status)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_shipments_depart   ON cargo_shipments(departure_date)');
 }
 
 export function executeQuery(sql: string): { columns: string[]; values: unknown[][] } {

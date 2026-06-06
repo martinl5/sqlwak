@@ -23,7 +23,16 @@ export default function GameProvider() {
   const [dimensions, setDimensions]             = useState({ width: 0, height: 0 });
   const [activeRightTab, setActiveRightTab]     = useState<'schema' | 'data'>('schema');
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
-  const { currentLevel } = useGameStore();
+  const { currentLevel, xp, streak } = useGameStore();
+
+  const getRankInfo = (pts: number) => {
+    if (pts < 1000) return { name: 'Analyst',           progress: pts / 1000,            xpToNext: 1000 - pts, nextName: 'Senior Analyst' };
+    if (pts < 3000) return { name: 'Senior Analyst',    progress: (pts - 1000) / 2000,   xpToNext: 3000 - pts, nextName: 'VP Analytics'   };
+    if (pts < 7000) return { name: 'VP Analytics',      progress: (pts - 3000) / 4000,   xpToNext: 7000 - pts, nextName: 'MD'             };
+    return               { name: 'Managing Director', progress: 1,                     xpToNext: 0,          nextName: ''               };
+  };
+
+  const rank = getRankInfo(xp);
 
   useEffect(() => {
     setIsClient(true);
@@ -127,10 +136,52 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 55</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 57</span>
           <span className="w-1 h-1 rounded-full inline-block" style={{ background: 'var(--lcb-green)' }} />
           <span style={{ color: 'var(--lcb-green)' }}>LIVE</span>
         </div>
+      </div>
+
+      {/* ── XP Progress Bar ───────────────────────────────────────────────── */}
+      <div
+        className="flex items-center gap-3 px-5 py-1.5"
+        style={{ background: 'var(--lcb-panel-2)', borderBottom: '1px solid var(--lcb-border)', flexShrink: 0 }}
+      >
+        <span
+          className="text-xs tracking-widest uppercase"
+          style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)', minWidth: 130 }}
+        >
+          {rank.name} <span style={{ color: 'var(--lcb-gold)' }}>· {xp.toLocaleString()}</span>
+        </span>
+        <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--lcb-border)' }}>
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${Math.round(rank.progress * 100)}%`,
+              background: 'linear-gradient(90deg, var(--lcb-gold-dim), var(--lcb-gold))',
+              transition: 'width 0.7s ease',
+            }}
+          />
+        </div>
+        {rank.xpToNext > 0 && (
+          <span className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)', minWidth: 120, textAlign: 'right' }}>
+            {rank.xpToNext.toLocaleString()} xp → {rank.nextName}
+          </span>
+        )}
+        {streak > 1 && (
+          <div
+            className="flex items-center gap-1 px-2 py-0.5 rounded"
+            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}
+          >
+            <span style={{ fontSize: 12 }}>🔥</span>
+            <span
+              className="text-xs font-bold"
+              style={{ color: '#f59e0b', fontFamily: 'var(--font-ibm-plex-mono)' }}
+            >
+              {streak}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
