@@ -136,7 +136,7 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 59</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 61</span>
 
           {/* Rank + XP progress bar */}
           <div className="flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
@@ -179,7 +179,7 @@ export default function GameProvider() {
           { name: 'Foundational', min: 1,  max: 15 },
           { name: 'Intermediate', min: 16, max: 30 },
           { name: 'Advanced',     min: 31, max: 40 },
-          { name: 'Expert',       min: 41, max: 59 },
+          { name: 'Expert',       min: 41, max: 61 },
         ] as const;
         return (
           <div

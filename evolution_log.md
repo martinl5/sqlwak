@@ -4,6 +4,30 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 4 — 2026-06-07
+
+### [UI/UX Improvements]
+
+- **Doubloon XP reward float animation** (`SQLPanel.tsx`, `globals.css`): On every correct query submission, a `+N ⬡ XP` badge floats upward from the Run button with a gold glow text-shadow and cubic-bezier easing, then fades out over 1.6 s. Amount is epoch-based: Foundational=+10, Intermediate=+15, Advanced=+20, Expert=+30. Implemented via `@keyframes doubloonFloat` + `.doubloon-float` CSS class; `doubloonAmt` state cleared on `animationend` so re-submissions trigger a fresh animation.
+- **"+N XP Earned" badge in LevelUpModal** (`LevelUpModal.tsx`): A new gold-bordered badge (⬡ icon + "+N XP Earned" text) appears between the Career Level and Next Level Hint sections of the completion modal, with a spring-bounce entrance animation (delay 0.48 s). The `epochXpEarned()` helper derives XP from the completed level using the same thresholds as the Zustand store.
+- **Epoch breadcrumb max updated** (`GameProvider.tsx`): Expert epoch max bumped 59 → 61; level count header updated `/59` → `/61`.
+- **LevelUpModal next-hint map updated**: entries added for levels 59 and 61; "all levels complete" sentinel moved to level 61.
+
+### [Game Design Tweaks]
+
+- **Level 60** *(Expert, difficulty 4)* — "Vessel Maintenance Window Planner (LEAD)":
+  Teaches `LEAD(departure_date) OVER (PARTITION BY vessel_id ORDER BY departure_date)` in a CTE to find the next voyage date per vessel. Outer query computes `CAST(JULIANDAY(next_departure) - JULIANDAY(departure_date) AS INTEGER)` as idle_days and filters `WHERE next_departure IS NOT NULL`. Returns 13 rows across vessels 1–10 (vessels 1–3 have 3 voyages each, vessels 4–10 have 2). Mirrors the LEAD look-ahead pattern used in product-analytics session segmentation, quant-finance trade-settlement gap detection, and operational scheduling at large institutions. Uses existing `cargo_shipments` + `vessels` data — no new rows needed.
+- **Level 61** *(Expert, difficulty 4)* — "Segment Balance Median (Window-Based)":
+  Implements the canonical window-based median when PERCENTILE_CONT is unavailable (SQLite, SparkSQL dialects). CTE joins `accounts` to `customers`, computes `ROW_NUMBER() OVER (PARTITION BY c.segment ORDER BY a.balance)` and `COUNT(*) OVER (PARTITION BY c.segment)`. Outer query: `WHERE rn IN ((cnt+1)/2, (cnt+2)/2)`, `GROUP BY segment`, `AVG(balance)`. Returns median balance per segment (Private, Priority, SME, Mass) ordered by median_balance DESC. This exact pattern appears in FAANG and quant-finance DS interviews whenever the interviewer specifies a dialect without built-in percentile functions.
+
+### [Database & Code Optimizations]
+
+- **`epochXpEarned()` pure helper** added to `LevelUpModal.tsx` (file-scope, not exported) — single source of truth for the per-level XP display in the modal. Mirrors `completeLevel`'s inline threshold logic without coupling to the Zustand store.
+- **`epochXp()` pure helper** added to `SQLPanel.tsx` (file-scope) — used by `handleExecute` to determine doubloon float amount; `currentLevel` added to `useCallback` dependency array (removes pre-existing missing-dep lint warning).
+- **No new DB tables or seed rows** — both new levels run cleanly against existing `cargo_shipments`, `vessels`, `accounts`, and `customers` data.
+
+---
+
 ## Iteration 3 — 2026-06-07
 
 ### [UI/UX Improvements]

@@ -28,9 +28,12 @@ const EPOCH_LABEL: Record<string, string> = {
   Expert:       'MANAGING DIRECTOR',
 };
 
+const epochXp = (lvl: number) => (lvl <= 15 ? 10 : lvl <= 30 ? 15 : lvl <= 40 ? 20 : 30);
+
 export default function SQLPanel({ onSuccess }: SQLPanelProps) {
   const [query, setQuery]           = useState('');
   const [error, setError]           = useState<string | null>(null);
+  const [doubloonAmt, setDoubloonAmt] = useState<number | null>(null);
   const editorRef                   = useRef<unknown>(null);
   const monacoRef                   = useRef<Monaco | null>(null);
   const dismissTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -111,6 +114,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
       const result = validateQuery(activeQuery, level?.solutionQuery || '');
       if (result.success) {
         setQueryResult(result.userResult || null);
+        setDoubloonAmt(epochXp(currentLevel));
         try {
           const editor = editorRef.current as { getPosition?: () => { lineNumber: number; column: number } | null } | null;
           if (editor && typeof editor.getPosition === 'function') {
@@ -129,7 +133,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     } finally {
       setIsExecuting(false);
     }
-  }, [query, level, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
+  }, [query, level, currentLevel, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -180,21 +184,32 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
             Level {currentLevel}: {level?.title}
           </h2>
         </div>
-        <button
-          onClick={handleExecute}
-          disabled={isExecuting}
-          className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase transition-opacity hover:opacity-85 disabled:opacity-40"
-          style={{
-            background: 'var(--lcb-gold)',
-            color: 'var(--lcb-black)',
-            borderRadius: 4,
-            fontFamily: 'var(--font-ibm-plex-mono)',
-          }}
-        >
-          <Play className="w-3 h-3" />
-          {isExecuting ? 'Running…' : 'Run'}
-          <span style={{ opacity: 0.6, fontSize: 10 }}>⌘↵</span>
-        </button>
+        <div className="relative">
+          {doubloonAmt !== null && (
+            <div
+              className="doubloon-float"
+              style={{ bottom: '110%', right: 0 }}
+              onAnimationEnd={() => setDoubloonAmt(null)}
+            >
+              +{doubloonAmt} ⬡ XP
+            </div>
+          )}
+          <button
+            onClick={handleExecute}
+            disabled={isExecuting}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase transition-opacity hover:opacity-85 disabled:opacity-40"
+            style={{
+              background: 'var(--lcb-gold)',
+              color: 'var(--lcb-black)',
+              borderRadius: 4,
+              fontFamily: 'var(--font-ibm-plex-mono)',
+            }}
+          >
+            <Play className="w-3 h-3" />
+            {isExecuting ? 'Running…' : 'Run'}
+            <span style={{ opacity: 0.6, fontSize: 10 }}>⌘↵</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Level description ────────────────────────────────────────────── */}

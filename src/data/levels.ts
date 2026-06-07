@@ -1696,4 +1696,101 @@ SELECT month,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // SENIOR DS PATTERNS (Levels 60–61)
+  // LEAD look-ahead; window-based median (ROW_NUMBER + COUNT)
+  // ============================================================
+  {
+    id: 60,
+    title: 'Vessel Maintenance Window Planner (LEAD)',
+    description: `Port Operations needs to identify idle periods between consecutive voyages for each vessel — the windows when dry-dock maintenance or crew rotations can be scheduled.
+
+For every vessel with multiple voyages, show the gap in days between each departure and the vessel's next departure.
+
+Use LEAD() in a CTE to look ahead to the next departure_date within the same vessel_id, ordered by departure_date. In the outer query, compute idle_days using JULIANDAY arithmetic and filter out rows with no next departure.
+
+Return \`vessel_name\`, \`vessel_type\`, \`departure_date\`, \`next_departure\`, and \`idle_days\` (integer), ordered by vessel_name then departure_date.`,
+    hint: 'CTE: LEAD(departure_date) OVER (PARTITION BY vessel_id ORDER BY departure_date) AS next_departure. Outer: CAST(JULIANDAY(next_departure) - JULIANDAY(departure_date) AS INTEGER) AS idle_days, WHERE next_departure IS NOT NULL.',
+    seedQuery: `WITH vessel_schedule AS (
+  SELECT v.vessel_name,
+         v.vessel_type,
+         cs.departure_date,
+         LEAD(cs.departure_date) OVER (
+           PARTITION BY cs.vessel_id
+           ORDER BY cs.departure_date
+         ) AS next_departure
+    FROM cargo_shipments cs
+    JOIN vessels v ON cs.vessel_id = v.vessel_id
+)
+SELECT vessel_name,
+       vessel_type,
+       departure_date,
+       next_departure,
+        AS idle_days
+  FROM vessel_schedule
+ WHERE
+ ORDER BY vessel_name, departure_date`,
+    solutionQuery: `WITH vessel_schedule AS (
+  SELECT v.vessel_name,
+         v.vessel_type,
+         cs.departure_date,
+         LEAD(cs.departure_date) OVER (
+           PARTITION BY cs.vessel_id
+           ORDER BY cs.departure_date
+         ) AS next_departure
+    FROM cargo_shipments cs
+    JOIN vessels v ON cs.vessel_id = v.vessel_id
+)
+SELECT vessel_name,
+       vessel_type,
+       departure_date,
+       next_departure,
+       CAST(JULIANDAY(next_departure) - JULIANDAY(departure_date) AS INTEGER) AS idle_days
+  FROM vessel_schedule
+ WHERE next_departure IS NOT NULL
+ ORDER BY vessel_name, departure_date`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+  {
+    id: 61,
+    title: 'Segment Balance Median (Window-Based)',
+    description: `Risk Analytics wants the median account balance per customer segment. Unlike the mean, the median resists distortion from ultra-high-net-worth Private Banking clients.
+
+Since SQLite lacks PERCENTILE_CONT, implement the window-based median: assign a rank to each account within its segment using ROW_NUMBER() OVER (PARTITION BY segment ORDER BY balance), then count group size with COUNT(*) OVER (PARTITION BY segment). The middle row(s) satisfy rn IN ((cnt+1)/2, (cnt+2)/2); taking AVG of those rows gives the median for both odd and even group sizes.
+
+Return \`segment\` and \`median_balance\` (2dp), ordered by \`median_balance\` descending.`,
+    hint: 'CTE: JOIN accounts to customers, compute ROW_NUMBER() OVER (PARTITION BY c.segment ORDER BY a.balance) AS rn and COUNT(*) OVER (PARTITION BY c.segment) AS cnt. Outer: WHERE rn IN ((cnt+1)/2, (cnt+2)/2), GROUP BY segment, SELECT ROUND(AVG(balance),2) AS median_balance.',
+    seedQuery: `WITH ranked AS (
+  SELECT c.segment,
+         a.balance,
+         ROW_NUMBER() OVER (PARTITION BY c.segment ORDER BY a.balance) AS rn,
+         COUNT(*)     OVER (PARTITION BY c.segment)                    AS cnt
+    FROM accounts a
+    JOIN customers c ON a.customer_id = c.customer_id
+)
+SELECT segment,
+        AS median_balance
+  FROM ranked
+ WHERE rn IN (     ,     )
+ GROUP BY segment
+ ORDER BY median_balance DESC`,
+    solutionQuery: `WITH ranked AS (
+  SELECT c.segment,
+         a.balance,
+         ROW_NUMBER() OVER (PARTITION BY c.segment ORDER BY a.balance) AS rn,
+         COUNT(*)     OVER (PARTITION BY c.segment)                    AS cnt
+    FROM accounts a
+    JOIN customers c ON a.customer_id = c.customer_id
+)
+SELECT segment,
+       ROUND(AVG(balance), 2) AS median_balance
+  FROM ranked
+ WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)
+ GROUP BY segment
+ ORDER BY median_balance DESC`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

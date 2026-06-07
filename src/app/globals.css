@@ -92,3 +92,23 @@ input:focus-visible {
   to   { opacity: 1; transform: translateY(0); }
 }
 .harbour-toast { animation: toastSlideUp 0.28s ease forwards; }
+
+/* ── Doubloon XP reward float ────────────────────────────────────────────── */
+@keyframes doubloonFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  55%  { opacity: 1; transform: translateY(-30px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-54px) scale(0.88); }
+}
+.doubloon-float {
+  animation: doubloonFloat 1.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  font-family: var(--font-ibm-plex-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--lcb-gold);
+  text-shadow: 0 0 14px rgba(201,168,76,0.75), 0 0 28px rgba(201,168,76,0.35);
+  z-index: 60;
+}
