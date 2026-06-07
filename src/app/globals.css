@@ -79,3 +79,16 @@ input:focus-visible {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-in-up { animation: fadeInUp 0.35s ease forwards; }
+
+/* ── Result row stagger ──────────────────────────────────────────────────── */
+@keyframes fadeInRow {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Harbour Master toast slide-up ──────────────────────────────────────── */
+@keyframes toastSlideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.harbour-toast { animation: toastSlideUp 0.28s ease forwards; }

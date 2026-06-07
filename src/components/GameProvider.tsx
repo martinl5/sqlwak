@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Fragment } from 'react';
 import dynamic from 'next/dynamic';
 import SQLPanel from './SQLPanel';
 import DataPreview from './DataPreview';
@@ -136,7 +136,7 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 57</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 59</span>
 
           {/* Rank + XP progress bar */}
           <div className="flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
@@ -172,6 +172,52 @@ export default function GameProvider() {
           <span style={{ color: 'var(--lcb-green)' }}>LIVE</span>
         </div>
       </div>
+
+      {/* ── Epoch Breadcrumb Strip ───────────────────────────────────────── */}
+      {(() => {
+        const epochs = [
+          { name: 'Foundational', min: 1,  max: 15 },
+          { name: 'Intermediate', min: 16, max: 30 },
+          { name: 'Advanced',     min: 31, max: 40 },
+          { name: 'Expert',       min: 41, max: 59 },
+        ] as const;
+        return (
+          <div
+            className="flex items-center px-5 gap-1.5 text-xs"
+            style={{
+              background: 'var(--lcb-panel-2)',
+              borderBottom: '1px solid var(--lcb-border)',
+              flexShrink: 0,
+              fontFamily: 'var(--font-ibm-plex-mono)',
+              height: 26,
+            }}
+          >
+            {epochs.map((ep, i) => {
+              const isCurrent = currentLevel >= ep.min && currentLevel <= ep.max;
+              const isDone    = currentLevel > ep.max;
+              return (
+                <Fragment key={ep.name}>
+                  {i > 0 && (
+                    <span style={{ color: 'var(--lcb-border)', fontSize: 10 }}>›</span>
+                  )}
+                  <span
+                    style={{
+                      color: isCurrent ? 'var(--lcb-gold)' : isDone ? 'var(--lcb-green)' : 'var(--lcb-muted)',
+                      opacity: isCurrent ? 1 : isDone ? 0.75 : 0.4,
+                      fontWeight: isCurrent ? 600 : 400,
+                      letterSpacing: '0.05em',
+                      fontSize: 10,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {isDone ? '✓ ' : isCurrent ? '▶ ' : ''}{ep.name}
+                  </span>
+                </Fragment>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
       <div className="relative flex-1 min-h-0 overflow-hidden">

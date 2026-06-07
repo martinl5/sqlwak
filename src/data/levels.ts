@@ -1600,4 +1600,100 @@ SELECT cargo_type,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // SENIOR DS PATTERNS (Levels 58–59)
+  // A/B test conversion analysis; LAG-based MoM revenue growth
+  // ============================================================
+  {
+    id: 58,
+    title: 'Digital Onboarding A/B Test: Conversion Analysis',
+    description: `LCB's Digital Banking team ran a controlled experiment on a new onboarding flow.
+Customers in ab_test_group = 'A' received the redesigned digital UI; group 'B' saw the original.
+
+The conversion metric is account activation: any customer who opened at least one account with opened_date ≥ '2022-01-01' (the test launch date).
+
+Compute per group:
+  • total_customers — COUNT DISTINCT customer_id from customers
+  • converted — COUNT DISTINCT customer_id who have a qualifying account
+  • conversion_rate_pct — ROUND to 1 dp
+
+Use a LEFT JOIN to accounts so customers with no qualifying account are still counted in the denominator.
+
+Return ab_test_group, total_customers, converted, conversion_rate_pct, ordered by ab_test_group.`,
+    hint: "LEFT JOIN accounts a ON a.customer_id = c.customer_id, GROUP BY c.ab_test_group. Use COUNT(DISTINCT CASE WHEN a.opened_date >= '2022-01-01' THEN c.customer_id END) for converted, then divide by COUNT(DISTINCT c.customer_id) for the rate.",
+    seedQuery: `SELECT
+  c.ab_test_group,
+  COUNT(DISTINCT c.customer_id)                                     AS total_customers,
+  COUNT(DISTINCT CASE WHEN  THEN c.customer_id END)                 AS converted,
+  ROUND(100.0 *  /  , 1)                                            AS conversion_rate_pct
+FROM customers c
+LEFT JOIN  ON a.customer_id = c.customer_id
+GROUP BY c.ab_test_group
+ORDER BY c.ab_test_group`,
+    solutionQuery: `SELECT
+  c.ab_test_group,
+  COUNT(DISTINCT c.customer_id) AS total_customers,
+  COUNT(DISTINCT CASE WHEN a.opened_date >= '2022-01-01' THEN c.customer_id END) AS converted,
+  ROUND(
+    100.0 * COUNT(DISTINCT CASE WHEN a.opened_date >= '2022-01-01' THEN c.customer_id END)
+          / COUNT(DISTINCT c.customer_id),
+    1
+  ) AS conversion_rate_pct
+FROM customers c
+LEFT JOIN accounts a ON a.customer_id = c.customer_id
+GROUP BY c.ab_test_group
+ORDER BY c.ab_test_group`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+  {
+    id: 59,
+    title: 'Month-over-Month Cargo Revenue Growth (LAG)',
+    description: `The CFO's dashboard needs a monthly revenue trend for the cargo fleet with explicit month-on-month percentage change.
+
+Step 1 — CTE 'monthly': GROUP cargo_shipments by STRFTIME('%Y-%m', departure_date), compute monthly_revenue_usd = ROUND(SUM(cargo_value_usd), 0).
+Step 2 — CTE 'with_lag': apply LAG(monthly_revenue_usd) OVER (ORDER BY month) as prev_month_revenue_usd.
+Step 3 — Outer SELECT: compute mom_growth_pct = ROUND(100.0 * (monthly_revenue_usd - prev_month_revenue_usd) / prev_month_revenue_usd, 1).
+
+Return month, monthly_revenue_usd, prev_month_revenue_usd, mom_growth_pct, ordered by month.
+(The first row will have NULL for prev_month_revenue_usd and mom_growth_pct — that is correct.)`,
+    hint: 'Two CTEs: first aggregates by month, second adds LAG(...) OVER (ORDER BY month). The outer query computes (current - prev) / prev * 100 for the growth rate.',
+    seedQuery: `WITH monthly AS (
+  SELECT STRFTIME('%Y-%m', departure_date) AS month,
+         ROUND(SUM(cargo_value_usd), 0)    AS monthly_revenue_usd
+    FROM cargo_shipments
+   GROUP BY
+),
+with_lag AS (
+  SELECT month,
+         monthly_revenue_usd,
+         LAG(monthly_revenue_usd) OVER (ORDER BY ) AS prev_month_revenue_usd
+    FROM monthly
+)
+SELECT month, monthly_revenue_usd, prev_month_revenue_usd,
+       ROUND(100.0 * (monthly_revenue_usd - prev_month_revenue_usd) /  , 1) AS mom_growth_pct
+  FROM with_lag
+ ORDER BY month`,
+    solutionQuery: `WITH monthly AS (
+  SELECT STRFTIME('%Y-%m', departure_date) AS month,
+         ROUND(SUM(cargo_value_usd), 0)    AS monthly_revenue_usd
+    FROM cargo_shipments
+   GROUP BY STRFTIME('%Y-%m', departure_date)
+),
+with_lag AS (
+  SELECT month,
+         monthly_revenue_usd,
+         LAG(monthly_revenue_usd) OVER (ORDER BY month) AS prev_month_revenue_usd
+    FROM monthly
+)
+SELECT month,
+       monthly_revenue_usd,
+       prev_month_revenue_usd,
+       ROUND(100.0 * (monthly_revenue_usd - prev_month_revenue_usd) / prev_month_revenue_usd, 1) AS mom_growth_pct
+  FROM with_lag
+ ORDER BY month`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

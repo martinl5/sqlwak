@@ -4,6 +4,38 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 3 — 2026-06-07
+
+### [UI/UX Improvements]
+
+- **Thematic Harbour Master error toasts** (`SQLPanel.tsx`): Replaced the plain red error bar with a styled "Harbour Master Report" toast:
+  - Displays an anchor icon (⚓) + bold gold "HARBOUR MASTER REPORT" heading, then the SQL error in red monospace.
+  - Slides up with `toastSlideUp` keyframe animation (0.28s).
+  - Auto-dismisses after 7 seconds; includes a manual × dismiss button.
+  - Imports `Anchor`, `X` from lucide-react for consistent icon style.
+- **Animated query result row reveals** (`DataPreview.tsx`): Query result rows now stagger in with a `fadeInRow` keyframe (left-slide + fade). A `resultVersion` counter triggers re-animation on every new result set (not just on first mount). First 21 rows stagger at 22 ms intervals; subsequent rows appear immediately.
+- **Epoch Breadcrumb Strip** (`GameProvider.tsx`): A new 26-px header strip between the brand bar and the main content area shows the four epoch stages (Foundational → Intermediate → Advanced → Expert) as a compact breadcrumb:
+  - Current epoch: gold + bold + `▶` prefix.
+  - Completed epochs: green + `✓` prefix at 75% opacity.
+  - Upcoming epochs: muted grey at 40% opacity.
+  - Uses `Fragment` from React for correct `key` on separator elements.
+- **Level count** updated from `/57` → `/59` in the header.
+
+### [Game Design Tweaks]
+
+- **Level 58** *(Expert, difficulty 4)* — "Digital Onboarding A/B Test: Conversion Analysis":
+  Uses `ab_test_group` column (added in Iteration 2). Measures account-activation conversion rate per group (accounts opened ≥ 2022-01-01). Pattern: `LEFT JOIN` + `COUNT(DISTINCT CASE WHEN ... END)` + `ROUND(100.0 * ... / ..., 1)`, grouped by `ab_test_group`. Expected result: Group A = 40.0%, Group B = 20.0%. Covers the canonical product-analytics / DS interview A/B test computation pattern.
+- **Level 59** *(Expert, difficulty 4)* — "Month-over-Month Cargo Revenue Growth (LAG)":
+  Two-CTE approach: first CTE aggregates monthly cargo revenue via `STRFTIME('%Y-%m', departure_date)`, second CTE adds `LAG(monthly_revenue_usd) OVER (ORDER BY month)`, outer query computes `mom_growth_pct`. Teaches the LAG() window function as used in financial MoM trend reporting; the result set clearly shows a dramatic April 2024 revenue spike (+96.7%) from large crude oil shipments, and a June slump (-71.7%) from a single departure — pedagogically authentic.
+
+### [Database & Code Optimizations]
+
+- **New index** `idx_accounts_opened_date ON accounts(opened_date)` — speeds up the date-filter in Level 58's LEFT JOIN + CASE WHEN scan.
+- **`LevelUpModal` hint map** extended: entry for levels 57–58 now reads "A/B test analysis, LAG/LEAD window functions"; new entry for 59 says "all current levels complete".
+- **`nextHintKey` sentinel** updated from `57` → `59`; `currentLevel < 57` guard updated to `< 59`.
+
+---
+
 ## Iteration 2 — 2026-06-05
 
 ### [UI/UX Improvements]
