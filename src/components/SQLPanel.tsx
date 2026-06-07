@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, KeyboardEvent } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
-import { Play, Lightbulb } from 'lucide-react';
+import { Play, Lightbulb, X, Anchor } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { validateQuery } from '@/lib/validator';
 import { levels } from '@/data/levels';
@@ -29,10 +29,11 @@ const EPOCH_LABEL: Record<string, string> = {
 };
 
 export default function SQLPanel({ onSuccess }: SQLPanelProps) {
-  const [query, setQuery]   = useState('');
-  const [error, setError]   = useState<string | null>(null);
-  const editorRef           = useRef<unknown>(null);
-  const monacoRef           = useRef<Monaco | null>(null);
+  const [query, setQuery]           = useState('');
+  const [error, setError]           = useState<string | null>(null);
+  const editorRef                   = useRef<unknown>(null);
+  const monacoRef                   = useRef<Monaco | null>(null);
+  const dismissTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     currentLevel,
@@ -137,6 +138,15 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [handleExecute]);
+
+  // Auto-dismiss error toast after 7s
+  useEffect(() => {
+    if (error) {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = setTimeout(() => setError(null), 7000);
+    }
+    return () => { if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current); };
+  }, [error]);
 
   useEffect(() => {
     setQuery('');
@@ -259,15 +269,44 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
         />
       </div>
 
-      {/* ── Error ────────────────────────────────────────────────────────── */}
+      {/* ── Harbour Master Report toast ──────────────────────────────────── */}
       {error && (
         <div
-          className="px-4 py-3"
-          style={{ borderTop: '1px solid var(--lcb-red)', borderLeft: '3px solid var(--lcb-red)', background: 'rgba(239,68,68,0.06)' }}
+          className="harbour-toast mx-3 mb-3"
+          style={{
+            borderLeft: '3px solid var(--lcb-gold)',
+            background: 'rgba(201,168,76,0.06)',
+            borderRadius: 4,
+            padding: '10px 12px',
+          }}
         >
-          <p className="text-xs" style={{ color: 'var(--lcb-red)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-            {error}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 min-w-0">
+              <Anchor className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: 'var(--lcb-gold)' }} />
+              <div className="min-w-0">
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest mb-1"
+                  style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-ibm-plex-mono)' }}
+                >
+                  Harbour Master Report
+                </p>
+                <p
+                  className="text-xs leading-5"
+                  style={{ color: 'var(--lcb-red)', fontFamily: 'var(--font-ibm-plex-mono)', wordBreak: 'break-word' }}
+                >
+                  {error}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="flex-shrink-0 p-0.5 transition-opacity hover:opacity-60"
+              style={{ color: 'var(--lcb-muted)' }}
+              aria-label="Dismiss"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -6,6 +6,12 @@ import { Table, Database } from 'lucide-react';
 export default function DataPreview() {
   const { queryResult, error } = useGameStore();
 
+  // Re-mount tbody whenever result shape changes to re-trigger row animations.
+  // Derived from content — no refs or effects needed (React Compiler safe).
+  const resultKey = queryResult
+    ? `${queryResult.columns.join('|')}:${queryResult.values.length}`
+    : 'empty';
+
   const panelStyle = {
     background: 'var(--lcb-panel)',
     border: '1px solid var(--lcb-border)',
@@ -87,12 +93,16 @@ export default function DataPreview() {
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody key={resultKey}>
             {queryResult.values.map((row, rowIdx) => (
               <tr
                 key={rowIdx}
                 className="lcb-table-row"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                style={{
+                  borderBottom: '1px solid rgba(255,255,255,0.03)',
+                  animation: `fadeInRow 0.28s ease forwards ${Math.min(rowIdx, 20) * 22}ms`,
+                  opacity: 0,
+                }}
               >
                 {row.map((cell, cellIdx) => (
                   <td

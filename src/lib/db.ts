@@ -446,6 +446,7 @@ async function seedDatabase(database: Database): Promise<void> {
   database.run('CREATE INDEX IF NOT EXISTS idx_tff_status         ON trade_finance_facilities(status)');
   database.run('CREATE INDEX IF NOT EXISTS idx_shipments_departure ON cargo_shipments(departure_date)');
   database.run('CREATE INDEX IF NOT EXISTS idx_customers_ab_group  ON customers(ab_test_group)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_accounts_opened_date ON accounts(opened_date)');
 }
 
 export function executeQuery(sql: string): { columns: string[]; values: unknown[][] } {
