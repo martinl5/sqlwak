@@ -19,9 +19,12 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   30: 'Master GROUP BY, HAVING and subqueries',
   40: 'Command CTEs and window functions',
   50: 'Tackle the Maritime Trade Finance division',
-  57: 'Senior DS patterns: A/B test analysis, LAG/LEAD window functions',
-  59: 'You have completed all current levels — more challenges coming soon',
+  57: 'Senior DS patterns: A/B test analysis, LAG window functions',
+  59: 'LEAD function: next-event lookahead and gap analysis for vessel scheduling',
+  61: 'Window-based median: ROW_NUMBER + COUNT OVER PARTITION BY — expert percentile patterns',
 };
+
+const epochXpEarned = (lvl: number) => (lvl <= 15 ? 10 : lvl <= 30 ? 15 : lvl <= 40 ? 20 : 30);
 
 export default function LevelUpModal() {
   const { showLevelUp, setShowLevelUp, currentLevel, completeLevel, flockSize } = useGameStore();
@@ -51,7 +54,8 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, currentLevel]);
 
-  const nextHintKey = [10, 20, 30, 40, 50, 57, 59].find((k) => currentLevel < k) ?? 59;
+  const nextHintKey = [10, 20, 30, 40, 50, 57, 59, 61].find((k) => currentLevel < k) ?? 61;
+  const xpEarned    = epochXpEarned(currentLevel);
 
   return (
     <AnimatePresence>
@@ -161,8 +165,22 @@ export default function LevelUpModal() {
               </p>
             </motion.div>
 
+            {/* XP earned badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.48, type: 'spring', damping: 14, stiffness: 280 }}
+              className="mx-6 mt-3 flex items-center justify-center gap-2 px-3 py-2"
+              style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid var(--lcb-gold)', borderRadius: 4 }}
+            >
+              <span style={{ fontSize: 15, filter: 'drop-shadow(0 0 6px rgba(201,168,76,0.7))' }}>⬡</span>
+              <span className="text-sm font-bold tracking-wide" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-gold)' }}>
+                +{xpEarned} XP Earned
+              </span>
+            </motion.div>
+
             {/* Next level hint */}
-            {currentLevel < 59 && (
+            {currentLevel < 61 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
