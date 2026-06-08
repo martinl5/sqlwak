@@ -65,12 +65,12 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
         <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--lcb-border)' }}>
           <div className="flex justify-between text-xs mb-1.5" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-muted)' }}>
             <span>Progress</span>
-            <span style={{ color: 'var(--lcb-gold)' }}>{completedLevels.length} / 57</span>
+            <span style={{ color: 'var(--lcb-gold)' }}>{completedLevels.length} / {levels.length}</span>
           </div>
           <div className="h-1 w-full" style={{ background: 'var(--lcb-border)', borderRadius: 2 }}>
             <div
               className="h-full transition-all"
-              style={{ width: `${(completedLevels.length / 57) * 100}%`, background: 'var(--lcb-gold)', borderRadius: 2 }}
+              style={{ width: `${(completedLevels.length / levels.length) * 100}%`, background: 'var(--lcb-gold)', borderRadius: 2 }}
             />
           </div>
         </div>

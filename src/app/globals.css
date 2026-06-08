@@ -93,6 +93,12 @@ input:focus-visible {
 }
 .harbour-toast { animation: toastSlideUp 0.28s ease forwards; }
 
+/* ── Level progress map tile pulse ─────────────────────────────────────── */
+@keyframes levelMapPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.0); }
+  50%       { box-shadow: 0 0 5px 2px rgba(201,168,76,0.55); }
+}
+
 /* ── Doubloon XP reward float ────────────────────────────────────────────── */
 @keyframes doubloonFloat {
   0%   { opacity: 1; transform: translateY(0) scale(1); }
