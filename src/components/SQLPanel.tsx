@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
 import { Play, Lightbulb, X, Anchor } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
@@ -220,7 +220,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
         {hasAttemptedCurrent && level?.hint && (
           <div
             className="flex items-start gap-2 mt-2 px-3 py-2"
-            style={{ borderLeft: '2px solid var(--lcb-gold-dim)', background: 'rgba(201,168,76,0.05)' }}
+            style={{ border: '1px solid rgba(201,168,76,0.22)', background: 'rgba(201,168,76,0.05)', borderRadius: 3 }}
           >
             <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
             <p className="text-xs" style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
@@ -239,22 +239,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
           <button
             key={s.label}
             onClick={() => handleSnippetClick(s.insert)}
-            className="px-2 py-0.5 text-xs transition-colors"
-            style={{
-              fontFamily: 'var(--font-ibm-plex-mono)',
-              color: 'var(--lcb-muted)',
-              border: '1px solid var(--lcb-border)',
-              borderRadius: 3,
-              background: 'transparent',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--lcb-gold)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--lcb-gold)';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--lcb-border)';
-              (e.currentTarget as HTMLButtonElement).style.color = 'var(--lcb-muted)';
-            }}
+            className="lcb-snippet px-2 py-0.5 text-xs"
           >
             {s.label}
           </button>
@@ -289,8 +274,8 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
         <div
           className="harbour-toast mx-3 mb-3"
           style={{
-            borderLeft: '3px solid var(--lcb-gold)',
-            background: 'rgba(201,168,76,0.06)',
+            border: '1px solid rgba(201,168,76,0.38)',
+            background: 'rgba(201,168,76,0.07)',
             borderRadius: 4,
             padding: '10px 12px',
           }}

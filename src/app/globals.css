@@ -9,7 +9,7 @@
   --lcb-gold:     #c9a84c;
   --lcb-gold-dim: #7a6230;
   --lcb-white:    #e8e6e0;
-  --lcb-muted:    #6b7280;
+  --lcb-muted:    #95a3b4;
   --lcb-green:    #22c55e;
   --lcb-red:      #ef4444;
 }
@@ -39,10 +39,12 @@ html, body {
   border-radius: 6px;
 }
 
-/* ── Gold accent strip on panel headers ──────────────────────────────────── */
+/* ── Panel header label container ────────────────────────────────────────── */
 .lcb-header {
-  border-left: 2px solid var(--lcb-gold);
-  padding-left: 10px;
+  padding: 3px 8px;
+  background: rgba(201,168,76,0.05);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 3px;
 }
 
 /* ── Monaco Editor ────────────────────────────────────────────────────────── */
@@ -99,6 +101,21 @@ input:focus-visible {
   50%       { box-shadow: 0 0 5px 2px rgba(201,168,76,0.55); }
 }
 
+/* ── SQL snippet pill buttons ────────────────────────────────────────────── */
+.lcb-snippet {
+  color: var(--lcb-muted);
+  border: 1px solid var(--lcb-border);
+  border-radius: 3px;
+  background: transparent;
+  transition: color 0.1s, border-color 0.1s;
+  font-family: var(--font-ibm-plex-mono);
+}
+.lcb-snippet:hover,
+.lcb-snippet:focus-visible {
+  color: var(--lcb-gold);
+  border-color: var(--lcb-gold);
+}
+
 /* ── Doubloon XP reward float ────────────────────────────────────────────── */
 @keyframes doubloonFloat {
   0%   { opacity: 1; transform: translateY(0) scale(1); }
@@ -117,4 +134,12 @@ input:focus-visible {
   color: var(--lcb-gold);
   text-shadow: 0 0 14px rgba(201,168,76,0.75), 0 0 28px rgba(201,168,76,0.35);
   z-index: 60;
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-gold-pulse { animation: none; }
+  .fade-in-up         { animation: none; }
+  .harbour-toast      { animation: none; }
+  .doubloon-float     { animation: none; opacity: 1; }
 }
