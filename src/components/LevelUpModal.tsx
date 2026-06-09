@@ -21,7 +21,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   50: 'Tackle the Maritime Trade Finance division',
   57: 'Senior DS patterns: A/B test analysis, LAG window functions',
   59: 'LEAD function: next-event lookahead and gap analysis for vessel scheduling',
-  61: 'Window-based median: ROW_NUMBER + COUNT OVER PARTITION BY — expert percentile patterns',
+  61: 'Conditional aggregation pivot: COUNT(CASE WHEN ...) — the standard SQL pivot pattern for any dialect',
+  63: 'Rolling volatility: SQRT(AVG(x²) − AVG(x)²) — population std dev via window functions',
 };
 
 const epochXpEarned = (lvl: number) => (lvl <= 15 ? 10 : lvl <= 30 ? 15 : lvl <= 40 ? 20 : 30);
@@ -54,7 +55,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, currentLevel]);
 
-  const nextHintKey = [10, 20, 30, 40, 50, 57, 59, 61].find((k) => currentLevel < k) ?? 61;
+  const nextHintKey = [10, 20, 30, 40, 50, 57, 59, 61, 63].find((k) => currentLevel < k) ?? 63;
   const xpEarned    = epochXpEarned(currentLevel);
 
   return (
@@ -180,7 +181,7 @@ export default function LevelUpModal() {
             </motion.div>
 
             {/* Next level hint */}
-            {currentLevel < 61 && (
+            {currentLevel < 63 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

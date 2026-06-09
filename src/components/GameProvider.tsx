@@ -10,6 +10,7 @@ import LevelNavigator from './LevelNavigator';
 import { useGameStore } from '@/store/useGameStore';
 import { initDatabase } from '@/lib/db';
 import SchemaViewer from './SchemaViewer';
+import LevelProgressMap from './LevelProgressMap';
 
 const HarbourCanvas = dynamic(() => import('./FlockCanvas'), {
   ssr: false,
@@ -136,7 +137,7 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 61</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 63</span>
 
           {/* Rank + XP progress bar */}
           <div className="flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
@@ -179,7 +180,7 @@ export default function GameProvider() {
           { name: 'Foundational', min: 1,  max: 15 },
           { name: 'Intermediate', min: 16, max: 30 },
           { name: 'Advanced',     min: 31, max: 40 },
-          { name: 'Expert',       min: 41, max: 61 },
+          { name: 'Expert',       min: 41, max: 63 },
         ] as const;
         return (
           <div
@@ -218,6 +219,9 @@ export default function GameProvider() {
           </div>
         );
       })()}
+
+      {/* ── Level Progress Map ───────────────────────────────────────────── */}
+      <LevelProgressMap />
 
       {/* ── Main content area ─────────────────────────────────────────────── */}
       <div className="relative flex-1 min-h-0 overflow-hidden">

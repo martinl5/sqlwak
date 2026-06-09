@@ -1793,4 +1793,95 @@ SELECT segment,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // SENIOR DS PATTERNS (Levels 62–63)
+  // Conditional aggregation pivot; rolling population std-dev
+  // ============================================================
+  {
+    id: 62,
+    title: 'Monthly Payment Channel Mix (Pivot)',
+    description: `The Digital Banking team wants to track the monthly transaction count per payment channel — a pivot table that reveals the shift from branch and ATM to digital channels.
+
+Use conditional aggregation: for each month, count how many transactions used each of five key channels: PayNow, FAST, GIRO, Card, and ATM.
+
+Return \`month\` (YYYY-MM), \`paynow\`, \`fast\`, \`giro\`, \`card\`, and \`atm\` (all as integers), ordered by \`month\`.
+
+This is the canonical SQL pivot pattern — used in virtually every product-analytics and finance-ops context. No PIVOT keyword exists in SQLite; you achieve it with \`COUNT(CASE WHEN channel = '...' THEN 1 END)\` inside a GROUP BY.`,
+    hint: 'Use COUNT(CASE WHEN channel = \'PayNow\' THEN 1 END) AS paynow (and similar) inside GROUP BY STRFTIME(\'%Y-%m\', transaction_date).',
+    seedQuery: `SELECT STRFTIME('%Y-%m', transaction_date) AS month,
+       COUNT(CASE WHEN channel =        THEN 1 END) AS paynow,
+       COUNT(CASE WHEN channel =        THEN 1 END) AS fast,
+       COUNT(CASE WHEN channel =        THEN 1 END) AS giro,
+       COUNT(CASE WHEN channel =        THEN 1 END) AS card,
+       COUNT(CASE WHEN channel =        THEN 1 END) AS atm
+  FROM transactions
+ GROUP BY
+ ORDER BY month`,
+    solutionQuery: `SELECT STRFTIME('%Y-%m', transaction_date)            AS month,
+       COUNT(CASE WHEN channel = 'PayNow' THEN 1 END) AS paynow,
+       COUNT(CASE WHEN channel = 'FAST'   THEN 1 END) AS fast,
+       COUNT(CASE WHEN channel = 'GIRO'   THEN 1 END) AS giro,
+       COUNT(CASE WHEN channel = 'Card'   THEN 1 END) AS card,
+       COUNT(CASE WHEN channel = 'ATM'    THEN 1 END) AS atm
+  FROM transactions
+ GROUP BY STRFTIME('%Y-%m', transaction_date)
+ ORDER BY month`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+  {
+    id: 63,
+    title: 'Cargo Revenue Rolling 3-Month Volatility',
+    description: `Risk Management wants to quantify how much monthly cargo revenue varies over rolling 3-month windows — a measure of freight-market volatility that informs hedging decisions.
+
+Since SQLite lacks a built-in STDDEV function, implement population standard deviation using the algebraic identity:
+
+  σ = SQRT( AVG(x²) − AVG(x)² )
+
+Use a CTE to aggregate total monthly cargo revenue (in USD millions, 2dp). In the outer query, apply this formula over a \`ROWS BETWEEN 2 PRECEDING AND CURRENT ROW\` window to produce both a 3-month moving average and a 3-month rolling volatility.
+
+Return \`month\`, \`revenue_musd\`, \`moving_avg\` (2dp), and \`rolling_3m_vol\` (2dp, population std dev), ordered by \`month\`.
+
+This algebraic variance identity is the standard approach whenever a dialect lacks STDDEV — used in Spark SQL, BigQuery legacy SQL, and SQLite-backed analytics workloads.`,
+    hint: 'CTE: GROUP BY STRFTIME(\'%Y-%m\', departure_date), SUM(cargo_value_usd)/1e6. Outer: AVG(rev) OVER w for moving_avg; ROUND(SQRT(AVG(rev*rev) OVER w - AVG(rev) OVER w * AVG(rev) OVER w), 2) for rolling_3m_vol. Window: ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW.',
+    seedQuery: `WITH monthly AS (
+  SELECT STRFTIME('%Y-%m', departure_date)         AS month,
+         ROUND(SUM(cargo_value_usd) / 1000000.0, 2) AS revenue_musd
+    FROM cargo_shipments
+   GROUP BY STRFTIME('%Y-%m', departure_date)
+)
+SELECT month,
+       revenue_musd,
+       ROUND(AVG(revenue_musd) OVER (
+         ORDER BY month ROWS BETWEEN     PRECEDING AND CURRENT ROW
+       ), 2) AS moving_avg,
+       ROUND(SQRT(
+         AVG(revenue_musd * revenue_musd) OVER (ORDER BY month ROWS BETWEEN     PRECEDING AND CURRENT ROW) -
+         AVG(revenue_musd) OVER (ORDER BY month ROWS BETWEEN     PRECEDING AND CURRENT ROW) *
+         AVG(revenue_musd) OVER (ORDER BY month ROWS BETWEEN     PRECEDING AND CURRENT ROW)
+       ), 2) AS rolling_3m_vol
+  FROM monthly
+ ORDER BY month`,
+    solutionQuery: `WITH monthly AS (
+  SELECT STRFTIME('%Y-%m', departure_date)              AS month,
+         ROUND(SUM(cargo_value_usd) / 1000000.0, 2)    AS revenue_musd
+    FROM cargo_shipments
+   GROUP BY STRFTIME('%Y-%m', departure_date)
+)
+SELECT month,
+       revenue_musd,
+       ROUND(AVG(revenue_musd) OVER (
+         ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+       ), 2) AS moving_avg,
+       ROUND(SQRT(
+         AVG(revenue_musd * revenue_musd) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) -
+         AVG(revenue_musd) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) *
+         AVG(revenue_musd) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)
+       ), 2) AS rolling_3m_vol
+  FROM monthly
+ ORDER BY month`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

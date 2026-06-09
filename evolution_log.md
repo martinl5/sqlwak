@@ -4,6 +4,36 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 5 — 2026-06-08
+
+### [UI/UX Improvements]
+
+- **Level Progress Map Strip** (`LevelProgressMap.tsx`, `GameProvider.tsx`, `globals.css`): A persistent 22-px horizontal strip inserted between the epoch breadcrumb and the main content area. Shows all 63 levels as small clickable tiles (9×14px each), colour-coded by status:
+  - Current level: gold with `@keyframes levelMapPulse` glow animation (box-shadow pulse, 1.8 s).
+  - Completed levels: green (#22c55e) at 72% opacity.
+  - Future levels: near-invisible dark at 22% opacity.
+  - Thin 1-px vertical dividers at epoch boundaries (before levels 16, 31, 41).
+  - Each tile is a `<button>` with `title` and `aria-label` for keyboard accessibility; clicking navigates directly to that level.
+  - Strip is horizontally scrollable with `scrollbarWidth: none` so it stays visually clean.
+  - This is the "sticky progress sidebar with level map" item from the UI/UX rotation.
+
+- **LevelNavigator level count fix** (`LevelNavigator.tsx`): Replaced the hardcoded `/ 57` progress counter and `(completedLevels.length / 57) * 100` width calculation with dynamic `levels.length` — navigator will always reflect the current total without manual updates.
+
+### [Game Design Tweaks]
+
+- **Level 62** *(Expert, difficulty 4)* — "Monthly Payment Channel Mix (Pivot)":
+  Teaches the standard SQL pivot pattern using conditional aggregation — the only cross-dialect approach (no PIVOT keyword in SQLite, Spark SQL, BigQuery standard SQL). Groups transactions by month and pivots five payment channels (PayNow, FAST, GIRO, Card, ATM) into columns using `COUNT(CASE WHEN channel = '...' THEN 1 END)`. Returns 6 rows (Jan–Jun 2024) showing how channel volume rotates through the data. Directly mirrors the "cross-tab / pivot" pattern used in product-analytics, digital-banking, and e-commerce DS work at FAANG and fintech institutions. No new DB data needed.
+
+- **Level 63** *(Expert, difficulty 4)* — "Cargo Revenue Rolling 3-Month Volatility":
+  Implements population standard deviation using the algebraic identity σ = √(AVG(x²) − AVG(x)²) via window functions — the standard approach when the dialect lacks STDDEV (SQLite, legacy Spark SQL, Redshift without extensions). CTE aggregates monthly cargo revenue into USD millions. Outer query applies `AVG(rev) OVER (ORDER BY month ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)` for the moving average and the same frame for `AVG(rev*rev) − AVG(rev)²` inside SQRT for rolling volatility. Returns 6 rows revealing the April 2024 volatility spike (σ ≈ 5.4 M USD) driven by large crude-oil shipments, then a June drop (σ ≈ 6.5 M USD). This exact identity appears in quant-finance rolling-risk computations, real-time anomaly-detection pipelines, and DS interviews at FAANG/sovereign funds.
+
+### [Database & Code Optimizations]
+
+- **New index** `idx_transactions_channel ON transactions(channel)` — speeds up the `channel =` filter in Level 62's conditional aggregation scan.
+- **Level count references updated** throughout: `GameProvider.tsx` header `/ 61` → `/ 63`; epoch breadcrumb Expert max `61` → `63`; `LevelUpModal.tsx` completion guard `currentLevel < 61` → `< 63`; `nextHintKey` sentinel array extended to `[..., 63]`; EPOCH_NEXT_HINT entries added for levels 61 and 63.
+
+---
+
 ## Iteration 4 — 2026-06-07
 
 ### [UI/UX Improvements]
