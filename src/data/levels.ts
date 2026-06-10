@@ -1349,7 +1349,7 @@ Return \`vessel_name\`, \`vessel_type\`, \`flag_state\`, and \`dwt_tonnes\` from
        dwt_tonnes
   FROM vessels
  ORDER BY dwt_tonnes DESC`,
-    epoch: 'Intermediate',
+    epoch: 'Expert',
     difficulty: 2,
   },
   {
@@ -1373,7 +1373,7 @@ Return \`shipment_id\`, \`vessel_name\`, \`origin_port\`, \`destination_port\`, 
   JOIN vessels v ON s.vessel_id = v.vessel_id
  WHERE s.status = 'Delayed'
  ORDER BY s.cargo_value_usd DESC`,
-    epoch: 'Intermediate',
+    epoch: 'Expert',
     difficulty: 2,
   },
   {
@@ -1416,7 +1416,7 @@ SELECT c.customer_name,
   FROM facility_summary fs
   JOIN customers c ON fs.customer_id = c.customer_id
  ORDER BY fs.utilisation_pct DESC`,
-    epoch: 'Advanced',
+    epoch: 'Expert',
     difficulty: 3,
   },
   {
@@ -1458,7 +1458,7 @@ SELECT vessel_name,
        ) AS rank_in_type
   FROM vessel_stats
  ORDER BY vessel_type, rank_in_type`,
-    epoch: 'Advanced',
+    epoch: 'Expert',
     difficulty: 3,
   },
   {

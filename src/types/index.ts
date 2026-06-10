@@ -1,37 +1,4 @@
-export interface Bird {
-  id: number;
-  species: string;
-  name: string;
-  age: number;
-  wingspan: number;
-  color: string;
-}
-
-export interface Location {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  altitude: number;
-  region: string;
-}
-
-export interface WeatherPattern {
-  id: number;
-  pattern_name: string;
-  intensity: number;
-  temperature: number;
-  wind_speed: number;
-}
-
-export interface FlightLog {
-  id: number;
-  bird_id: number;
-  location_id: number;
-  timestamp: string;
-  distance: number;
-  duration: number;
-}
+export type Epoch = 'Foundational' | 'Intermediate' | 'Advanced' | 'Expert';
 
 export interface Level {
   id: number;
@@ -40,8 +7,14 @@ export interface Level {
   hint: string;
   seedQuery: string;
   solutionQuery: string;
-  epoch: 'Foundational' | 'Intermediate' | 'Advanced' | 'Expert';
+  epoch: Epoch;
   difficulty: number;
+  /**
+   * When true the user's rows must appear in the same order as the solution's.
+   * When omitted, ordering is required only if the solution query has a
+   * top-level ORDER BY (see solutionRequiresOrder in lib/validator.ts).
+   */
+  orderMatters?: boolean;
 }
 
 export interface QueryResult {

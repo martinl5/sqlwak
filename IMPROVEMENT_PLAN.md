@@ -7,6 +7,30 @@ React 19, sql.js, Zustand).
 
 ---
 
+## Implementation Status
+
+Implemented in this PR:
+
+- **Phase 1 — Correctness core (done):** read-only query guard + seed snapshot/reset (1.1),
+  order-aware comparison with `orderMatters` override and top-level-ORDER-BY inference (1.2),
+  cached expected results (1.3), exact strings / relative float epsilon / case-insensitive
+  column names (1.4), specific failure messages per mismatch class (1.5), epoch tags fixed on
+  levels 51–54 (part of 1.6).
+- **Phase 2 — Safety net (done):** Vitest level-integrity suite covering all 63 levels +
+  validator unit tests (270 tests), GitHub Actions CI running lint, typecheck, tests, build
+  (2.1–2.3).
+- **Phase 3 — Architecture (mostly done):** sql.js self-hosted from the npm package via a
+  sync script — no more CDN/version drift (3.1); single `src/lib/progression.ts` consumed
+  everywhere, all hardcoded epoch/XP/max-level copies deleted (3.2); dead NextAuth wiring,
+  unused types, unused `p5` dependency, no-op callbacks, and the `sqlawk` name typo removed
+  (3.3); seed extracted to `src/lib/seed.ts` for Node test reuse.
+
+Still open: level 49 simplification and seed-blank audit (1.6), store tests (2.4),
+`levels.ts` split and build-time expected results (3.4), Pillar 4 UX/a11y work, and Pillar 5
+docs (LICENSE choice is the owner's call).
+
+---
+
 ## Current State Snapshot
 
 | Area | State |

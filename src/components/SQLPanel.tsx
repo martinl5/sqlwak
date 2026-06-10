@@ -6,10 +6,7 @@ import { Play, Lightbulb, X, Anchor } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { validateQuery } from '@/lib/validator';
 import { levels } from '@/data/levels';
-
-interface SQLPanelProps {
-  onSuccess: () => void;
-}
+import { epochOf, xpFor, EPOCH_RANK } from '@/lib/progression';
 
 const SQL_SNIPPETS = [
   { label: 'SELECT',   insert: 'SELECT '    },
@@ -21,16 +18,7 @@ const SQL_SNIPPETS = [
   { label: 'LIMIT',    insert: '\nLIMIT '   },
 ];
 
-const EPOCH_LABEL: Record<string, string> = {
-  Foundational: 'GRADUATE ANALYST',
-  Intermediate: 'SENIOR ANALYST',
-  Advanced:     'VP, DATA & ANALYTICS',
-  Expert:       'MANAGING DIRECTOR',
-};
-
-const epochXp = (lvl: number) => (lvl <= 15 ? 10 : lvl <= 30 ? 15 : lvl <= 40 ? 20 : 30);
-
-export default function SQLPanel({ onSuccess }: SQLPanelProps) {
+export default function SQLPanel() {
   const [query, setQuery]           = useState('');
   const [error, setError]           = useState<string | null>(null);
   const [doubloonAmt, setDoubloonAmt] = useState<number | null>(null);
@@ -51,13 +39,6 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
   } = useGameStore();
 
   const level = levels.find((l) => l.id === currentLevel);
-
-  const epochOf = (id: number) => {
-    if (id <= 15) return 'Foundational';
-    if (id <= 30) return 'Intermediate';
-    if (id <= 40) return 'Advanced';
-    return 'Expert';
-  };
 
   const handleEditorMount = (editor: unknown, monaco: Monaco) => {
     editorRef.current  = editor;
@@ -111,19 +92,16 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     setStoreError(null);
 
     try {
-      const result = validateQuery(activeQuery, level?.solutionQuery || '');
+      const result = validateQuery(activeQuery, level?.solutionQuery || '', {
+        orderMatters: level?.orderMatters,
+      });
       if (result.success) {
         setQueryResult(result.userResult || null);
-        setDoubloonAmt(epochXp(currentLevel));
-        try {
-          const editor = editorRef.current as { getPosition?: () => { lineNumber: number; column: number } | null } | null;
-          if (editor && typeof editor.getPosition === 'function') {
-            const pos = editor.getPosition();
-            if (pos) setLastSpawnedBird({ x: 150 + pos.column * 8, y: 100 + pos.lineNumber * 20 });
-          }
-        } catch (_) { /* ignore */ }
+        setDoubloonAmt(xpFor(currentLevel));
+        const editor = editorRef.current as { getPosition?: () => { lineNumber: number; column: number } | null } | null;
+        const pos = editor?.getPosition?.();
+        if (pos) setLastSpawnedBird({ x: 150 + pos.column * 8, y: 100 + pos.lineNumber * 20 });
         setShowLevelUp(true);
-        onSuccess();
       } else {
         setError(result.message);
         setQueryResult(result.userResult || null);
@@ -133,7 +111,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
     } finally {
       setIsExecuting(false);
     }
-  }, [query, level, currentLevel, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, onSuccess, setHasAttemptedCurrent]);
+  }, [query, level, currentLevel, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, setHasAttemptedCurrent]);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -175,7 +153,7 @@ export default function SQLPanel({ onSuccess }: SQLPanelProps) {
             className="text-xs tracking-widest uppercase"
             style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-muted)' }}
           >
-            {EPOCH_LABEL[epoch]} — {epoch}
+            {EPOCH_RANK[epoch].toUpperCase()} — {epoch}
           </p>
           <h2
             className="text-sm font-semibold mt-0.5"

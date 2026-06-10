@@ -1,6 +1,7 @@
 'use client';
 
-import { useGameStore, selectCurrentEpoch } from '@/store/useGameStore';
+import { useGameStore } from '@/store/useGameStore';
+import { epochOf } from '@/lib/progression';
 import { Ship, ChevronLeft, List } from 'lucide-react';
 
 interface FlockStatusProps {
@@ -16,7 +17,7 @@ const EPOCH_COLOR: Record<string, string> = {
 
 export default function FlockStatus({ onOpenLevelNavigator }: FlockStatusProps) {
   const { currentLevel, flockSize, goToPreviousLevel, levelHistory } = useGameStore();
-  const epoch     = selectCurrentEpoch(currentLevel);
+  const epoch     = epochOf(currentLevel);
   const canGoBack = levelHistory.length > 1;
 
   return (

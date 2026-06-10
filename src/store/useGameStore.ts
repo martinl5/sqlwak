@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Level, Boid, QueryResult } from '@/types';
+import { xpFor } from '@/lib/progression';
+import type { Boid, QueryResult } from '@/types';
 
 interface GameState {
   // Level progression
@@ -75,7 +76,7 @@ export const useGameStore = create<GameState>()(
 
       completeLevel: (level) =>
         set((state) => {
-          const xpGain = level <= 15 ? 10 : level <= 30 ? 15 : level <= 40 ? 20 : 30;
+          const xpGain = xpFor(level);
           return {
             completedLevels: state.completedLevels.includes(level)
               ? state.completedLevels
@@ -150,18 +151,3 @@ export const useGameStore = create<GameState>()(
     }
   )
 );
-
-// Helper selectors
-export const selectCurrentEpoch = (level: number): string => {
-  if (level <= 15) return 'Foundational';
-  if (level <= 30) return 'Intermediate';
-  if (level <= 40) return 'Advanced';
-  return 'Expert';
-};
-
-export const selectBoidSpecies = (level: number): { species: string; color: string; size: number } => {
-  if (level <= 15) return { species: 'Tugboat',        color: '#c9a84c', size: 14 };
-  if (level <= 30) return { species: 'Cargo Ship',     color: '#60a5fa', size: 22 };
-  if (level <= 40) return { species: 'Container Ship', color: '#34d399', size: 30 };
-  return                  { species: 'Supertanker',    color: '#f59e0b', size: 38 };
-};

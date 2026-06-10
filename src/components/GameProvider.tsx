@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Fragment } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import dynamic from 'next/dynamic';
 import SQLPanel from './SQLPanel';
 import DataPreview from './DataPreview';
@@ -9,6 +9,7 @@ import LevelUpModal from './LevelUpModal';
 import LevelNavigator from './LevelNavigator';
 import { useGameStore } from '@/store/useGameStore';
 import { initDatabase } from '@/lib/db';
+import { EPOCH_RANGES, MAX_LEVEL } from '@/lib/progression';
 import SchemaViewer from './SchemaViewer';
 import LevelProgressMap from './LevelProgressMap';
 
@@ -20,7 +21,6 @@ const HarbourCanvas = dynamic(() => import('./FlockCanvas'), {
 export default function GameProvider() {
   const [isDbReady, setIsDbReady]               = useState(false);
   const [dbError, setDbError]                   = useState<string | null>(null);
-  const [isClient, setIsClient]                 = useState(false);
   const [dimensions, setDimensions]             = useState({ width: 0, height: 0 });
   const [activeRightTab, setActiveRightTab]     = useState<'schema' | 'data'>('schema');
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
@@ -36,25 +36,17 @@ export default function GameProvider() {
   const rank = getRankInfo(totalXp);
 
   useEffect(() => {
-    setIsClient(true);
-    setDimensions({ width: window.innerWidth, height: window.innerHeight });
-  }, []);
-
-  useEffect(() => {
     initDatabase()
       .then(() => setIsDbReady(true))
       .catch((err) => setDbError(err instanceof Error ? err.message : 'Failed to initialise database'));
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
     const onResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [isClient]);
-
-  const handleSuccess = useCallback(() => {}, []);
+  }, []);
 
   // ── Error state ────────────────────────────────────────────────────────────
   if (dbError) {
@@ -79,7 +71,7 @@ export default function GameProvider() {
   }
 
   // ── Loading state ──────────────────────────────────────────────────────────
-  if (!isClient || !isDbReady) {
+  if (!isDbReady) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-6" style={{ background: 'var(--lcb-black)' }}>
         {/* LCB lion crest placeholder */}
@@ -137,7 +129,7 @@ export default function GameProvider() {
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / 63</span>
+          <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / {MAX_LEVEL}</span>
 
           {/* Rank + XP progress bar */}
           <div className="flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
@@ -176,12 +168,7 @@ export default function GameProvider() {
 
       {/* ── Epoch Breadcrumb Strip ───────────────────────────────────────── */}
       {(() => {
-        const epochs = [
-          { name: 'Foundational', min: 1,  max: 15 },
-          { name: 'Intermediate', min: 16, max: 30 },
-          { name: 'Advanced',     min: 31, max: 40 },
-          { name: 'Expert',       min: 41, max: 63 },
-        ] as const;
+        const epochs = EPOCH_RANGES;
         return (
           <div
             className="flex items-center px-5 gap-1.5 text-xs"
@@ -234,7 +221,7 @@ export default function GameProvider() {
         <div className="relative z-10 h-full flex">
           {/* Left: SQL Editor */}
           <div className="w-[460px] h-full p-3 pr-2">
-            <SQLPanel onSuccess={handleSuccess} />
+            <SQLPanel />
           </div>
 
           {/* Right: Schema / Data + status */}

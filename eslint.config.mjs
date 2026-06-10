@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored sql.js runtime copied from node_modules by scripts/sync-sql-assets.mjs
+    "public/vendor/**",
   ]),
 ]);
 
