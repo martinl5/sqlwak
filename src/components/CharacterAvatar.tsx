@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useReducedMotion } from 'framer-motion';
 
 // Line-art portrait in the LCB terminal palette: off-white strokes on the
@@ -16,7 +16,13 @@ const EYES = {
   left:  { cx: 79,  cy: 105 },
   right: { cx: 123, cy: 105 },
 };
-const PUPIL_RANGE = 3.5; // max pupil travel in viewBox px
+// Lens-shaped sclera per eye: flatter sloped top, rounder bottom, pointed corners.
+const SCLERA = {
+  left:  'M 68,105 C 71,98.5 86,97 90,104 C 87,111.5 72,112 68,105 Z',
+  right: 'M 134,105 C 131,98.5 116,97 112,104 C 115,111.5 130,112 134,105 Z',
+};
+const PUPIL_RANGE_X = 3.5; // max pupil travel in viewBox px
+const PUPIL_RANGE_Y = 2;   // shallower eyes — less vertical travel
 
 const eyeTransition = { duration: 0.12, ease: 'easeOut' as const };
 
@@ -41,8 +47,8 @@ export default function CharacterAvatar({ size = 260 }: { size?: number }) {
       const r = svg.getBoundingClientRect();
       const dx = (e.clientX - (r.left + r.width / 2)) / 40;
       const dy = (e.clientY - (r.top + r.height / 2)) / 40;
-      pupilX.set(Math.max(-PUPIL_RANGE, Math.min(PUPIL_RANGE, dx)));
-      pupilY.set(Math.max(-PUPIL_RANGE, Math.min(PUPIL_RANGE, dy)));
+      pupilX.set(Math.max(-PUPIL_RANGE_X, Math.min(PUPIL_RANGE_X, dx)));
+      pupilY.set(Math.max(-PUPIL_RANGE_Y, Math.min(PUPIL_RANGE_Y, dy)));
     };
     window.addEventListener('pointermove', onMove);
     return () => window.removeEventListener('pointermove', onMove);
@@ -74,18 +80,28 @@ export default function CharacterAvatar({ size = 260 }: { size?: number }) {
   const leftEyeScale = blink ? 0.08 : 1;
   const rightEyeScale = wink ? 0.1 : blink ? 0.08 : 1;
 
+  const clipBase = useId();
+
   const eye = (which: 'left' | 'right', scaleY: number) => {
     const { cx, cy } = EYES[which];
+    const clipId = `${clipBase}-${which}`;
     return (
       <motion.g
         style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
         animate={{ scaleY }}
         transition={eyeTransition}
       >
-        <ellipse cx={cx} cy={cy} rx={6.5} ry={7.5} fill="rgba(232,230,224,0.07)" stroke={LINE} strokeWidth={4} />
-        <motion.g style={{ x: springX, y: springY }}>
-          <circle cx={cx} cy={cy} r={2.8} fill={LINE} />
-        </motion.g>
+        <clipPath id={clipId}>
+          <path d={SCLERA[which]} />
+        </clipPath>
+        <path d={SCLERA[which]} fill={LINE} stroke={LINE} strokeWidth={2.5} />
+        {/* Pupil + glint, clipped so cursor tracking never leaves the lens */}
+        <g clipPath={`url(#${clipId})`}>
+          <motion.g style={{ x: springX, y: springY }}>
+            <circle cx={cx} cy={cy + 0.5} r={5.5} fill={HAIR} />
+            <circle cx={cx + 2.2} cy={cy - 1.7} r={1.8} fill={LINE} />
+          </motion.g>
+        </g>
       </motion.g>
     );
   };
