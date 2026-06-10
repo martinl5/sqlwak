@@ -66,6 +66,9 @@ export default function LevelUpModal() {
 
           {/* Card */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="level-up-title"
             initial={{ scale: 0.88, opacity: 0, y: 16 }}
             animate={{ scale: 1,    opacity: 1, y: 0  }}
             exit={{   scale: 0.88, opacity: 0, y: 16  }}
@@ -96,6 +99,7 @@ export default function LevelUpModal() {
                 Query Accepted
               </motion.p>
               <motion.h2
+                id="level-up-title"
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25 }}
@@ -192,6 +196,7 @@ export default function LevelUpModal() {
 
             {/* Continue button */}
             <motion.button
+              autoFocus
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.56 }}
@@ -211,6 +216,7 @@ export default function LevelUpModal() {
             {/* Close */}
             <button
               onClick={handleClose}
+              aria-label="Close"
               className="absolute top-3 right-3 p-1 transition-opacity hover:opacity-60"
               style={{ color: 'var(--lcb-muted)' }}
             >

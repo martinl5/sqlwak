@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import { levels } from '@/data/levels';
 import { Check, X } from 'lucide-react';
@@ -21,6 +22,13 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
 
   const handleSelect = (id: number) => { setCurrentLevel(id); onClose(); };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const epochs = ['Foundational', 'Intermediate', 'Advanced', 'Expert'] as const;
@@ -36,6 +44,9 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
 
       {/* Drawer */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Level navigator"
         className="absolute right-0 top-0 bottom-0 w-[360px] flex flex-col"
         style={{ background: 'var(--lcb-panel)', borderLeft: '1px solid var(--lcb-border)' }}
       >
@@ -54,6 +65,8 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
           </div>
           <button
             onClick={onClose}
+            aria-label="Close level navigator"
+            autoFocus
             className="p-1 transition-opacity hover:opacity-60"
             style={{ color: 'var(--lcb-muted)' }}
           >
@@ -112,6 +125,8 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
                             : 'var(--lcb-muted)',
                         }}
                         title={level.title}
+                        aria-label={`Level ${level.id}: ${level.title}${done ? ' (completed)' : ''}`}
+                        aria-current={current ? 'true' : undefined}
                       >
                         {done && !current && (
                           <Check className="w-2.5 h-2.5 absolute top-0.5 left-0.5" style={{ color: '#22c55e' }} />

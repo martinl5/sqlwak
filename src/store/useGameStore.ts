@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { xpFor } from '@/lib/progression';
+import { xpFor, MAX_LEVEL } from '@/lib/progression';
 import type { Boid, QueryResult } from '@/types';
 
 interface GameState {
@@ -76,15 +76,20 @@ export const useGameStore = create<GameState>()(
 
       completeLevel: (level) =>
         set((state) => {
-          const xpGain = xpFor(level);
+          // XP is awarded once per level — replaying a completed level
+          // shouldn't farm XP. Streak counts every successful solve.
+          const isFirstCompletion = !state.completedLevels.includes(level);
+          const nextLevel = Math.min(level + 1, MAX_LEVEL);
           return {
-            completedLevels: state.completedLevels.includes(level)
-              ? state.completedLevels
-              : [...state.completedLevels, level],
-            currentLevel: level + 1,
-            levelHistory: [...state.levelHistory, level + 1],
+            completedLevels: isFirstCompletion
+              ? [...state.completedLevels, level]
+              : state.completedLevels,
+            currentLevel: nextLevel,
+            levelHistory: state.levelHistory.includes(nextLevel)
+              ? state.levelHistory
+              : [...state.levelHistory, nextLevel],
             hasAttemptedCurrent: false,
-            totalXp: state.totalXp + xpGain,
+            totalXp: isFirstCompletion ? state.totalXp + xpFor(level) : state.totalXp,
             currentStreak: state.currentStreak + 1,
           };
         }),
@@ -130,8 +135,9 @@ export const useGameStore = create<GameState>()(
           const newHistory = [...state.levelHistory];
           newHistory.pop(); // Remove current level
           const previousLevel = newHistory[newHistory.length - 1];
-          set({ 
+          set({
             currentLevel: previousLevel,
+            levelHistory: newHistory,
             hasAttemptedCurrent: false,
           });
         }

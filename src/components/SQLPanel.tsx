@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
 import { Play, Lightbulb, X, Anchor } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
-import { validateQuery } from '@/lib/validator';
+import { validateQuery, getExpectedShape } from '@/lib/validator';
 import { levels } from '@/data/levels';
 import { epochOf, xpFor, EPOCH_RANK } from '@/lib/progression';
 
@@ -21,6 +21,7 @@ const SQL_SNIPPETS = [
 export default function SQLPanel() {
   const [query, setQuery]           = useState('');
   const [error, setError]           = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
   const [doubloonAmt, setDoubloonAmt] = useState<number | null>(null);
   const editorRef                   = useRef<unknown>(null);
   const monacoRef                   = useRef<Monaco | null>(null);
@@ -105,9 +106,11 @@ export default function SQLPanel() {
       } else {
         setError(result.message);
         setQueryResult(result.userResult || null);
+        setFailedAttempts((n) => n + 1);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Query execution failed');
+      setFailedAttempts((n) => n + 1);
     } finally {
       setIsExecuting(false);
     }
@@ -132,11 +135,16 @@ export default function SQLPanel() {
 
   useEffect(() => {
     setQuery('');
+    setFailedAttempts(0);
     const editor = editorRef.current as { focus?: () => void } | null;
     if (editor?.focus) setTimeout(() => editor.focus?.(), 50);
   }, [currentLevel]);
 
   const epoch = epochOf(currentLevel);
+  // Escalating disclosure: after three failed attempts, reveal the expected
+  // result's shape (columns + row count) without revealing its values.
+  const expectedShape =
+    failedAttempts >= 3 && level ? getExpectedShape(level.solutionQuery) : null;
 
   return (
     <div
@@ -203,6 +211,20 @@ export default function SQLPanel() {
             <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
             <p className="text-xs" style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
               {level.hint}
+            </p>
+          </div>
+        )}
+        {expectedShape && (
+          <div
+            className="mt-2 px-3 py-2"
+            style={{ border: '1px solid rgba(96,165,250,0.25)', background: 'rgba(96,165,250,0.05)', borderRadius: 3 }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: '#60a5fa', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+              Harbour Master&apos;s Dossier
+            </p>
+            <p className="text-xs leading-5" style={{ color: 'var(--lcb-white)', opacity: 0.8, fontFamily: 'var(--font-ibm-plex-mono)' }}>
+              The expected report has <span style={{ color: '#60a5fa' }}>{expectedShape.rows}</span> row{expectedShape.rows === 1 ? '' : 's'} with column{expectedShape.columns.length === 1 ? '' : 's'}:{' '}
+              <span style={{ color: '#60a5fa' }}>{expectedShape.columns.join(', ')}</span>
             </p>
           </div>
         )}
