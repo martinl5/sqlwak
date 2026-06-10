@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Fragment } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import SQLPanel from './SQLPanel';
 import DataPreview from './DataPreview';
 import HarbourStatus from './FlockStatus';
@@ -163,6 +164,13 @@ export default function GameProvider() {
 
           <span className="w-1 h-1 rounded-full inline-block" style={{ background: 'var(--lcb-green)' }} />
           <span style={{ color: 'var(--lcb-green)' }}>LIVE</span>
+          <Link
+            href="/about"
+            className="uppercase tracking-widest hover:underline"
+            style={{ color: 'var(--lcb-muted)' }}
+          >
+            About
+          </Link>
         </div>
       </div>
 
