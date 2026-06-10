@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Database, Table, ChevronDown, ChevronRight, Search } from 'lucide-react';
-import { useGameStore } from '@/store/useGameStore';
 
 interface ColumnInfo {
   name: string;
@@ -144,7 +143,7 @@ export default function SchemaViewer() {
 
   const toggle = (t: string) => {
     const next = new Set(expandedTables);
-    next.has(t) ? next.delete(t) : next.add(t);
+    if (next.has(t)) next.delete(t); else next.add(t);
     setExpandedTables(next);
   };
 

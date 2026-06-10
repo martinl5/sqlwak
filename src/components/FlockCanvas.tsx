@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useGameStore, selectBoidSpecies } from '@/store/useGameStore';
-import type { Boid } from '@/types';
+import { useGameStore } from '@/store/useGameStore';
+import { shipFor } from '@/lib/progression';
 
 interface ShipEntity {
   id: number;
@@ -39,7 +39,6 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
   const animationRef           = useRef<number>(0);
   const frameRef               = useRef<number>(0);
   const initializedRef         = useRef<boolean>(false);
-  const prevBoidsLengthRef     = useRef<number>(0);
 
   const { boids, currentLevel, addBoid, lastSpawnedBird } = useGameStore();
 
@@ -81,12 +80,11 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
 
     boids.forEach((boid) => {
       if (currentIds.has(boid.id)) return;
-      const info = selectBoidSpecies(boid.level);
+      const info = shipFor(boid.level);
       const laneIdx = shipsRef.current.length % 5;
       const laneY = hz + waterH * (0.12 + laneIdx * 0.17);
 
       for (let i = 0; i < 8; i++) {
-        const angle = (Math.PI * 2 / 8) * i;
         spawnEffectsRef.current.push({
           id: Date.now() + i,
           x: boid.x || width * 0.5,
@@ -121,7 +119,7 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
     if (!lastSpawnedBird || lastSpawnRef.current) return;
     lastSpawnRef.current = lastSpawnedBird;
 
-    const info = selectBoidSpecies(currentLevel);
+    const info = shipFor(currentLevel);
     const hz = height * 0.58;
     const waterH = height - hz;
     const laneIdx = shipsRef.current.length % 5;
@@ -226,7 +224,7 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
         ctx.beginPath();
         for (let x = 0; x < width; x += 4) {
           const y = shimmerY + Math.sin((x + shimmerOff) * 0.03) * 2;
-          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
       }

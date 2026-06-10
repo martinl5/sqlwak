@@ -1,17 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { useGameStore, selectBoidSpecies, selectCurrentEpoch } from '@/store/useGameStore';
+import { useGameStore } from '@/store/useGameStore';
+import { epochOf, shipFor, xpFor, EPOCH_RANK, MAX_LEVEL } from '@/lib/progression';
 import { X, Anchor, ArrowRight } from 'lucide-react';
-
-const EPOCH_TITLE: Record<string, string> = {
-  Foundational: 'Graduate Analyst',
-  Intermediate: 'Senior Analyst',
-  Advanced:     'VP, Data & Analytics',
-  Expert:       'Managing Director',
-};
 
 const EPOCH_NEXT_HINT: Record<number, string> = {
   10: 'Continue mastering SELECT and WHERE filters',
@@ -25,13 +19,11 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   63: 'Rolling volatility: SQRT(AVG(x²) − AVG(x)²) — population std dev via window functions',
 };
 
-const epochXpEarned = (lvl: number) => (lvl <= 15 ? 10 : lvl <= 30 ? 15 : lvl <= 40 ? 20 : 30);
-
 export default function LevelUpModal() {
   const { showLevelUp, setShowLevelUp, currentLevel, completeLevel, flockSize } = useGameStore();
 
-  const ship  = selectBoidSpecies(currentLevel);
-  const epoch = selectCurrentEpoch(currentLevel);
+  const ship  = shipFor(currentLevel);
+  const epoch = epochOf(currentLevel);
 
   useEffect(() => {
     if (!showLevelUp) return;
@@ -44,19 +36,19 @@ export default function LevelUpModal() {
     frame();
   }, [showLevelUp]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setShowLevelUp(false);
     completeLevel(currentLevel);
-  };
+  }, [setShowLevelUp, completeLevel, currentLevel]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && showLevelUp) handleClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showLevelUp, currentLevel]);
+  }, [showLevelUp, handleClose]);
 
   const nextHintKey = [10, 20, 30, 40, 50, 57, 59, 61, 63].find((k) => currentLevel < k) ?? 63;
-  const xpEarned    = epochXpEarned(currentLevel);
+  const xpEarned    = xpFor(currentLevel);
 
   return (
     <AnimatePresence>
@@ -162,7 +154,7 @@ export default function LevelUpModal() {
                 LCB Career Level
               </p>
               <p className="text-sm font-semibold mt-0.5" style={{ fontFamily: 'var(--font-playfair)', color: 'var(--lcb-gold)' }}>
-                {EPOCH_TITLE[epoch]}
+                {EPOCH_RANK[epoch]}
               </p>
             </motion.div>
 
@@ -181,7 +173,7 @@ export default function LevelUpModal() {
             </motion.div>
 
             {/* Next level hint */}
-            {currentLevel < 63 && (
+            {currentLevel < MAX_LEVEL && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

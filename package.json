@@ -1,25 +1,25 @@
 {
-  "name": "sqlawk",
+  "name": "sqlwak",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "predev": "node scripts/sync-sql-assets.mjs",
+    "prebuild": "node scripts/sync-sql-assets.mjs"
   },
   "dependencies": {
-    "@auth/core": "^0.41.0",
     "@monaco-editor/react": "^4.7.0",
-    "@types/canvas-confetti": "^1.9.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
     "next": "16.2.1",
-    "next-auth": "^5.0.0-beta.30",
-    "p5": "^2.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sql.js": "^1.14.1",
@@ -27,13 +27,15 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
-    "@types/p5": "^1.7.7",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/sql.js": "^1.4.11",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }

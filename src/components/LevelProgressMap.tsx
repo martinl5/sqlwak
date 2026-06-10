@@ -3,9 +3,7 @@
 import { Fragment } from 'react';
 import { useGameStore } from '@/store/useGameStore';
 import { levels } from '@/data/levels';
-
-// Vertical dividers appear before the first level of each new epoch
-const EPOCH_STARTS = new Set([16, 31, 41]);
+import { EPOCH_STARTS } from '@/lib/progression';
 
 const EPOCH_DOT_COLOR: Record<string, string> = {
   Foundational: '#c9a84c',

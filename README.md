@@ -75,6 +75,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+Useful checks (all run in CI):
+
+```bash
+npm run lint       # ESLint
+npm run typecheck  # TypeScript
+npm test           # Vitest — validates every level's solution query
+npm run build      # Production build
+```
+
 ---
 
 ## Contributing

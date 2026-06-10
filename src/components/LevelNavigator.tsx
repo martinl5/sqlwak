@@ -1,6 +1,6 @@
 'use client';
 
-import { useGameStore, selectCurrentEpoch } from '@/store/useGameStore';
+import { useGameStore } from '@/store/useGameStore';
 import { levels } from '@/data/levels';
 import { Check, X } from 'lucide-react';
 
