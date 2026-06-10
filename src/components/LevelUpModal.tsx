@@ -11,8 +11,9 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   10: 'Continue mastering SELECT and WHERE filters',
   20: 'Unlock JOINs and multi-table aggregation',
   30: 'Master GROUP BY, HAVING and subqueries',
-  40: 'Command CTEs and window functions',
-  50: 'Tackle the Maritime Trade Finance division',
+  40: 'Tackle the Maritime Trade Finance division',
+  44: 'Command Expert-level banking CTEs and window functions',
+  54: 'Master complex Maritime Trade Finance analytics',
   57: 'Senior DS patterns: A/B test analysis, LAG window functions',
   59: 'LEAD function: next-event lookahead and gap analysis for vessel scheduling',
   61: 'Conditional aggregation pivot: COUNT(CASE WHEN ...) — the standard SQL pivot pattern for any dialect',
@@ -47,7 +48,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 50, 57, 59, 61, 63].find((k) => currentLevel < k) ?? 63;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63].find((k) => currentLevel < k) ?? 63;
   const xpEarned    = xpFor(currentLevel);
 
   return (

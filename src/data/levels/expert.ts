@@ -1,8 +1,13 @@
 import type { Level } from '@/types';
 
 export const expertLevels: Level[] = [
+  // ============================================================
+  // EXPERT BANKING (Levels 45–54)
+  // Recursive CTEs, Advanced Windows, Multi-CTE Analysis
+  // ============================================================
+
   {
-    id: 41,
+    id: 45,
     title: 'Customer Lifetime Value Estimate',
     description: `Strategic Finance estimates Customer Lifetime Value (CLV) using a simplified formula:
 \`LTV = total_balance × 0.015 + total_transacted × 0.001\`
@@ -52,7 +57,7 @@ SELECT c.customer_name,
   },
 
   {
-    id: 42,
+    id: 46,
     title: 'Transaction Spike Detection',
     description: `Fraud Operations flags customers whose single largest transaction is more than 3× their personal average. Compute the anomaly ratio.
 
@@ -91,7 +96,7 @@ SELECT c.customer_name,
   },
 
   {
-    id: 43,
+    id: 47,
     title: 'Rolling 30-Day Debit Spend',
     description: `Treasury's liquidity desk monitors a rolling 30-day debit spend window to detect unusual cash outflow patterns.
 
@@ -121,7 +126,7 @@ Aggregate daily debit totals, then compute a 30-day rolling sum using a window f
   },
 
   {
-    id: 44,
+    id: 48,
     title: 'Loan Amortisation Schedule (Recursive CTE)',
     description: `Using a recursive CTE, generate the first 12 months of the repayment schedule for Loan #1 (SGD 380,000 at 2.5% p.a., monthly payment ≈ SGD 1,760).
 
@@ -154,7 +159,7 @@ SELECT month_num,
   },
 
   {
-    id: 45,
+    id: 49,
     title: 'Customer Acquisition Cohort Analysis',
     description: `Cohort analysis: group customers by the year they joined LCB, then measure total accounts opened and average balance per cohort.
 
@@ -188,7 +193,7 @@ SELECT c.cohort_year,
   },
 
   {
-    id: 46,
+    id: 50,
     title: 'Portfolio Risk Concentration',
     description: `The Board requires a risk concentration report: for each risk grade, show the loan count, total exposure, average rate, and its percentage of the overall portfolio.
 
@@ -232,7 +237,7 @@ SELECT g.risk_grade,
   },
 
   {
-    id: 47,
+    id: 51,
     title: 'Customer Churn Risk Signals',
     description: `Retention Analytics flags customers showing churn signals: either they have at least one Dormant account, or their last transaction was before March 2024.
 
@@ -288,7 +293,7 @@ SELECT c.customer_name,
   },
 
   {
-    id: 48,
+    id: 52,
     title: 'Total Interest Income Projection',
     description: `Finance needs the projected total interest income for all active loans using the simple interest formula:
 \`total_interest = principal × rate / 100 / 12 × term_months\`
@@ -318,7 +323,7 @@ Return \`loan_id\`, \`customer_name\`, \`principal_amount\`, \`interest_rate\`, 
   },
 
   {
-    id: 49,
+    id: 53,
     title: 'Transaction Anomaly Z-Score',
     description: `Advanced fraud detection: compute a simplified Z-score for each transaction relative to its account's mean and variance. Flag those with an absolute Z-score > 1.5.
 
@@ -366,7 +371,7 @@ SELECT t.transaction_id,
   },
 
   {
-    id: 50,
+    id: 54,
     title: 'LCB Executive Dashboard',
     description: `The CEO requests a single-row summary KPI dashboard for the Board pack. Compute all key metrics in one query using subqueries within a SELECT.
 
@@ -402,141 +407,9 @@ Return these columns:
   },
 
   // ============================================================
-  // MARITIME TRADE FINANCE (Levels 51–55)
-  // New tables: vessels, cargo_shipments, trade_finance_facilities
+  // MARITIME TRADE FINANCE EXPERT (Levels 55–63)
+  // Complex analytics: UNION ALL, multi-CTE, advanced window functions
   // ============================================================
-
-  {
-    id: 51,
-    title: 'LCB Fleet Registry',
-    description: `LCB's Trade Finance division finances a fleet of merchant vessels. The shipping desk needs the complete vessel registry sorted by cargo capacity.
-
-Return \`vessel_name\`, \`vessel_type\`, \`flag_state\`, and \`dwt_tonnes\` from the \`vessels\` table, ordered by \`dwt_tonnes\` descending.`,
-    hint: 'SELECT four columns FROM vessels ORDER BY dwt_tonnes DESC.',
-    seedQuery: `SELECT
-  FROM vessels
- ORDER BY `,
-    solutionQuery: `SELECT vessel_name,
-       vessel_type,
-       flag_state,
-       dwt_tonnes
-  FROM vessels
- ORDER BY dwt_tonnes DESC`,
-    epoch: 'Expert',
-    difficulty: 2,
-  },
-
-  {
-    id: 52,
-    title: 'Delayed Cargo Alert',
-    description: `Operations Control has flagged all shipments currently showing a \`Delayed\` status — the bank needs to assess cargo insurance exposure immediately.
-
-Return \`shipment_id\`, \`vessel_name\`, \`origin_port\`, \`destination_port\`, and \`cargo_value_usd\` for delayed shipments, ordered by \`cargo_value_usd\` descending.`,
-    hint: 'JOIN cargo_shipments to vessels on vessel_id, filter WHERE status = Delayed.',
-    seedQuery: `SELECT
-  FROM cargo_shipments s
-  JOIN vessels v ON
- WHERE
- ORDER BY `,
-    solutionQuery: `SELECT s.shipment_id,
-       v.vessel_name,
-       s.origin_port,
-       s.destination_port,
-       s.cargo_value_usd
-  FROM cargo_shipments s
-  JOIN vessels v ON s.vessel_id = v.vessel_id
- WHERE s.status = 'Delayed'
- ORDER BY s.cargo_value_usd DESC`,
-    epoch: 'Expert',
-    difficulty: 2,
-  },
-
-  {
-    id: 53,
-    title: 'Trade Finance Utilisation Rate',
-    description: `Risk Management monitors how much of each customer's active trade finance facilities are drawn down. High utilisation (>85%) signals liquidity pressure.
-
-Using a CTE, aggregate active \`trade_finance_facilities\` per customer. Return \`customer_name\`, \`segment\`, \`facility_count\`, \`total_facility\`, \`total_utilised\`, and \`utilisation_pct\` (1dp), ordered by \`utilisation_pct\` descending.`,
-    hint: 'CTE: SUM facility_amount and utilised_amount per customer_id WHERE status = Active. Outer query: JOIN to customers, compute ROUND(utilised*100.0/facility, 1).',
-    seedQuery: `WITH facility_summary AS (
-  SELECT customer_id,
-         COUNT(*)                              AS facility_count,
-         ROUND(SUM(facility_amount), 0)        AS total_facility,
-         ROUND(SUM(utilised_amount), 0)        AS total_utilised,
-          AS utilisation_pct
-    FROM trade_finance_facilities
-   WHERE
-   GROUP BY customer_id
-)
-SELECT
-  FROM facility_summary fs
-  JOIN customers c ON
- ORDER BY `,
-    solutionQuery: `WITH facility_summary AS (
-  SELECT customer_id,
-         COUNT(*)                                              AS facility_count,
-         ROUND(SUM(facility_amount), 0)                       AS total_facility,
-         ROUND(SUM(utilised_amount), 0)                       AS total_utilised,
-         ROUND(SUM(utilised_amount) * 100.0 / SUM(facility_amount), 1) AS utilisation_pct
-    FROM trade_finance_facilities
-   WHERE status = 'Active'
-   GROUP BY customer_id
-)
-SELECT c.customer_name,
-       c.segment,
-       fs.facility_count,
-       fs.total_facility,
-       fs.total_utilised,
-       fs.utilisation_pct
-  FROM facility_summary fs
-  JOIN customers c ON fs.customer_id = c.customer_id
- ORDER BY fs.utilisation_pct DESC`,
-    epoch: 'Expert',
-    difficulty: 3,
-  },
-
-  {
-    id: 54,
-    title: 'Vessel Cargo Revenue Ranking',
-    description: `The Fleet Analytics team wants each vessel ranked by total cargo value within its vessel type — to identify the highest-earning ship per category.
-
-Use a CTE to compute per-vessel stats, then apply \`RANK() OVER (PARTITION BY vessel_type ORDER BY total_cargo_value DESC)\`.
-
-Return \`vessel_name\`, \`vessel_type\`, \`shipment_count\`, \`total_cargo_value\`, and \`rank_in_type\`, ordered by \`vessel_type\` then \`rank_in_type\`.`,
-    hint: 'CTE: JOIN vessels to cargo_shipments, GROUP BY vessel, SUM cargo_value_usd. Outer query: RANK() OVER (PARTITION BY vessel_type ORDER BY total_cargo_value DESC).',
-    seedQuery: `WITH vessel_stats AS (
-  SELECT v.vessel_id, v.vessel_name, v.vessel_type,
-         COUNT(s.shipment_id)                AS shipment_count,
-         ROUND(SUM(s.cargo_value_usd), 0)    AS total_cargo_value
-    FROM vessels v
-    JOIN cargo_shipments s ON
-   GROUP BY
-)
-SELECT vessel_name, vessel_type, shipment_count, total_cargo_value,
-        AS rank_in_type
-  FROM vessel_stats
- ORDER BY `,
-    solutionQuery: `WITH vessel_stats AS (
-  SELECT v.vessel_id, v.vessel_name, v.vessel_type,
-         COUNT(s.shipment_id)             AS shipment_count,
-         ROUND(SUM(s.cargo_value_usd), 0) AS total_cargo_value
-    FROM vessels v
-    JOIN cargo_shipments s ON v.vessel_id = s.vessel_id
-   GROUP BY v.vessel_id, v.vessel_name, v.vessel_type
-)
-SELECT vessel_name,
-       vessel_type,
-       shipment_count,
-       total_cargo_value,
-       RANK() OVER (
-         PARTITION BY vessel_type
-             ORDER BY total_cargo_value DESC
-       ) AS rank_in_type
-  FROM vessel_stats
- ORDER BY vessel_type, rank_in_type`,
-    epoch: 'Expert',
-    difficulty: 3,
-  },
 
   {
     id: 55,
