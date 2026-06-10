@@ -21,10 +21,6 @@ const SCLERA = {
   left:  'M 68,105 C 71,98.5 86,97 90,104 C 87,111.5 72,112 68,105 Z',
   right: 'M 134,105 C 131,98.5 116,97 112,104 C 115,111.5 130,112 134,105 Z',
 };
-const LOWER_LID = {
-  left:  'M 71,113.5 Q 79,117 87,113.5',
-  right: 'M 115,113.5 Q 123,117 131,113.5',
-};
 const PUPIL_RANGE_X = 3.5; // max pupil travel in viewBox px
 const PUPIL_RANGE_Y = 2;   // shallower eyes — less vertical travel
 
@@ -90,27 +86,23 @@ export default function CharacterAvatar({ size = 260 }: { size?: number }) {
     const { cx, cy } = EYES[which];
     const clipId = `${clipBase}-${which}`;
     return (
-      <g>
-        <motion.g
-          style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
-          animate={{ scaleY }}
-          transition={eyeTransition}
-        >
-          <clipPath id={clipId}>
-            <path d={SCLERA[which]} />
-          </clipPath>
-          <path d={SCLERA[which]} fill={LINE} stroke={LINE} strokeWidth={2.5} />
-          {/* Pupil + glint, clipped so cursor tracking never leaves the lens */}
-          <g clipPath={`url(#${clipId})`}>
-            <motion.g style={{ x: springX, y: springY }}>
-              <circle cx={cx} cy={cy + 0.5} r={5.5} fill={HAIR} />
-              <circle cx={cx + 2.2} cy={cy - 1.7} r={1.8} fill={LINE} />
-            </motion.g>
-          </g>
-        </motion.g>
-        {/* Lower lid stays put while the eye blinks shut above it */}
-        <path d={LOWER_LID[which]} fill="none" stroke={LINE} strokeWidth={3} opacity={0.85} />
-      </g>
+      <motion.g
+        style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+        animate={{ scaleY }}
+        transition={eyeTransition}
+      >
+        <clipPath id={clipId}>
+          <path d={SCLERA[which]} />
+        </clipPath>
+        <path d={SCLERA[which]} fill={LINE} stroke={LINE} strokeWidth={2.5} />
+        {/* Pupil + glint, clipped so cursor tracking never leaves the lens */}
+        <g clipPath={`url(#${clipId})`}>
+          <motion.g style={{ x: springX, y: springY }}>
+            <circle cx={cx} cy={cy + 0.5} r={5.5} fill={HAIR} />
+            <circle cx={cx + 2.2} cy={cy - 1.7} r={1.8} fill={LINE} />
+          </motion.g>
+        </g>
+      </motion.g>
     );
   };
 
