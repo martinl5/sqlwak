@@ -32,6 +32,7 @@ export default function FlockStatus({ onOpenLevelNavigator }: FlockStatusProps) 
           className="p-1.5 transition-colors hover:opacity-70"
           style={{ color: 'var(--lcb-muted)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--lcb-border)', borderRadius: 4 }}
           title="Browse levels"
+          aria-label="Browse levels"
         >
           <List className="w-3.5 h-3.5" />
         </button>
@@ -47,6 +48,7 @@ export default function FlockStatus({ onOpenLevelNavigator }: FlockStatusProps) 
             cursor: canGoBack ? 'pointer' : 'not-allowed',
           }}
           title="Previous level"
+          aria-label="Go to previous level"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
         </button>

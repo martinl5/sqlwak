@@ -25,9 +25,22 @@ Implemented in this PR:
   unused types, unused `p5` dependency, no-op callbacks, and the `sqlawk` name typo removed
   (3.3); seed extracted to `src/lib/seed.ts` for Node test reuse.
 
-Still open: level 49 simplification and seed-blank audit (1.6), store tests (2.4),
-`levels.ts` split and build-time expected results (3.4), Pillar 4 UX/a11y work, and Pillar 5
-docs (LICENSE choice is the owner's call).
+Implemented in the follow-up PR:
+
+- **Remainder of 1.6:** level 49 rewritten with the `AVG(x²) − AVG(x)²` variance identity
+  (no more correlated subqueries); seed-scaffold whitespace normalized.
+- **2.4:** store tests for XP accrual, streak, navigation history, and reset — which surfaced
+  and fixed three real bugs (XP farming by replaying levels, `currentLevel` advancing past the
+  final level, and back-navigation never consuming history).
+- **3.4 (partial):** `levels.ts` split into per-epoch modules under `src/data/levels/`.
+- **Pillar 4:** escalating disclosure (expected result *shape* revealed after 3 failed
+  attempts), dialog semantics/focus/Escape handling for the modal and level navigator,
+  aria-labels on icon buttons, and a stacking responsive layout below the `lg` breakpoint.
+- **Pillar 5:** MIT LICENSE, CONTRIBUTING.md with a level-authoring guide.
+
+Still open: build-time expected results (3.4), the expected-vs-actual value diff (4.1 — the
+shape reveal shipped; a value-level diff is a deliberate product decision), and a deeper
+mobile/touch pass (4.4).
 
 ---
 

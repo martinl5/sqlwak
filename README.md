@@ -88,7 +88,11 @@ npm run build      # Production build
 
 ## Contributing
 
-Issues and PRs welcome! Ideas for new levels, challenge themes, or schema additions are especially appreciated.
+Issues and PRs welcome! Ideas for new levels, challenge themes, or schema additions are especially appreciated — see [CONTRIBUTING.md](CONTRIBUTING.md) for the level-authoring guide.
+
+## License
+
+[MIT](LICENSE)
 
 ---
 

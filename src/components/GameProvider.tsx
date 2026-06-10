@@ -218,14 +218,14 @@ export default function GameProvider() {
         )}
 
         {/* UI overlay */}
-        <div className="relative z-10 h-full flex">
+        <div className="relative z-10 h-full flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
           {/* Left: SQL Editor */}
-          <div className="w-[460px] h-full p-3 pr-2">
+          <div className="w-full lg:w-[460px] h-[75vh] lg:h-full flex-shrink-0 p-3 lg:pr-2">
             <SQLPanel />
           </div>
 
           {/* Right: Schema / Data + status */}
-          <div className="w-[420px] h-full p-3 pl-2 flex flex-col gap-2">
+          <div className="w-full lg:w-[420px] h-[75vh] lg:h-full flex-shrink-0 p-3 lg:pl-2 flex flex-col gap-2">
             {/* Tab bar */}
             <div
               className="flex"
@@ -235,6 +235,7 @@ export default function GameProvider() {
                 <button
                   key={tab}
                   onClick={() => setActiveRightTab(tab)}
+                  aria-pressed={activeRightTab === tab}
                   className="flex-1 py-2 text-xs tracking-widest uppercase transition-colors"
                   style={{
                     fontFamily: 'var(--font-ibm-plex-mono)',
