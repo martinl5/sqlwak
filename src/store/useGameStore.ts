@@ -26,6 +26,7 @@ interface GameState {
   // UI state
   showLevelUp: boolean;
   lastSpawnedBird: { x: number; y: number } | null;
+  hasSeenOnboarding: boolean;
 
   // User
   userName: string | null;
@@ -41,6 +42,7 @@ interface GameState {
   setHasAttemptedCurrent: (hasAttempted: boolean) => void;
   setShowLevelUp: (show: boolean) => void;
   setLastSpawnedBird: (pos: { x: number; y: number } | null) => void;
+  setHasSeenOnboarding: () => void;
   setUserName: (name: string | null) => void;
   resetGame: () => void;
   goToPreviousLevel: () => void;
@@ -62,6 +64,7 @@ export const useGameStore = create<GameState>()(
       hasAttemptedCurrent: false,
       showLevelUp: false,
       lastSpawnedBird: null,
+      hasSeenOnboarding: false,
       userName: null,
 
       setCurrentLevel: (level) => 
@@ -112,6 +115,7 @@ export const useGameStore = create<GameState>()(
       setHasAttemptedCurrent: (hasAttempted) => set({ hasAttemptedCurrent: hasAttempted }),
       setShowLevelUp: (show) => set({ showLevelUp: show }),
       setLastSpawnedBird: (pos) => set({ lastSpawnedBird: pos }),
+      setHasSeenOnboarding: () => set({ hasSeenOnboarding: true }),
       setUserName: (name) => set({ userName: name }),
 
       resetGame: () =>
@@ -153,6 +157,7 @@ export const useGameStore = create<GameState>()(
         userName: state.userName,
         totalXp: state.totalXp,
         currentStreak: state.currentStreak,
+        hasSeenOnboarding: state.hasSeenOnboarding,
       }),
     }
   )

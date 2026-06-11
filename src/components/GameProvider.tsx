@@ -13,6 +13,7 @@ import { initDatabase } from '@/lib/db';
 import { EPOCH_RANGES, MAX_LEVEL } from '@/lib/progression';
 import SchemaViewer from './SchemaViewer';
 import LevelProgressMap from './LevelProgressMap';
+import OnboardingOverlay from './OnboardingOverlay';
 
 const HarbourCanvas = dynamic(() => import('./FlockCanvas'), {
   ssr: false,
@@ -270,6 +271,7 @@ export default function GameProvider() {
 
       <LevelNavigator isOpen={showLevelNavigator} onClose={() => setShowLevelNavigator(false)} />
       <LevelUpModal />
+      <OnboardingOverlay />
     </div>
   );
 }

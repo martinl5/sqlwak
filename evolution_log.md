@@ -4,6 +4,35 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 6 — 2026-06-11
+
+### [UI/UX Improvements]
+
+- **First-time Onboarding Overlay** (`OnboardingOverlay.tsx`, `useGameStore.ts`, `GameProvider.tsx`):
+  A 3-step maritime-themed welcome overlay shown to new players on their first visit (tracked via `hasSeenOnboarding` persisted in the Zustand store).
+  - **Step 1 — Welcome**: LCB brand introduction with an anchor SVG icon, contextualising the player as an LCB data analyst navigating maritime data.
+  - **Step 2 — SQL + XP mechanics**: Editor usage (⌘↵ to run), epoch progression (Foundational → Expert), XP earning explained.
+  - **Step 3 — Navigation guide**: Schema panel, level map strip, hint system.
+  - **Visual design**: Gold top-bar gradient, step indicator dots (active dot expands to 18 px pill), circular icon container with gold border, `framer-motion` spring entrance + key-swapped exit animations per step, backdrop blur at 82% black opacity. "Skip" link for returning users who reset data. "Set Sail! ⚓" CTA on final step.
+  - **Persistence**: `hasSeenOnboarding: boolean` added to `GameState` interface, store default, and `partialize` list — survives page reloads; new players always see the overlay.
+  - Overlay renders above the level-up modal (z-index 60) and appears 600 ms after DB ready state to avoid collision with the loading screen.
+
+### [Game Design Tweaks]
+
+- **Level 64** *(Expert, difficulty 4)* — "Loan Book Risk Tranching (NTILE)":
+  Teaches `NTILE(4) OVER (ORDER BY principal_amount DESC)` — the equal-count bucketing function used for Basel III capital adequacy reporting, VaR tranching, and ABS/CDO structuring at sovereign wealth funds and investment banks. CTE assigns each of 15 loans to one of 4 tranches (4-4-4-3 distribution). Outer query aggregates per tranche: loan_count, avg_principal, avg_rate_pct, total_exposure, default_count. Result reveals tranche 1 = four large grade-A home loans ($1.6M total, 0 defaults); tranche 3 = the only Default (loan 8, grade D); tranche 4 = three small high-rate personal loans. No new data needed; uses existing `loans` table.
+
+- **Level 65** *(Expert, difficulty 4)* — "Monthly Portfolio Cash Flow & Running Balance":
+  Teaches `SUM(net_flow) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)` — the universal running-total pattern underpinning every treasury ledger, account statement, and real-time P&L feed. CTE aggregates 150 transactions by month (Jan–Jun 2024) into total_credits, total_debits, net_flow. Outer query adds the cumulative running_net_balance. The explicit `ROWS UNBOUNDED PRECEDING` frame is pedagogically important: without it, the default RANGE frame can give non-deterministic results on ties. The result shows 6 rows with the cumulative net position across the portfolio. No new data needed; uses existing `transactions` table.
+
+### [Database & Code Optimizations]
+
+- **`hasSeenOnboarding` state field** added to `GameState`, initialized `false`, persisted in `lcb-analytics-storage` localStorage key — zero-cost addition to existing Zustand `persist` middleware config.
+- **`nextHintKey` sentinel array** in `LevelUpModal.tsx` extended from `[..., 63]` to `[..., 63, 64, 65]`; default fallback updated from `63` → `65`; `EPOCH_NEXT_HINT` map extended with entries for levels 64 and 65.
+- **No new DB tables or seed rows** — both new levels run cleanly against the existing `loans` and `transactions` tables.
+
+---
+
 ## Iteration 5 — 2026-06-08
 
 ### [UI/UX Improvements]
