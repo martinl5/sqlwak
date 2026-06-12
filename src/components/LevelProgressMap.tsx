@@ -17,12 +17,11 @@ export default function LevelProgressMap() {
 
   return (
     <div
-      className="flex items-center px-4"
+      className="lcb-map-strip flex items-center px-4"
       style={{
         background: 'var(--lcb-panel-2)',
         borderBottom: '1px solid var(--lcb-border)',
         flexShrink: 0,
-        height: 22,
         gap: 2,
         overflowX: 'auto',
         overflowY: 'hidden',
@@ -52,9 +51,8 @@ export default function LevelProgressMap() {
               onClick={() => setCurrentLevel(level.id)}
               title={`Lvl ${level.id}: ${level.title}`}
               aria-label={`Go to Level ${level.id}: ${level.title}`}
+              className="lcb-map-dot"
               style={{
-                width: 9,
-                height: 14,
                 borderRadius: 2,
                 flexShrink: 0,
                 border: isCurrent ? `1px solid ${dotColor}` : '1px solid transparent',

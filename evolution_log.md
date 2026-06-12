@@ -4,6 +4,32 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 9 — 2026-06-12
+
+### [Mobile & Touch Pass — closes the improvement plan]
+
+The last open item in IMPROVEMENT_PLAN.md (§4.4, deeper mobile/touch pass) is done, and the
+plan file itself is retired — every other item was either shipped (pillars 1–3, 5, most of 4)
+or explicitly deprioritized in its status section (3.4 build-time results, 4.1 value diff).
+
+- **Proper viewport**: `layout.tsx` now exports Next's `viewport` object — device-width,
+  `viewportFit: 'cover'` (the fixed terminal layout extends under notches), and the brand
+  `themeColor` so mobile browser chrome matches the header.
+- **Touch targets**: a `@media (pointer: coarse)` layer in `globals.css` grows icon buttons
+  (level navigator open/close, back, toast dismiss) to ≥40px via a shared `.lcb-icon-btn`
+  class, gives the SQL snippet pills finger-sized padding, and widens the level-progress-map
+  tiles from 9×14 to 15×20. `touch-action: manipulation` on all buttons removes the
+  double-tap-zoom delay on rapid Run/Submit taps.
+- **Editor on touch**: Monaco gets a 16px font on coarse pointers (anything smaller makes iOS
+  zoom the page when the hidden textarea focuses) plus word wrap for narrow screens; the
+  ⌘↵ / ⇧⌘↵ keyboard-shortcut hints on Run/Submit are hidden where there is no keyboard.
+- **Dynamic-viewport units**: the stacked mobile panels (`75vh`) and the level-up modal
+  (`90vh`) now use `dvh`, so the iOS/Android collapsing URL bar no longer hides the bottom
+  of the editor or the modal's Continue button.
+- **Status bar**: the harbour status row wraps instead of overflowing at very narrow widths.
+
+---
+
 ## Iteration 8 — 2026-06-12
 
 ### [Game Design Tweaks]

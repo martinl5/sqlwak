@@ -67,7 +67,7 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
             onClick={onClose}
             aria-label="Close level navigator"
             autoFocus
-            className="p-1 transition-opacity hover:opacity-60"
+            className="lcb-icon-btn p-1 transition-opacity hover:opacity-60"
             style={{ color: 'var(--lcb-muted)' }}
           >
             <X className="w-4 h-4" />

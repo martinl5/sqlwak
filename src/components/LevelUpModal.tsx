@@ -85,7 +85,7 @@ export default function LevelUpModal() {
             animate={{ scale: 1,    opacity: 1, y: 0  }}
             exit={{   scale: 0.88, opacity: 0, y: 16  }}
             transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-            className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto"
+            className="relative w-full max-w-sm max-h-[90dvh] overflow-y-auto"
             style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 8, borderTop: '3px solid var(--lcb-gold)' }}
           >
             {/* Top accent row */}

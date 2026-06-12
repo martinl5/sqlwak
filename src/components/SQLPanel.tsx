@@ -62,6 +62,17 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
     if (!/Mac|iP(hone|ad|od)/.test(navigator.platform)) setModKey('Ctrl');
   }, []);
 
+  // Touch devices get a 16px editor font (anything smaller makes iOS zoom the
+  // whole page when the editor focuses) and word wrap for narrow screens.
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    setIsTouch(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsTouch(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   const handleEditorMount = (editor: unknown, monaco: Monaco) => {
     editorRef.current  = editor;
     monacoRef.current  = monaco;
@@ -272,7 +283,7 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
           >
             <Play className="w-3 h-3" />
             Run
-            <span style={{ opacity: 0.6, fontSize: 10 }}>{modKey}↵</span>
+            <span className="lcb-kbd-hint" style={{ opacity: 0.6, fontSize: 10 }}>{modKey}↵</span>
           </button>
           <button
             onClick={handleSubmit}
@@ -288,7 +299,7 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
           >
             <Check className="w-3 h-3" />
             {isExecuting ? 'Running…' : 'Submit'}
-            <span style={{ opacity: 0.6, fontSize: 10 }}>⇧{modKey}↵</span>
+            <span className="lcb-kbd-hint" style={{ opacity: 0.6, fontSize: 10 }}>⇧{modKey}↵</span>
           </button>
         </div>
       </div>
@@ -352,7 +363,8 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
           onMount={handleEditorMount}
           options={{
             minimap:               { enabled: false },
-            fontSize:              13,
+            fontSize:              isTouch ? 16 : 13,
+            wordWrap:              isTouch ? 'on' : 'off',
             lineNumbers:           'on',
             scrollBeyondLastLine:  false,
             automaticLayout:       true,
@@ -395,7 +407,7 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
             </div>
             <button
               onClick={() => setError(null)}
-              className="flex-shrink-0 p-0.5 transition-opacity hover:opacity-60"
+              className="lcb-icon-btn flex-shrink-0 p-0.5 transition-opacity hover:opacity-60"
               style={{ color: 'var(--lcb-muted)' }}
               aria-label="Dismiss"
             >
