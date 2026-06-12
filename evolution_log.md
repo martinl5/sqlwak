@@ -4,6 +4,32 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 8 — 2026-06-12
+
+### [Game Design Tweaks]
+
+- **Levels 66–67: the anti-join gap is closed.** The 65-level catalog contained exactly one
+  `EXISTS` and no dedicated `LEFT JOIN … IS NULL` drill — yet "find the rows in A with no
+  match in B" is among the most common SQL interview questions (IMPROVEMENT_PLAN.md §4.5).
+  - **Level 66** *(Expert, difficulty 3)* — "Unfinanced Fleet Exposure (Anti-Join)": vessels
+    with no trade finance facility on file, via `LEFT JOIN trade_finance_facilities … WHERE
+    f.facility_id IS NULL`, ordered by `dwt_tonnes` DESC. The description teaches why the
+    NULL test belongs on the right table's primary key. The four matching vessels are exactly
+    the ones not owned by LCB customers — uncollateralised third-party carriers, which makes
+    the compliance narrative true in the data, not just flavour text.
+  - **Level 67** *(Expert, difficulty 4)* — "Lending Whitespace: Depositors Without Loans
+    (NOT EXISTS)": customers holding accounts but no loans, with `total_deposits` aggregated,
+    via correlated `NOT EXISTS`. The description teaches the `NOT IN` NULL trap (one NULL in
+    the subquery silently yields zero rows) — the reason production code prefers `NOT EXISTS`.
+  - Both levels' results were verified non-empty and deterministic against the live seed
+    (distinct ORDER BY keys, 4 and 5 rows respectively) before authoring; the generic
+    level-integrity and determinism suites picked them up automatically (375 tests green).
+- **`LevelUpModal` next-hint map** extended with entries for 66 (LEFT JOIN anti-join) and 67
+  (NOT EXISTS); sentinel advanced 65 → 67. Level counts everywhere else derive from
+  `levels.length` (Iteration 5's progression module), so no other touch points existed.
+
+---
+
 ## Iteration 7 — 2026-06-12
 
 ### [UI/UX Improvements]

@@ -38,9 +38,18 @@ Implemented in the follow-up PR:
   aria-labels on icon buttons, and a stacking responsive layout below the `lg` breakpoint.
 - **Pillar 5:** MIT LICENSE, CONTRIBUTING.md with a level-authoring guide.
 
-Still open: build-time expected results (3.4), the expected-vs-actual value diff (4.1 — the
-shape reveal shipped; a value-level diff is a deliberate product decision), and a deeper
-mobile/touch pass (4.4).
+Implemented since (iteration 8):
+
+- **4.5 (partial):** the anti-join syllabus gap is closed — level 66 teaches the
+  `LEFT JOIN … IS NULL` anti-join, level 67 teaches correlated `NOT EXISTS` (and the
+  `NOT IN` NULL trap). Remaining 4.5 gaps: a dedicated date-functions drill and earlier
+  `CASE` exposure are partially covered by existing levels (28, 38, 62, 65) — revisit
+  only if player feedback shows a hole.
+
+Still open: build-time expected results (3.4 — deprioritized: the level-up modal now
+deliberately reveals the model answer after a win, so hiding solutions from the bundle
+buys nothing), the expected-vs-actual value diff (4.1 — the shape reveal shipped; a
+value-level diff is a deliberate product decision), and a deeper mobile/touch pass (4.4).
 
 ---
 
