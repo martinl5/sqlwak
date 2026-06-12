@@ -842,4 +842,117 @@ SELECT month,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // SENIOR DS PATTERNS (Levels 64–65)
+  // NTILE portfolio tranching; running cumulative cash-flow balance
+  // ============================================================
+
+  {
+    id: 64,
+    title: 'Loan Book Risk Tranching (NTILE)',
+    description: `LCB's Credit Risk team must divide the loan portfolio into four equal-sized tranches by principal exposure — a regulatory requirement for capital adequacy reporting (Basel III / MAS Notice 637).
+
+Use \`NTILE(4) OVER (ORDER BY principal_amount DESC)\` in a CTE to assign each loan to a tranche (1 = largest exposure, 4 = smallest). In the outer query, aggregate per tranche:
+
+- \`loan_count\` — number of loans in the tranche
+- \`avg_principal\` — average principal, rounded to the nearest dollar
+- \`avg_rate_pct\` — average interest rate, rounded to 2 dp
+- \`total_exposure\` — sum of principal, rounded to the nearest dollar
+- \`default_count\` — number of loans with status \`'Default'\`
+
+Order by \`tranche\`.
+
+This NTILE bucketing pattern is the standard approach for portfolio segmentation at sovereign wealth funds, investment banks, and insurance firms — used whenever you need equal-count bins rather than equal-width intervals.`,
+    hint: "CTE: SELECT loan_id, principal_amount, interest_rate, status, NTILE(4) OVER (ORDER BY principal_amount DESC) AS tranche FROM loans. Outer: GROUP BY tranche, use ROUND(AVG(...), 0) for principal, ROUND(AVG(...), 2) for rate, SUM(CASE WHEN status='Default' THEN 1 ELSE 0 END) for default_count.",
+    seedQuery: `WITH tranches AS (
+  SELECT loan_id,
+         principal_amount,
+         interest_rate,
+         status,
+         NTILE( ) OVER (ORDER BY principal_amount DESC) AS tranche
+    FROM loans
+)
+SELECT tranche,
+       COUNT(*)                                              AS loan_count,
+       ROUND(AVG(principal_amount), 0)                      AS avg_principal,
+       ROUND(AVG(interest_rate), 2)                         AS avg_rate_pct,
+       ROUND(SUM(principal_amount), 0)                      AS total_exposure,
+       SUM(CASE WHEN status =         THEN 1 ELSE 0 END)    AS default_count
+  FROM tranches
+ GROUP BY
+ ORDER BY tranche`,
+    solutionQuery: `WITH tranches AS (
+  SELECT loan_id,
+         principal_amount,
+         interest_rate,
+         status,
+         NTILE(4) OVER (ORDER BY principal_amount DESC) AS tranche
+    FROM loans
+)
+SELECT tranche,
+       COUNT(*)                                                    AS loan_count,
+       ROUND(AVG(principal_amount), 0)                            AS avg_principal,
+       ROUND(AVG(interest_rate), 2)                               AS avg_rate_pct,
+       ROUND(SUM(principal_amount), 0)                            AS total_exposure,
+       SUM(CASE WHEN status = 'Default' THEN 1 ELSE 0 END)        AS default_count
+  FROM tranches
+ GROUP BY tranche
+ ORDER BY tranche`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+
+  {
+    id: 65,
+    title: 'Monthly Portfolio Cash Flow & Running Balance',
+    description: `The Treasury desk needs a daily liquidity dashboard. As a first step, produce a month-by-month cash-flow summary across all accounts, plus a **running net balance** — the cumulative sum of monthly net flows from January through June 2024.
+
+Use a CTE to aggregate per month:
+- \`total_credits\` — sum of all Credit transactions (2 dp)
+- \`total_debits\` — sum of all Debit transactions (2 dp)
+- \`net_flow\` — credits minus debits (2 dp)
+
+In the outer query, add:
+- \`running_net_balance\` — cumulative \`net_flow\` from the start of the period to the current month, using \`SUM(net_flow) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\`, rounded to 2 dp
+
+Return all six months ordered by \`month\`.
+
+Running totals with \`SUM() OVER (ROWS UNBOUNDED PRECEDING)\` underpin every treasury ledger, account statement, and real-time P&L feed at banks, fintechs, and trading desks. The explicit frame is required for deterministic ordering in any dialect.`,
+    hint: "CTE: GROUP BY STRFTIME('%Y-%m', transaction_date), SUM CASE WHEN transaction_type = 'Credit' / 'Debit'. Outer: ROUND(SUM(net_flow) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW), 2) AS running_net_balance.",
+    seedQuery: `WITH monthly_flows AS (
+  SELECT STRFTIME('%Y-%m', transaction_date)                                         AS month,
+         ROUND(SUM(CASE WHEN transaction_type =        THEN amount ELSE 0 END), 2)   AS total_credits,
+         ROUND(SUM(CASE WHEN transaction_type =        THEN amount ELSE 0 END), 2)   AS total_debits,
+         ROUND(SUM(CASE WHEN transaction_type = 'Credit' THEN amount ELSE -amount END), 2) AS net_flow
+    FROM transactions
+   GROUP BY month
+)
+SELECT month,
+       total_credits,
+       total_debits,
+       net_flow,
+       ROUND(SUM(net_flow) OVER (ORDER BY month ROWS BETWEEN            AND CURRENT ROW), 2)
+         AS running_net_balance
+  FROM monthly_flows
+ ORDER BY month`,
+    solutionQuery: `WITH monthly_flows AS (
+  SELECT STRFTIME('%Y-%m', transaction_date)                                              AS month,
+         ROUND(SUM(CASE WHEN transaction_type = 'Credit' THEN amount ELSE 0 END), 2)     AS total_credits,
+         ROUND(SUM(CASE WHEN transaction_type = 'Debit'  THEN amount ELSE 0 END), 2)     AS total_debits,
+         ROUND(SUM(CASE WHEN transaction_type = 'Credit' THEN amount ELSE -amount END), 2) AS net_flow
+    FROM transactions
+   GROUP BY month
+)
+SELECT month,
+       total_credits,
+       total_debits,
+       net_flow,
+       ROUND(SUM(net_flow) OVER (ORDER BY month ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW), 2)
+         AS running_net_balance
+  FROM monthly_flows
+ ORDER BY month`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

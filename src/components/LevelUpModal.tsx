@@ -18,6 +18,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   59: 'LEAD function: next-event lookahead and gap analysis for vessel scheduling',
   61: 'Conditional aggregation pivot: COUNT(CASE WHEN ...) — the standard SQL pivot pattern for any dialect',
   63: 'Rolling volatility: SQRT(AVG(x²) − AVG(x)²) — population std dev via window functions',
+  64: 'NTILE bucketing: equal-count portfolio tranching for Basel III capital adequacy reporting',
+  65: 'Running balance: SUM() OVER (ROWS UNBOUNDED PRECEDING) — the universal treasury ledger pattern',
 };
 
 export default function LevelUpModal() {
@@ -48,7 +50,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63].find((k) => currentLevel < k) ?? 63;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65].find((k) => currentLevel < k) ?? 65;
   const xpEarned    = xpFor(currentLevel);
 
   return (
