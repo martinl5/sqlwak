@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import Editor, { Monaco } from '@monaco-editor/react';
-import { Play, Lightbulb, X, Anchor } from 'lucide-react';
+import Editor, { Monaco, loader } from '@monaco-editor/react';
+import { Play, Lightbulb, X, Anchor, Check } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
+import { executeQuery } from '@/lib/db';
 import { validateQuery, getExpectedShape } from '@/lib/validator';
 import { levels } from '@/data/levels';
 import { epochOf, xpFor, EPOCH_RANK } from '@/lib/progression';
+
+// Serve Monaco from /public (synced from node_modules by
+// scripts/sync-sql-assets.mjs) instead of the default jsdelivr CDN — the
+// editor is the product, so it must not depend on a third party being up.
+loader.config({ paths: { vs: '/vendor/monaco/vs' } });
 
 const SQL_SNIPPETS = [
   { label: 'SELECT',   insert: 'SELECT '    },
@@ -18,7 +24,12 @@ const SQL_SNIPPETS = [
   { label: 'LIMIT',    insert: '\nLIMIT '   },
 ];
 
-export default function SQLPanel() {
+interface SQLPanelProps {
+  /** Called whenever a query produced output (or an error) worth looking at. */
+  onQueryRun?: () => void;
+}
+
+export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
   const [query, setQuery]           = useState('');
   const [error, setError]           = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -26,9 +37,13 @@ export default function SQLPanel() {
   const editorRef                   = useRef<unknown>(null);
   const monacoRef                   = useRef<Monaco | null>(null);
   const dismissTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Monaco swallows ⌘↵/Ctrl↵ before they reach the window listener, so the
+  // editor needs its own keybindings; routed through a ref to stay current.
+  const handlersRef                 = useRef({ run: () => {}, submit: () => {} });
 
   const {
     currentLevel,
+    completedLevels,
     isExecuting,
     hasAttemptedCurrent,
     setIsExecuting,
@@ -40,6 +55,12 @@ export default function SQLPanel() {
   } = useGameStore();
 
   const level = levels.find((l) => l.id === currentLevel);
+
+  // ⌘ on Mac, Ctrl everywhere else — shown on the buttons.
+  const [modKey, setModKey] = useState('⌘');
+  useEffect(() => {
+    if (!/Mac|iP(hone|ad|od)/.test(navigator.platform)) setModKey('Ctrl');
+  }, []);
 
   const handleEditorMount = (editor: unknown, monaco: Monaco) => {
     editorRef.current  = editor;
@@ -66,7 +87,17 @@ export default function SQLPanel() {
       },
     });
     monaco.editor.setTheme('lcb-terminal');
-    (editor as { focus?: () => void }).focus?.();
+
+    const ed = editor as {
+      focus?: () => void;
+      addCommand?: (keybinding: number, handler: () => void) => void;
+    };
+    ed.addCommand?.(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => handlersRef.current.run());
+    ed.addCommand?.(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter,
+      () => handlersRef.current.submit()
+    );
+    ed.focus?.();
   };
 
   const handleSnippetClick = (insert: string) => {
@@ -84,9 +115,45 @@ export default function SQLPanel() {
     }
   };
 
-  const handleExecute = useCallback(async () => {
-    const activeQuery = query.trim() || (level?.seedQuery ?? '').trim();
-    if (!activeQuery) { setError('Please enter a SQL query'); return; }
+  // The editor model is the source of truth: React's onChange state can lag
+  // a fast type-then-⌘↵ by a beat, which would silently run stale SQL.
+  const getEditorText = useCallback(() => {
+    const ed = editorRef.current as { getValue?: () => string } | null;
+    return ed?.getValue?.() ?? query;
+  }, [query]);
+
+  // Run: execute the query and show its results — no grading, no penalty.
+  // Exploring the data is how analysts actually work, so it's free.
+  const handleRun = useCallback(() => {
+    const activeQuery = getEditorText().trim();
+    if (!activeQuery) {
+      setError('Type a query first — try SELECT * FROM customers LIMIT 5');
+      return;
+    }
+    setIsExecuting(true);
+    setError(null);
+    setStoreError(null);
+    try {
+      const result = executeQuery(activeQuery);
+      setQueryResult(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Query execution failed';
+      setError(message);
+      setStoreError(message);
+      setQueryResult(null);
+    } finally {
+      setIsExecuting(false);
+      onQueryRun?.();
+    }
+  }, [getEditorText, setIsExecuting, setQueryResult, setStoreError, onQueryRun]);
+
+  // Submit: grade the query against the level's expected report.
+  const handleSubmit = useCallback(() => {
+    const activeQuery = getEditorText().trim();
+    if (!activeQuery) {
+      setError('Write your query before submitting — the Harbour Master expects a report.');
+      return;
+    }
     setHasAttemptedCurrent(true);
     setIsExecuting(true);
     setError(null);
@@ -96,33 +163,42 @@ export default function SQLPanel() {
       const result = validateQuery(activeQuery, level?.solutionQuery || '', {
         orderMatters: level?.orderMatters,
       });
+      setQueryResult(result.userResult || null);
       if (result.success) {
-        setQueryResult(result.userResult || null);
-        setDoubloonAmt(xpFor(currentLevel));
+        if (!completedLevels.includes(currentLevel)) setDoubloonAmt(xpFor(currentLevel));
         const editor = editorRef.current as { getPosition?: () => { lineNumber: number; column: number } | null } | null;
         const pos = editor?.getPosition?.();
         if (pos) setLastSpawnedBird({ x: 150 + pos.column * 8, y: 100 + pos.lineNumber * 20 });
         setShowLevelUp(true);
       } else {
         setError(result.message);
-        setQueryResult(result.userResult || null);
         setFailedAttempts((n) => n + 1);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Query execution failed');
+      const message = err instanceof Error ? err.message : 'Query execution failed';
+      setError(message);
+      setStoreError(message);
       setFailedAttempts((n) => n + 1);
     } finally {
       setIsExecuting(false);
+      onQueryRun?.();
     }
-  }, [query, level, currentLevel, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, setHasAttemptedCurrent]);
+  }, [getEditorText, level, currentLevel, completedLevels, setIsExecuting, setQueryResult, setStoreError, setShowLevelUp, setLastSpawnedBird, setHasAttemptedCurrent, onQueryRun]);
+
+  useEffect(() => {
+    handlersRef.current = { run: handleRun, submit: handleSubmit };
+  }, [handleRun, handleSubmit]);
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); handleExecute(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (e.shiftKey) handleSubmit(); else handleRun();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleExecute]);
+  }, [handleRun, handleSubmit]);
 
   // Auto-dismiss error toast after 7s
   useEffect(() => {
@@ -134,7 +210,8 @@ export default function SQLPanel() {
   }, [error]);
 
   useEffect(() => {
-    setQuery('');
+    setQuery(levels.find((l) => l.id === currentLevel)?.seedQuery ?? '');
+    setError(null);
     setFailedAttempts(0);
     const editor = editorRef.current as { focus?: () => void } | null;
     if (editor?.focus) setTimeout(() => editor.focus?.(), 50);
@@ -153,10 +230,10 @@ export default function SQLPanel() {
     >
       {/* ── Panel header ────────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between px-4 py-3"
+        className="flex items-center justify-between gap-2 px-4 py-3"
         style={{ borderBottom: '1px solid var(--lcb-border)', background: 'var(--lcb-panel-2)' }}
       >
-        <div className="lcb-header">
+        <div className="lcb-header min-w-0">
           <p
             className="text-xs tracking-widest uppercase"
             style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-muted)' }}
@@ -170,7 +247,7 @@ export default function SQLPanel() {
             Level {currentLevel}: {level?.title}
           </h2>
         </div>
-        <div className="relative">
+        <div className="relative flex items-center gap-1.5 flex-shrink-0">
           {doubloonAmt !== null && (
             <div
               className="doubloon-float"
@@ -181,9 +258,27 @@ export default function SQLPanel() {
             </div>
           )}
           <button
-            onClick={handleExecute}
+            onClick={handleRun}
             disabled={isExecuting}
-            className="flex items-center gap-2 px-4 py-2 text-xs font-semibold tracking-wider uppercase transition-opacity hover:opacity-85 disabled:opacity-40"
+            title="Execute your query and inspect the results — exploration is free"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold tracking-wider uppercase transition-opacity hover:opacity-80 disabled:opacity-40"
+            style={{
+              background: 'transparent',
+              color: 'var(--lcb-gold)',
+              border: '1px solid var(--lcb-gold-dim)',
+              borderRadius: 4,
+              fontFamily: 'var(--font-ibm-plex-mono)',
+            }}
+          >
+            <Play className="w-3 h-3" />
+            Run
+            <span style={{ opacity: 0.6, fontSize: 10 }}>{modKey}↵</span>
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isExecuting}
+            title="Submit your answer to the Harbour Master for grading"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold tracking-wider uppercase transition-opacity hover:opacity-85 disabled:opacity-40"
             style={{
               background: 'var(--lcb-gold)',
               color: 'var(--lcb-black)',
@@ -191,9 +286,9 @@ export default function SQLPanel() {
               fontFamily: 'var(--font-ibm-plex-mono)',
             }}
           >
-            <Play className="w-3 h-3" />
-            {isExecuting ? 'Running…' : 'Run'}
-            <span style={{ opacity: 0.6, fontSize: 10 }}>⌘↵</span>
+            <Check className="w-3 h-3" />
+            {isExecuting ? 'Running…' : 'Submit'}
+            <span style={{ opacity: 0.6, fontSize: 10 }}>⇧{modKey}↵</span>
           </button>
         </div>
       </div>
@@ -252,7 +347,7 @@ export default function SQLPanel() {
           height="100%"
           defaultLanguage="sql"
           theme="lcb-terminal"
-          value={query || level?.seedQuery || ''}
+          value={query}
           onChange={(v) => setQuery(v || '')}
           onMount={handleEditorMount}
           options={{

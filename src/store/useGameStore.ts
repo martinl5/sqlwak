@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { xpFor, MAX_LEVEL } from '@/lib/progression';
+import { xpFor, shipFor, MAX_LEVEL } from '@/lib/progression';
 import type { Boid, QueryResult } from '@/types';
 
 interface GameState {
@@ -34,6 +34,7 @@ interface GameState {
   // Actions
   setCurrentLevel: (level: number) => void;
   completeLevel: (level: number) => void;
+  rehydrateFleet: (width: number) => void;
   addBoid: (boid: Boid) => void;
   removeBoid: (id: number) => void;
   setQueryResult: (result: QueryResult | null) => void;
@@ -67,14 +68,17 @@ export const useGameStore = create<GameState>()(
       hasSeenOnboarding: false,
       userName: null,
 
-      setCurrentLevel: (level) => 
+      setCurrentLevel: (level) =>
         set((state) => ({
           currentLevel: level,
           // Add to history when navigating to a new level
-          levelHistory: state.levelHistory.includes(level) 
-            ? state.levelHistory 
+          levelHistory: state.levelHistory.includes(level)
+            ? state.levelHistory
             : [...state.levelHistory, level],
           hasAttemptedCurrent: false,
+          // A previous level's results would be misleading on the new task.
+          queryResult: null,
+          error: null,
         })),
 
       completeLevel: (level) =>
@@ -92,8 +96,36 @@ export const useGameStore = create<GameState>()(
               ? state.levelHistory
               : [...state.levelHistory, nextLevel],
             hasAttemptedCurrent: false,
+            queryResult: null,
+            error: null,
             totalXp: isFirstCompletion ? state.totalXp + xpFor(level) : state.totalXp,
             currentStreak: state.currentStreak + 1,
+          };
+        }),
+
+      // Repopulates the harbour from saved progress after a page reload
+      // (boids themselves are not persisted). Negative ids mark rehydrated
+      // ships so the canvas skips the spawn fanfare.
+      rehydrateFleet: (width) =>
+        set((state) => {
+          if (state.boids.length > 0 || state.completedLevels.length === 0) return {};
+          const recent = state.completedLevels.slice(-10);
+          return {
+            boids: recent.map((levelId, i) => {
+              const info = shipFor(levelId);
+              return {
+                id: -(i + 1),
+                x: ((i + 0.5) / recent.length) * width,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                level: levelId,
+                species: info.species,
+                color: info.color,
+                size: info.size,
+                trail: [],
+              };
+            }),
           };
         }),
 
@@ -143,6 +175,8 @@ export const useGameStore = create<GameState>()(
             currentLevel: previousLevel,
             levelHistory: newHistory,
             hasAttemptedCurrent: false,
+            queryResult: null,
+            error: null,
           });
         }
       },

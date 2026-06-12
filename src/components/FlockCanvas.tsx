@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useGameStore } from '@/store/useGameStore';
-import { shipFor } from '@/lib/progression';
+import { epochOf, shipFor } from '@/lib/progression';
 
 interface ShipEntity {
   id: number;
@@ -40,7 +40,7 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
   const frameRef               = useRef<number>(0);
   const initializedRef         = useRef<boolean>(false);
 
-  const { boids, currentLevel, addBoid, lastSpawnedBird } = useGameStore();
+  const { boids, currentLevel, addBoid, lastSpawnedBird, setLastSpawnedBird } = useGameStore();
 
   // Horizon line splits sky (above) from water (below)
   const horizonY = useCallback(() => height * 0.58, [height]);
@@ -84,15 +84,19 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
       const laneIdx = shipsRef.current.length % 5;
       const laneY = hz + waterH * (0.12 + laneIdx * 0.17);
 
-      for (let i = 0; i < 8; i++) {
-        spawnEffectsRef.current.push({
-          id: Date.now() + i,
-          x: boid.x || width * 0.5,
-          y: laneY,
-          color: info.color,
-          age: 0,
-          maxAge: 50,
-        });
+      // Negative ids are fleet rehydrated from saved progress — they sail
+      // straight in without the horn-ring fanfare of a fresh solve.
+      if (boid.id >= 0) {
+        for (let i = 0; i < 8; i++) {
+          spawnEffectsRef.current.push({
+            id: Date.now() + i,
+            x: boid.x || width * 0.5,
+            y: laneY,
+            color: info.color,
+            age: 0,
+            maxAge: 50,
+          });
+        }
       }
 
       shipsRef.current.push({
@@ -114,10 +118,8 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
   }, [boids, width, height]);
 
   // ── Handle newly spawned ship ─────────────────────────────────────────────
-  const lastSpawnRef = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
-    if (!lastSpawnedBird || lastSpawnRef.current) return;
-    lastSpawnRef.current = lastSpawnedBird;
+    if (!lastSpawnedBird) return;
 
     const info = shipFor(currentLevel);
     const hz = height * 0.58;
@@ -152,8 +154,10 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
       trail: [],
     });
 
-    setTimeout(() => { lastSpawnRef.current = null; }, 100);
-  }, [lastSpawnedBird, currentLevel, addBoid, height]);
+    // Consume the spawn request so later effect re-runs (e.g. the level
+    // advancing when the modal closes) don't dock a duplicate ship.
+    setLastSpawnedBird(null);
+  }, [lastSpawnedBird, currentLevel, addBoid, setLastSpawnedBird, height]);
 
   // ── Sky gradient progression ──────────────────────────────────────────────
   const getSkyColors = useCallback(() => {
@@ -289,10 +293,12 @@ export default function FlockCanvas({ width, height }: FlockCanvasProps) {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function levelToShipType(level: number): ShipEntity['type'] {
-  if (level <= 15) return 'tugboat';
-  if (level <= 30) return 'cargo';
-  if (level <= 40) return 'container';
-  return 'supertanker';
+  switch (epochOf(level)) {
+    case 'Foundational': return 'tugboat';
+    case 'Intermediate': return 'cargo';
+    case 'Advanced':     return 'container';
+    default:             return 'supertanker';
+  }
 }
 
 function hullWidth(type: ShipEntity['type'], size: number): number {

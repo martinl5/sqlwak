@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGameStore } from '@/store/useGameStore';
+import { levels } from '@/data/levels';
 import { epochOf, shipFor, xpFor, EPOCH_RANK, MAX_LEVEL } from '@/lib/progression';
-import { X, Anchor, ArrowRight } from 'lucide-react';
+import { X, Anchor, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 
 const EPOCH_NEXT_HINT: Record<number, string> = {
   10: 'Continue mastering SELECT and WHERE filters',
@@ -23,17 +24,22 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
 };
 
 export default function LevelUpModal() {
-  const { showLevelUp, setShowLevelUp, currentLevel, completeLevel, flockSize } = useGameStore();
+  const { showLevelUp, setShowLevelUp, currentLevel, completeLevel, completedLevels, flockSize } = useGameStore();
+  const [showSolution, setShowSolution] = useState(false);
 
   const ship  = shipFor(currentLevel);
   const epoch = epochOf(currentLevel);
+  const level = levels.find((l) => l.id === currentLevel);
+  // completeLevel runs on close, so at display time this still tells us
+  // whether the solve was a replay (XP is only banked once per level).
+  const isReplay = completedLevels.includes(currentLevel);
 
   useEffect(() => {
     if (!showLevelUp) return;
     const end = Date.now() + 1800;
     const frame = () => {
-      confetti({ particleCount: 2, angle: 60,  spread: 55, origin: { x: 0, y: 0.7 }, colors: ['#c9a84c','#e8e6e0','#22c55e'] });
-      confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ['#c9a84c','#e8e6e0','#22c55e'] });
+      confetti({ particleCount: 2, angle: 60,  spread: 55, origin: { x: 0, y: 0.7 }, colors: ['#c9a84c','#e8e6e0','#22c55e'], disableForReducedMotion: true });
+      confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ['#c9a84c','#e8e6e0','#22c55e'], disableForReducedMotion: true });
       if (Date.now() < end) requestAnimationFrame(frame);
     };
     frame();
@@ -41,6 +47,7 @@ export default function LevelUpModal() {
 
   const handleClose = useCallback(() => {
     setShowLevelUp(false);
+    setShowSolution(false); // collapsed again for the next solve
     completeLevel(currentLevel);
   }, [setShowLevelUp, completeLevel, currentLevel]);
 
@@ -76,7 +83,7 @@ export default function LevelUpModal() {
             animate={{ scale: 1,    opacity: 1, y: 0  }}
             exit={{   scale: 0.88, opacity: 0, y: 16  }}
             transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-            className="relative w-full max-w-sm overflow-hidden"
+            className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto"
             style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 8, borderTop: '3px solid var(--lcb-gold)' }}
           >
             {/* Top accent row */}
@@ -175,9 +182,54 @@ export default function LevelUpModal() {
             >
               <span style={{ fontSize: 15, filter: 'drop-shadow(0 0 6px rgba(201,168,76,0.7))' }}>⬡</span>
               <span className="text-sm font-bold tracking-wide" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-gold)' }}>
-                +{xpEarned} XP Earned
+                {isReplay ? 'Replay — XP already banked' : `+${xpEarned} XP Earned`}
               </span>
             </motion.div>
+
+            {/* Model answer — compare your approach with the house style */}
+            {level && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="mx-6 mt-2"
+              >
+                <button
+                  onClick={() => setShowSolution((s) => !s)}
+                  aria-expanded={showSolution}
+                  className="w-full flex items-center gap-1.5 px-3 py-2 text-xs transition-opacity hover:opacity-80"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--lcb-border)',
+                    borderRadius: 4,
+                    color: 'var(--lcb-muted)',
+                    fontFamily: 'var(--font-ibm-plex-mono)',
+                  }}
+                >
+                  {showSolution
+                    ? <ChevronDown  className="w-3 h-3" style={{ color: 'var(--lcb-gold)' }} />
+                    : <ChevronRight className="w-3 h-3" style={{ color: 'var(--lcb-gold)' }} />}
+                  Compare with the model answer
+                </button>
+                {showSolution && (
+                  <pre
+                    className="mt-1 px-3 py-2 text-xs leading-5 overflow-x-auto"
+                    style={{
+                      background: '#0a1117',
+                      border: '1px solid var(--lcb-border)',
+                      borderRadius: 4,
+                      color: 'var(--lcb-white)',
+                      fontFamily: 'var(--font-ibm-plex-mono)',
+                      maxHeight: 140,
+                      overflowY: 'auto',
+                      margin: '4px 0 0',
+                    }}
+                  >
+                    {level.solutionQuery}
+                  </pre>
+                )}
+              </motion.div>
+            )}
 
             {/* Next level hint */}
             {currentLevel < MAX_LEVEL && (

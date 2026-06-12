@@ -57,3 +57,47 @@ export const EPOCH_RANGES: { name: Epoch; min: number; max: number }[] = levels.
 
 /** Level ids that begin a new epoch (used for divider markers). */
 export const EPOCH_STARTS = new Set(EPOCH_RANGES.slice(1).map((r) => r.min));
+
+/** Total XP available across every level (replays never award XP). */
+export const TOTAL_XP = levels.reduce((sum, l) => sum + xpFor(l.id), 0);
+
+/**
+ * Header career ladder. Each epoch's rank is reached by banking the XP of
+ * all epochs before it, so — unlike a hardcoded table — every rank is
+ * genuinely attainable within the game's total XP budget.
+ */
+export const RANK_LADDER: { name: string; minXp: number }[] = (() => {
+  let cumulative = 0;
+  const ladder: { name: string; minXp: number }[] = [];
+  for (const range of EPOCH_RANGES) {
+    ladder.push({ name: EPOCH_RANK[range.name], minXp: cumulative });
+    cumulative += levels
+      .filter((l) => l.id >= range.min && l.id <= range.max)
+      .reduce((sum, l) => sum + xpFor(l.id), 0);
+  }
+  return ladder;
+})();
+
+export interface RankInfo {
+  name: string;
+  nextName: string | null;
+  /** 0–1 progress towards the next rank (1 at the top rank). */
+  progress: number;
+  xpToNext: number;
+}
+
+export function rankInfo(totalXp: number): RankInfo {
+  let idx = 0;
+  for (let i = 0; i < RANK_LADDER.length; i++) {
+    if (totalXp >= RANK_LADDER[i].minXp) idx = i;
+  }
+  const current = RANK_LADDER[idx];
+  const next = RANK_LADDER[idx + 1];
+  if (!next) return { name: current.name, nextName: null, progress: 1, xpToNext: 0 };
+  return {
+    name: current.name,
+    nextName: next.name,
+    progress: (totalXp - current.minXp) / (next.minXp - current.minXp),
+    xpToNext: next.minXp - totalXp,
+  };
+}

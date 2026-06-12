@@ -47,7 +47,7 @@ export default function LevelNavigator({ isOpen, onClose }: LevelNavigatorProps)
         role="dialog"
         aria-modal="true"
         aria-label="Level navigator"
-        className="absolute right-0 top-0 bottom-0 w-[360px] flex flex-col"
+        className="absolute right-0 top-0 bottom-0 w-[360px] max-w-[92vw] flex flex-col"
         style={{ background: 'var(--lcb-panel)', borderLeft: '1px solid var(--lcb-border)' }}
       >
         {/* Header */}
