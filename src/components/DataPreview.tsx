@@ -40,7 +40,7 @@ export default function DataPreview() {
     );
   }
 
-  if (!queryResult || queryResult.values.length === 0) {
+  if (!queryResult) {
     return (
       <div className="h-full flex flex-col overflow-hidden fade-in-up" style={panelStyle}>
         <div style={headerStyle} className="flex items-center gap-2">
@@ -49,9 +49,37 @@ export default function DataPreview() {
             Query Results
           </span>
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
           <p className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-            Run a query to see results
+            Nothing on the wire yet.
+          </p>
+          <p className="text-xs leading-5" style={{ color: 'var(--lcb-muted)', opacity: 0.7, fontFamily: 'var(--font-ibm-plex-mono)' }}>
+            Run your query to inspect its output — or explore freely, e.g.{' '}
+            <span style={{ color: 'var(--lcb-gold)' }}>SELECT * FROM customers LIMIT 5</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (queryResult.values.length === 0) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden fade-in-up" style={panelStyle}>
+        <div style={headerStyle} className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Database className="w-3.5 h-3.5" style={{ color: 'var(--lcb-gold)' }} />
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ fontFamily: 'var(--font-ibm-plex-mono)', color: 'var(--lcb-white)' }}>
+              Query Results
+            </span>
+          </div>
+          <span className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+            0 rows
+          </span>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-6 text-center">
+          <p className="text-xs leading-5" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
+            The query ran fine but returned no rows — check your WHERE conditions
+            (values are case-sensitive: &apos;Active&apos; ≠ &apos;active&apos;).
           </p>
         </div>
       </div>

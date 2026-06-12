@@ -4,6 +4,67 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 7 — 2026-06-12
+
+### [UI/UX Improvements]
+
+- **Run vs Submit split** (`SQLPanel.tsx`): the single graded "Run" button became two actions.
+  **Run** (⌘↵ / Ctrl↵) executes the query and shows its results with no grading and no
+  failed-attempt penalty — exploring the data (`SELECT * FROM …`) no longer produces a
+  confusing "wrong column count" failure. **Submit** (⇧⌘↵) grades against the expected
+  report, drives hints/attempt escalation, and completes the level. Onboarding step 2
+  rewritten around the new flow ("Run Freely, Submit to Earn").
+- **Results visibility**: query output previously landed in a right-panel tab that defaults
+  to Schema — players could run queries and never see their results. The tab is renamed
+  **Results**, auto-activates on every run, and on stacked mobile layouts the panel scrolls
+  into view. Query results and errors are now cleared when navigating between levels
+  (`useGameStore.ts`) so a previous level's output can't mislead.
+- **Editor keyboard shortcuts actually work**: Monaco swallows ⌘↵/Ctrl↵ before they reach
+  the window listener, so the advertised shortcut never fired while typing in the editor.
+  Keybindings are now registered with Monaco itself (`editor.addCommand`), and handlers read
+  the live editor model rather than React state (fast type-then-⌘↵ could execute stale SQL).
+  The shortcut labels also show `Ctrl` instead of `⌘` on non-Mac platforms.
+- **Editor seed bug fixed**: clearing the editor no longer makes the seed scaffold reappear
+  (the controlled value fell back to `seedQuery` whenever the state was empty).
+- **Model answer reveal** (`LevelUpModal.tsx`): after completing a level, a "Compare with the
+  model answer" toggle shows the canonical style-guide solution — players who solved it
+  differently learn the idiomatic pattern at the moment of success.
+- **Distinct Results states** (`DataPreview.tsx`): "no query run yet" (with an exploration
+  suggestion) is now distinguishable from "query ran but returned 0 rows" (with a
+  case-sensitivity nudge).
+
+### [Game Design Tweaks]
+
+- **Career ranks are now reachable** (`progression.ts`): the header ladder was hardcoded at
+  1000/3000/7000 XP while the whole game only awards 1,285 — VP and Managing Director were
+  unreachable. `RANK_LADDER` now derives thresholds from level data (each epoch's rank is
+  reached by banking all prior epochs' XP), with `rankInfo()` consumed by the header.
+- **Honest replay rewards**: replaying a completed level shows "Replay — XP already banked"
+  in the completion modal and skips the +XP float (XP was already awarded only once; the UI
+  just claimed otherwise).
+- **Fleet survives reloads** (`useGameStore.rehydrateFleet`): up to 10 ships from the most
+  recently completed levels sail back into the harbour after a page reload (boids were never
+  persisted, so the harbour was empty despite a non-zero Fleet count).
+- **Double-docking bug fixed** (`FlockCanvas.tsx`): `lastSpawnedBird` was never consumed, so
+  the spawn effect re-fired when the level advanced on modal close — every solve docked two
+  ships and inflated the Fleet counter. The spawn request is now cleared after use.
+
+### [Database & Code Optimizations]
+
+- **Monaco self-hosted** (`scripts/sync-sql-assets.mjs`, `monaco-editor` pinned): the editor
+  — the core of the product — was loaded from cdn.jsdelivr.net at runtime and the entire
+  terminal broke when the CDN was unreachable. It is now copied out of `node_modules` into
+  `public/vendor/monaco` at dev/build time, exactly like the sql.js runtime.
+- `levelToShipType` in `FlockCanvas` now derives from `epochOf()` instead of duplicating
+  hardcoded level boundaries; confetti respects `prefers-reduced-motion`; the level-navigator
+  drawer is capped at 92vw on small screens; header rank bar hides below `md` to prevent
+  overflow.
+- **Tests**: new `tests/progression.test.ts` (rank ladder reachability, monotonic thresholds,
+  `rankInfo` boundaries) and store tests for result-clearing on navigation and
+  `rehydrateFleet` idempotency — 296 tests total.
+
+---
+
 ## Iteration 6 — 2026-06-11
 
 ### [UI/UX Improvements]

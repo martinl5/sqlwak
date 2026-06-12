@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/useGameStore';
+import { MAX_LEVEL } from '@/lib/progression';
 
 const STEPS = [
   {
@@ -26,8 +27,8 @@ const STEPS = [
         <circle cx="14" cy="11" r="1.5" fill="rgba(201,168,76,0.4)" />
       </svg>
     ),
-    title: 'Write SQL, Earn XP',
-    body: 'Each challenge presents a real-world banking problem. Write your SQL query in the editor, press ⌘↵ or click Run to execute. Correct solutions earn XP and advance you through 4 epochs: Foundational → Intermediate → Advanced → Expert.',
+    title: 'Run Freely, Submit to Earn',
+    body: 'Each challenge is a real banking problem. Run (⌘↵) executes your SQL and shows the results — explore the data as much as you like, it\'s never penalised. When your report looks right, Submit (⇧⌘↵) it to the Harbour Master to earn XP and advance through 4 epochs: Foundational → Intermediate → Advanced → Expert.',
   },
   {
     icon: (
@@ -40,7 +41,7 @@ const STEPS = [
       </svg>
     ),
     title: 'Navigate the Harbour',
-    body: 'Use the Schema panel to explore tables. The level map strip shows your voyage across 65 challenges. Stuck? Click the hint button after your first attempt. The harbour master is always watching.',
+    body: `Use the Schema panel to explore tables. The level map strip shows your voyage across ${MAX_LEVEL} challenges. Stuck? A hint appears after your first submission, and after three the Harbour Master reveals the expected report's shape.`,
   },
 ];
 

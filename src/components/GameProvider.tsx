@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, useRef, useCallback, Fragment } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import SQLPanel from './SQLPanel';
@@ -10,7 +10,7 @@ import LevelUpModal from './LevelUpModal';
 import LevelNavigator from './LevelNavigator';
 import { useGameStore } from '@/store/useGameStore';
 import { initDatabase } from '@/lib/db';
-import { EPOCH_RANGES, MAX_LEVEL } from '@/lib/progression';
+import { EPOCH_RANGES, MAX_LEVEL, rankInfo } from '@/lib/progression';
 import SchemaViewer from './SchemaViewer';
 import LevelProgressMap from './LevelProgressMap';
 import OnboardingOverlay from './OnboardingOverlay';
@@ -26,21 +26,31 @@ export default function GameProvider() {
   const [dimensions, setDimensions]             = useState({ width: 0, height: 0 });
   const [activeRightTab, setActiveRightTab]     = useState<'schema' | 'data'>('schema');
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
-  const { currentLevel, totalXp, currentStreak } = useGameStore();
+  const rightPanelRef = useRef<HTMLDivElement>(null);
+  const { currentLevel, totalXp, currentStreak, rehydrateFleet } = useGameStore();
 
-  // Career-rank progression — mirrors a senior-DS ladder (Analyst → MD).
-  const getRankInfo = (pts: number) => {
-    if (pts < 1000) return { name: 'Analyst',           progress: pts / 1000,          xpToNext: 1000 - pts, nextName: 'Senior Analyst' };
-    if (pts < 3000) return { name: 'Senior Analyst',    progress: (pts - 1000) / 2000, xpToNext: 3000 - pts, nextName: 'VP Analytics'   };
-    if (pts < 7000) return { name: 'VP Analytics',      progress: (pts - 3000) / 4000, xpToNext: 7000 - pts, nextName: 'MD'             };
-    return                 { name: 'Managing Director', progress: 1,                   xpToNext: 0,          nextName: ''               };
-  };
-  const rank = getRankInfo(totalXp);
+  // Career-rank ladder derived from the level data (see progression.ts),
+  // so every rank up to Managing Director is actually reachable.
+  const rank = rankInfo(totalXp);
 
   useEffect(() => {
     initDatabase()
       .then(() => setIsDbReady(true))
       .catch((err) => setDbError(err instanceof Error ? err.message : 'Failed to initialise database'));
+  }, []);
+
+  // Restore docked ships from saved progress once the harbour has a size.
+  useEffect(() => {
+    if (isDbReady && dimensions.width > 0) rehydrateFleet(dimensions.width);
+  }, [isDbReady, dimensions.width, rehydrateFleet]);
+
+  // Whenever a query runs, surface its output: switch the right panel to the
+  // Results tab and, on stacked (mobile) layouts, bring it into view.
+  const handleQueryRun = useCallback(() => {
+    setActiveRightTab('data');
+    if (window.innerWidth < 1024) {
+      rightPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, []);
 
   useEffect(() => {
@@ -125,8 +135,8 @@ export default function GameProvider() {
           >
             Lion City Bank
           </span>
-          <span className="text-xs" style={{ color: 'var(--lcb-border)' }}>|</span>
-          <span className="text-xs tracking-widest uppercase" style={{ color: 'var(--lcb-muted)' }}>
+          <span className="hidden sm:inline text-xs" style={{ color: 'var(--lcb-border)' }}>|</span>
+          <span className="hidden sm:inline text-xs tracking-widest uppercase" style={{ color: 'var(--lcb-muted)' }}>
             SQL Analytics Terminal
           </span>
         </div>
@@ -134,7 +144,7 @@ export default function GameProvider() {
           <span>LEVEL <span style={{ color: 'var(--lcb-gold)' }}>{currentLevel}</span> / {MAX_LEVEL}</span>
 
           {/* Rank + XP progress bar */}
-          <div className="flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
+          <div className="hidden md:flex items-center gap-1.5" title={rank.xpToNext > 0 ? `${rank.xpToNext} XP to ${rank.nextName}` : 'Top rank reached'}>
             <span style={{ color: 'var(--lcb-muted)' }}>{rank.name}</span>
             <span style={{ color: 'var(--lcb-gold)' }}>{totalXp}</span>
             <div className="w-16 h-1 overflow-hidden" style={{ background: 'var(--lcb-border)', borderRadius: 2 }}>
@@ -147,8 +157,8 @@ export default function GameProvider() {
                 }}
               />
             </div>
-            {rank.xpToNext > 0 && (
-              <span style={{ color: 'var(--lcb-muted)', opacity: 0.7 }}>→ {rank.nextName}</span>
+            {rank.nextName && (
+              <span className="hidden lg:inline" style={{ color: 'var(--lcb-muted)', opacity: 0.7 }}>→ {rank.nextName}</span>
             )}
           </div>
 
@@ -230,11 +240,11 @@ export default function GameProvider() {
         <div className="relative z-10 h-full flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
           {/* Left: SQL Editor */}
           <div className="w-full lg:w-[460px] h-[75vh] lg:h-full flex-shrink-0 p-3 lg:pr-2">
-            <SQLPanel />
+            <SQLPanel onQueryRun={handleQueryRun} />
           </div>
 
-          {/* Right: Schema / Data + status */}
-          <div className="w-full lg:w-[420px] h-[75vh] lg:h-full flex-shrink-0 p-3 lg:pl-2 flex flex-col gap-2">
+          {/* Right: Schema / Results + status */}
+          <div ref={rightPanelRef} className="w-full lg:w-[420px] h-[75vh] lg:h-full flex-shrink-0 p-3 lg:pl-2 flex flex-col gap-2">
             {/* Tab bar */}
             <div
               className="flex"
@@ -253,7 +263,7 @@ export default function GameProvider() {
                     background: 'transparent',
                   }}
                 >
-                  {tab === 'schema' ? 'Schema' : 'Data'}
+                  {tab === 'schema' ? 'Schema' : 'Results'}
                 </button>
               ))}
             </div>

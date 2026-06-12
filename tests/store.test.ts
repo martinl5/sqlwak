@@ -84,6 +84,43 @@ describe('navigation', () => {
   });
 });
 
+describe('query state on navigation', () => {
+  it('clears stale results and errors when moving between levels', () => {
+    useGameStore.getState().setQueryResult({ columns: ['a'], values: [[1]] });
+    useGameStore.getState().setError('boom');
+    useGameStore.getState().setCurrentLevel(5);
+    expect(useGameStore.getState().queryResult).toBeNull();
+    expect(useGameStore.getState().error).toBeNull();
+
+    useGameStore.getState().setQueryResult({ columns: ['a'], values: [[1]] });
+    useGameStore.getState().completeLevel(5);
+    expect(useGameStore.getState().queryResult).toBeNull();
+  });
+});
+
+describe('rehydrateFleet', () => {
+  it('restores up to ten ships from completed levels', () => {
+    for (let i = 1; i <= 12; i++) useGameStore.getState().completeLevel(i);
+    useGameStore.getState().rehydrateFleet(1200);
+    const boids = useGameStore.getState().boids;
+    expect(boids.length).toBe(10);
+    // Most recent completions, negative ids (no spawn fanfare on the canvas)
+    expect(boids.map((b) => b.level)).toEqual([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(boids.every((b) => b.id < 0)).toBe(true);
+    expect(boids.every((b) => b.x >= 0 && b.x <= 1200)).toBe(true);
+  });
+
+  it('is a no-op when ships already exist or nothing is completed', () => {
+    useGameStore.getState().rehydrateFleet(1200);
+    expect(useGameStore.getState().boids.length).toBe(0);
+
+    useGameStore.getState().completeLevel(1);
+    useGameStore.getState().rehydrateFleet(1200);
+    useGameStore.getState().rehydrateFleet(1200);
+    expect(useGameStore.getState().boids.length).toBe(1);
+  });
+});
+
 describe('resetGame', () => {
   it('returns progression to the initial state', () => {
     useGameStore.getState().completeLevel(1);
