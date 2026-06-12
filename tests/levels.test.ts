@@ -3,7 +3,7 @@ import initSqlJs, { type Database } from 'sql.js';
 import { levels } from '@/data/levels';
 import { seedDatabase } from '@/lib/seed';
 import { runReadOnlyQuery, assertReadOnlyQuery } from '@/lib/sqlRunner';
-import { compareResults, solutionRequiresOrder } from '@/lib/validator';
+import { compareResults, extractOrderKeyIndices, solutionRequiresOrder } from '@/lib/validator';
 import type { Epoch, QueryResult } from '@/types';
 
 let db: Database;
@@ -52,6 +52,30 @@ describe.each(levels)('level $id — $title', (level) => {
       return; // seed scaffold doesn't even parse — that's fine
     }
     const orderMatters = level.orderMatters ?? solutionRequiresOrder(level.solutionQuery);
-    expect(compareResults(seedResult, expected, orderMatters)).not.toBeNull();
+    const orderKeys = orderMatters
+      ? extractOrderKeyIndices(level.solutionQuery, expected.columns)
+      : null;
+    expect(compareResults(seedResult, expected, orderMatters, orderKeys)).not.toBeNull();
+  });
+});
+
+describe('order-only ties accept any tie order (level 20 regression)', () => {
+  it('accepts a correct query whose tied rows come out in a different order', () => {
+    const level = levels.find((l) => l.id === 20)!;
+    const userQuery = `SELECT
+  customer_name,
+  count(distinct account_id) as account_count
+  FROM customers c
+  JOIN accounts a ON c.customer_id = a.customer_id
+ GROUP BY customer_name
+HAVING account_count > 1
+ ORDER BY account_count desc`;
+    const expected = runReadOnlyQuery(db, level.solutionQuery);
+    const user = runReadOnlyQuery(db, userQuery);
+    const orderMatters = level.orderMatters ?? solutionRequiresOrder(level.solutionQuery);
+    const orderKeys = extractOrderKeyIndices(level.solutionQuery, expected.columns);
+    expect(orderMatters).toBe(true);
+    expect(orderKeys).toEqual([1]);
+    expect(compareResults(user, expected, orderMatters, orderKeys)).toBeNull();
   });
 });
