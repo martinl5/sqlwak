@@ -955,4 +955,81 @@ SELECT month,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // ANTI-JOIN PATTERNS (Levels 66–67)
+  // LEFT JOIN … IS NULL; correlated NOT EXISTS
+  // ============================================================
+
+  {
+    id: 66,
+    title: 'Unfinanced Fleet Exposure (Anti-Join)',
+    description: `Trade Finance Compliance has flagged a gap: some vessels moving cargo through our network have **no trade finance facility on file** — no Letter of Credit, no Shipping Guarantee, nothing. Every one of them is uncollateralised operational risk.
+
+Find every vessel with no row in \`trade_finance_facilities\`. Return \`vessel_name\`, \`vessel_type\`, \`flag_state\`, and \`dwt_tonnes\`, ordered by \`dwt_tonnes\` descending (largest exposure first).
+
+Use the **anti-join** pattern: \`LEFT JOIN\` the facilities table, then keep only the rows where the join found no match — \`WHERE f.facility_id IS NULL\`. Test a column that can never be NULL in a real match (the primary key is the safe choice): if it's NULL after a LEFT JOIN, the match doesn't exist.
+
+"Find the rows in A with no match in B" is one of the most common interview questions there is — customers with no orders, users with no logins, products never sold. This LEFT JOIN form is the classic answer.`,
+    hint: "LEFT JOIN trade_finance_facilities f ON f.vessel_id = v.vessel_id, then WHERE f.facility_id IS NULL. The NULL test must be on the right-hand (facilities) table — that's what marks an unmatched row.",
+    seedQuery: `SELECT v.vessel_name,
+       v.vessel_type,
+       v.flag_state,
+       v.dwt_tonnes
+  FROM vessels v
+  LEFT JOIN trade_finance_facilities f ON
+ WHERE f.facility_id IS
+ ORDER BY v.dwt_tonnes DESC`,
+    solutionQuery: `SELECT v.vessel_name,
+       v.vessel_type,
+       v.flag_state,
+       v.dwt_tonnes
+  FROM vessels v
+  LEFT JOIN trade_finance_facilities f ON f.vessel_id = v.vessel_id
+ WHERE f.facility_id IS NULL
+ ORDER BY v.dwt_tonnes DESC`,
+    epoch: 'Expert',
+    difficulty: 3,
+  },
+
+  {
+    id: 67,
+    title: 'Lending Whitespace: Depositors Without Loans (NOT EXISTS)',
+    description: `The Retail Lending desk wants a cross-sell target list: customers who keep deposits with LCB but have **never taken a loan** from us. Their balances tell us they trust the bank — the lending relationship is pure whitespace.
+
+Find every customer who holds at least one account but has no row in \`loans\`. Return \`customer_name\`, \`segment\`, \`credit_score\`, and \`total_deposits\` — the sum of their account balances, rounded to 2 dp — ordered by \`total_deposits\` descending.
+
+Use a correlated \`NOT EXISTS\` subquery: \`WHERE NOT EXISTS (SELECT 1 FROM loans l WHERE l.customer_id = c.customer_id)\`. The inner JOIN to \`accounts\` already restricts the list to account holders, so the aggregation and the anti-join compose in one pass.
+
+Prefer \`NOT EXISTS\` over \`NOT IN\` for anti-joins: if the \`NOT IN\` subquery ever returns a NULL, the whole predicate goes unknown and you silently get **zero rows** — a classic production bug. \`NOT EXISTS\` has no such trap, and optimisers handle it well.`,
+    hint: "JOIN accounts for the deposit sum, GROUP BY the customer, and add WHERE NOT EXISTS (SELECT 1 FROM loans l WHERE l.customer_id = c.customer_id). The subquery is correlated — it references the outer customer row.",
+    seedQuery: `SELECT c.customer_name,
+       c.segment,
+       c.credit_score,
+       ROUND(SUM(a.balance), 2) AS total_deposits
+  FROM customers c
+  JOIN accounts a ON a.customer_id = c.customer_id
+ WHERE NOT EXISTS (
+         SELECT 1
+           FROM loans l
+          WHERE
+       )
+ GROUP BY
+ ORDER BY total_deposits DESC`,
+    solutionQuery: `SELECT c.customer_name,
+       c.segment,
+       c.credit_score,
+       ROUND(SUM(a.balance), 2) AS total_deposits
+  FROM customers c
+  JOIN accounts a ON a.customer_id = c.customer_id
+ WHERE NOT EXISTS (
+         SELECT 1
+           FROM loans l
+          WHERE l.customer_id = c.customer_id
+       )
+ GROUP BY c.customer_id, c.customer_name, c.segment, c.credit_score
+ ORDER BY total_deposits DESC`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

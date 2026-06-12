@@ -21,6 +21,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   63: 'Rolling volatility: SQRT(AVG(x²) − AVG(x)²) — population std dev via window functions',
   64: 'NTILE bucketing: equal-count portfolio tranching for Basel III capital adequacy reporting',
   65: 'Running balance: SUM() OVER (ROWS UNBOUNDED PRECEDING) — the universal treasury ledger pattern',
+  66: 'Anti-joins: LEFT JOIN … IS NULL — finding the rows that have no match',
+  67: 'NOT EXISTS: the correlated anti-join without the NOT IN NULL trap',
 };
 
 export default function LevelUpModal() {
@@ -57,7 +59,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65].find((k) => currentLevel < k) ?? 65;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67].find((k) => currentLevel < k) ?? 67;
   const xpEarned    = xpFor(currentLevel);
 
   return (
