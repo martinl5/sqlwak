@@ -30,7 +30,11 @@ html, body {
   background: var(--lcb-black);
   color: var(--lcb-white);
   font-family: var(--font-ibm-plex-mono), 'Courier New', monospace;
+  -webkit-text-size-adjust: 100%;
 }
+
+/* Kill the double-tap-to-zoom delay on rapid Run/Submit taps. */
+button { touch-action: manipulation; }
 
 /* ── Panel base ───────────────────────────────────────────────────────────── */
 .lcb-panel {
@@ -134,6 +138,28 @@ input:focus-visible {
   color: var(--lcb-gold);
   text-shadow: 0 0 14px rgba(201,168,76,0.75), 0 0 28px rgba(201,168,76,0.35);
   z-index: 60;
+}
+
+/* ── Level progress map tiles ────────────────────────────────────────────── */
+.lcb-map-strip { height: 22px; }
+.lcb-map-dot   { width: 9px; height: 14px; }
+
+/* ── Touch devices ───────────────────────────────────────────────────────────
+   On coarse pointers the desktop-dense controls need real tap targets:
+   icon buttons grow to ≥40px, snippet pills get finger-sized padding, the
+   progress-map tiles widen, and keyboard-shortcut hints disappear. */
+@media (pointer: coarse) {
+  .lcb-icon-btn {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lcb-snippet   { padding: 8px 12px; min-height: 38px; }
+  .lcb-kbd-hint  { display: none; }
+  .lcb-map-strip { height: 30px; }
+  .lcb-map-dot   { width: 15px; height: 20px; }
 }
 
 /* ── Reduced motion ───────────────────────────────────────────────────────── */

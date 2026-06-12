@@ -22,14 +22,14 @@ export default function FlockStatus({ onOpenLevelNavigator }: FlockStatusProps) 
 
   return (
     <div
-      className="flex items-center gap-3 px-3 py-2"
+      className="flex flex-wrap items-center gap-3 px-3 py-2"
       style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 6 }}
     >
       {/* Nav buttons */}
       <div className="flex items-center gap-1">
         <button
           onClick={onOpenLevelNavigator}
-          className="p-1.5 transition-colors hover:opacity-70"
+          className="lcb-icon-btn p-1.5 transition-colors hover:opacity-70"
           style={{ color: 'var(--lcb-muted)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--lcb-border)', borderRadius: 4 }}
           title="Browse levels"
           aria-label="Browse levels"
@@ -39,7 +39,7 @@ export default function FlockStatus({ onOpenLevelNavigator }: FlockStatusProps) 
         <button
           onClick={goToPreviousLevel}
           disabled={!canGoBack}
-          className="p-1.5 transition-colors"
+          className="lcb-icon-btn p-1.5 transition-colors"
           style={{
             color: canGoBack ? 'var(--lcb-muted)' : 'var(--lcb-border)',
             background: 'rgba(255,255,255,0.04)',
