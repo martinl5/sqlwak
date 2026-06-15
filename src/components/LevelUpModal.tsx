@@ -23,6 +23,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   65: 'Running balance: SUM() OVER (ROWS UNBOUNDED PRECEDING) — the universal treasury ledger pattern',
   66: 'Anti-joins: LEFT JOIN … IS NULL — finding the rows that have no match',
   67: 'NOT EXISTS: the correlated anti-join without the NOT IN NULL trap',
+  68: 'Cohort retention: first-login cohort month → Month-1 return rate — the core product-growth metric',
+  69: 'Sessionization / gaps & islands: LAG → flag → SUM() OVER → aggregate — the universal session-detection pattern',
 };
 
 export default function LevelUpModal() {
@@ -59,7 +61,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67].find((k) => currentLevel < k) ?? 67;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69].find((k) => currentLevel < k) ?? 69;
   const xpEarned    = xpFor(currentLevel);
 
   return (

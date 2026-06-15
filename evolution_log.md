@@ -4,6 +4,27 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 10 — 2026-06-15
+
+### [UI/UX Improvements]
+
+- **Schema-aware SQL auto-complete** (`SQLPanel.tsx`): Monaco now surfaces every LCB table name and column as IntelliSense suggestions when the player types in the editor. A module-level `LCB_SCHEMA` constant maps all 10 tables (customers, accounts, transactions, loans, products, branches, vessels, cargo_shipments, trade_finance_facilities, portal_logins) to their columns. A `registerCompletionItemProvider('sql', …)` call inside `handleEditorMount` registers table entries as `CompletionItemKind.Class` (with "LCB table" detail) and column entries as `CompletionItemKind.Field` (with the parent table name as detail). A `lcbCompletionsRegistered` module-level guard prevents duplicate registration across editor remounts. Players typing a partial table or column name see a ranked dropdown without any CDN dependency — auto-complete is fully self-hosted alongside Monaco.
+- **`portal_logins` table in SchemaViewer**: the new table's columns (`login_id`, `customer_id`, `login_at`) are documented with descriptions and a sample query (`SELECT * FROM portal_logins ORDER BY customer_id, login_at`), keeping the schema panel the single source of truth for the playground.
+
+### [Game Design Tweaks]
+
+- **Level 68** *(Expert, difficulty 4)* — "Portal Onboarding Cohort: Month-1 Retention":
+  Teaches the canonical three-CTE cohort-retention pattern: (1) first_logins CTE groups `portal_logins` by `customer_id` to find each customer's earliest login and `STRFTIME('%Y-%m', MIN(login_at))` cohort month; (2) retained CTE identifies customers who logged in during the immediately following calendar month using `DATE(first_login_at, '+1 month')`; (3) outer query LEFT JOINs and aggregates `cohort_size`, `retained_month2`, and `ROUND(100.0 * retained / cohort, 1) AS retention_rate_pct` per cohort. Four cohorts (Jan–Apr 2024) yield 75.0 %, 66.7 %, 50.0 %, and 0.0 % Month-1 retention — authentic variation that makes the pedagogical point. This exact pattern appears in Stripe, Revolut, and FAANG DS take-homes.
+- **Level 69** *(Expert, difficulty 5)* — "Portal Session Reconstruction (Gaps & Islands)":
+  Teaches the universal four-CTE sessionization pattern: (1) lag_applied adds `LAG(login_at) OVER (PARTITION BY customer_id ORDER BY login_at)`; (2) session_flags marks each row `is_new_session = 1` when the gap from the previous login exceeds 30 minutes using `(JULIANDAY(login_at) - JULIANDAY(prev_login_at)) * 24 * 60 > 30`; (3) sessions_numbered assigns a per-customer session ID via `SUM(is_new_session) OVER (PARTITION BY customer_id ORDER BY login_at)` — the classic cumulative-sum island trick; (4) session_stats aggregates each session's duration in whole minutes with `CAST(ROUND(… * 24 * 60) AS INTEGER)`. Outer query returns `total_sessions` and `longest_session_mins` per customer (11 rows). Identical pattern works in BigQuery, Redshift, Snowflake, and Spark SQL. Highest difficulty (5) in the catalog — the capstone Expert challenge.
+
+### [Database & Code Optimizations]
+
+- **`portal_logins` table** added to `src/lib/seed.ts`: 36 rows across customers 1–11, timestamps from Jan–Jun 2024 with deliberate within-session clusters (gap < 30 min) and cross-session gaps. Designed simultaneously to support cohort analysis (customers joining the portal in Jan/Feb/Mar/Apr 2024 cohorts) and sessionization (mixed session durations from 0 to 25 min). Two new indexes: `idx_portal_logins_customer ON portal_logins(customer_id)` and `idx_portal_logins_at ON portal_logins(login_at)`.
+- **`LevelUpModal` hint map** extended with entries for levels 68 and 69; `nextHintKey` sentinel array extended from `[…, 67]` to `[…, 67, 68, 69]`; fallback `?? 67` updated to `?? 69`. `MAX_LEVEL` in `progression.ts` derives from `levels[levels.length - 1].id` and auto-updates to 69 — no other touch points needed.
+
+---
+
 ## Iteration 9 — 2026-06-12
 
 ### [Mobile & Touch Pass — closes the improvement plan]

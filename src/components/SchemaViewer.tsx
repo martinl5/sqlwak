@@ -135,6 +135,15 @@ const SCHEMA: Record<string, TableSchema> = {
     ],
     sample: 'SELECT * FROM trade_finance_facilities;',
   },
+  portal_logins: {
+    description: 'Customer digital banking portal login events — used for cohort & session analysis',
+    columns: [
+      { name: 'login_id',    type: 'INTEGER', description: 'Unique identifier', primaryKey: true },
+      { name: 'customer_id', type: 'INTEGER', description: 'FK → customers', foreignKey: 'customers.customer_id' },
+      { name: 'login_at',    type: 'TEXT',    description: 'Login timestamp (YYYY-MM-DD HH:MM:SS)' },
+    ],
+    sample: 'SELECT * FROM portal_logins ORDER BY customer_id, login_at;',
+  },
 };
 
 export default function SchemaViewer() {

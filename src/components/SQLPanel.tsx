@@ -14,6 +14,21 @@ import { epochOf, xpFor, EPOCH_RANK } from '@/lib/progression';
 // editor is the product, so it must not depend on a third party being up.
 loader.config({ paths: { vs: '/vendor/monaco/vs' } });
 
+// LCB schema for SQL auto-complete — registered once per page load.
+let lcbCompletionsRegistered = false;
+const LCB_SCHEMA: Record<string, string[]> = {
+  customers:                ['customer_id', 'customer_name', 'segment', 'credit_score', 'join_date', 'email', 'ab_test_group'],
+  accounts:                 ['account_id', 'customer_id', 'product_id', 'branch_id', 'balance', 'opened_date', 'status'],
+  transactions:             ['transaction_id', 'account_id', 'amount', 'transaction_type', 'transaction_date', 'merchant_category', 'channel'],
+  loans:                    ['loan_id', 'customer_id', 'product_id', 'principal_amount', 'interest_rate', 'term_months', 'start_date', 'status', 'risk_grade'],
+  products:                 ['product_id', 'product_name', 'product_type', 'interest_rate', 'min_balance'],
+  branches:                 ['branch_id', 'branch_name', 'city', 'region', 'branch_type'],
+  vessels:                  ['vessel_id', 'vessel_name', 'vessel_type', 'flag_state', 'dwt_tonnes', 'year_built', 'owner_customer_id'],
+  cargo_shipments:          ['shipment_id', 'vessel_id', 'origin_port', 'destination_port', 'cargo_type', 'cargo_value_usd', 'departure_date', 'arrival_date', 'status'],
+  trade_finance_facilities: ['facility_id', 'customer_id', 'vessel_id', 'facility_type', 'facility_amount', 'utilised_amount', 'expiry_date', 'status'],
+  portal_logins:            ['login_id', 'customer_id', 'login_at'],
+};
+
 const SQL_SNIPPETS = [
   { label: 'SELECT',   insert: 'SELECT '    },
   { label: 'FROM',     insert: '\nFROM '    },
@@ -108,6 +123,44 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
       monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter,
       () => handlersRef.current.submit()
     );
+
+    // Register schema-aware SQL completions once per page load.
+    if (!lcbCompletionsRegistered) {
+      lcbCompletionsRegistered = true;
+      monaco.languages.registerCompletionItemProvider('sql', {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        provideCompletionItems(model: any, position: any) {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber:   position.lineNumber,
+            startColumn:     word.startColumn,
+            endColumn:       word.endColumn,
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const suggestions: any[] = [
+            ...Object.keys(LCB_SCHEMA).map(tbl => ({
+              label:      tbl,
+              kind:       monaco.languages.CompletionItemKind.Class,
+              insertText: tbl,
+              range,
+              detail:     'LCB table',
+            })),
+            ...Object.entries(LCB_SCHEMA).flatMap(([tbl, cols]) =>
+              cols.map(col => ({
+                label:      col,
+                kind:       monaco.languages.CompletionItemKind.Field,
+                insertText: col,
+                range,
+                detail:     tbl,
+              }))
+            ),
+          ];
+          return { suggestions };
+        },
+      });
+    }
+
     ed.focus?.();
   };
 
