@@ -1032,4 +1032,172 @@ Prefer \`NOT EXISTS\` over \`NOT IN\` for anti-joins: if the \`NOT IN\` subquery
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // COHORT RETENTION (Level 68)
+  // ============================================================
+
+  {
+    id: 68,
+    title: 'Portal Onboarding Cohort: Month-1 Retention',
+    description: `The Digital Banking squad needs to know how well our onboarding funnel retains new users. Every customer who logs into the portal for the first time in a given month forms a **cohort**. Measure how many returned the following month.
+
+Using the \`portal_logins\` table:
+1. A first CTE (\`first_logins\`) finds each customer's earliest login and labels them with their **cohort month** (\`STRFTIME('%Y-%m', MIN(login_at))\`).
+2. A second CTE (\`retained\`) finds the \`DISTINCT\` set of customers who logged in during **the month immediately after** their cohort month — use \`DATE(first_login_at, '+1 month')\` to derive the next month and compare it with \`STRFTIME('%Y-%m', pl.login_at)\`.
+3. The outer query LEFT JOINs \`first_logins\` to \`retained\` and aggregates per cohort:
+   - \`cohort_month\` — the calendar month (YYYY-MM)
+   - \`cohort_size\` — total distinct customers whose first login was in that month
+   - \`retained_month2\` — how many came back the following month
+   - \`retention_rate_pct\` — \`ROUND(100.0 * retained_month2 / cohort_size, 1)\`
+
+Order by \`cohort_month\`.
+
+Cohort retention is the first metric every Head of Growth asks for and a fixture in FAANG and fintech DS interviews. This exact three-CTE pattern (cohort definition → activity join → aggregation) appears in Stripe, Revolut, and DBS DS take-home tests.`,
+    hint: "CTE 1: SELECT customer_id, MIN(login_at) AS first_login_at, STRFTIME('%Y-%m', MIN(login_at)) AS cohort_month FROM portal_logins GROUP BY customer_id. CTE 2: DISTINCT customer_ids where STRFTIME('%Y-%m', pl.login_at) = STRFTIME('%Y-%m', DATE(fl.first_login_at, '+1 month')). Outer: LEFT JOIN + COUNT DISTINCT + ROUND.",
+    seedQuery: `WITH first_logins AS (
+  SELECT customer_id,
+         MIN(login_at)                         AS first_login_at,
+         STRFTIME('%Y-%m', MIN(login_at))      AS cohort_month
+    FROM portal_logins
+   GROUP BY customer_id
+),
+retained AS (
+  SELECT DISTINCT fl.customer_id
+    FROM first_logins fl
+    JOIN portal_logins pl ON pl.customer_id = fl.customer_id
+   WHERE STRFTIME('%Y-%m', pl.login_at) = STRFTIME('%Y-%m', DATE(fl.first_login_at,     ))
+)
+SELECT fl.cohort_month,
+       COUNT(DISTINCT fl.customer_id)                                                      AS cohort_size,
+       COUNT(DISTINCT r.customer_id)                                                       AS retained_month2,
+       ROUND(100.0 * COUNT(DISTINCT r.customer_id) / COUNT(DISTINCT fl.customer_id), 1)   AS retention_rate_pct
+  FROM first_logins fl
+  LEFT JOIN retained r ON r.customer_id = fl.customer_id
+ GROUP BY
+ ORDER BY fl.cohort_month`,
+    solutionQuery: `WITH first_logins AS (
+  SELECT customer_id,
+         MIN(login_at)                         AS first_login_at,
+         STRFTIME('%Y-%m', MIN(login_at))      AS cohort_month
+    FROM portal_logins
+   GROUP BY customer_id
+),
+retained AS (
+  SELECT DISTINCT fl.customer_id
+    FROM first_logins fl
+    JOIN portal_logins pl ON pl.customer_id = fl.customer_id
+   WHERE STRFTIME('%Y-%m', pl.login_at) = STRFTIME('%Y-%m', DATE(fl.first_login_at, '+1 month'))
+)
+SELECT fl.cohort_month,
+       COUNT(DISTINCT fl.customer_id)                                                      AS cohort_size,
+       COUNT(DISTINCT r.customer_id)                                                       AS retained_month2,
+       ROUND(100.0 * COUNT(DISTINCT r.customer_id) / COUNT(DISTINCT fl.customer_id), 1)   AS retention_rate_pct
+  FROM first_logins fl
+  LEFT JOIN retained r ON r.customer_id = fl.customer_id
+ GROUP BY fl.cohort_month
+ ORDER BY fl.cohort_month`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+
+  // ============================================================
+  // SESSIONIZATION / GAPS & ISLANDS (Level 69)
+  // ============================================================
+
+  {
+    id: 69,
+    title: 'Portal Session Reconstruction (Gaps & Islands)',
+    description: `The UX Insights team needs to understand how deeply customers engage during each visit. A **session** is a continuous run of logins by the same customer where each consecutive login arrives within **30 minutes** of the previous one. A gap larger than 30 minutes — or the customer's very first login — marks the start of a new session.
+
+Using \`portal_logins\`, reconstruct sessions and return per-customer session statistics:
+- \`customer_id\`
+- \`total_sessions\` — count of distinct sessions
+- \`longest_session_mins\` — duration in whole minutes of the longest session (start → last login in that session)
+
+The four-CTE approach:
+1. **\`lag_applied\`**: use \`LAG(login_at) OVER (PARTITION BY customer_id ORDER BY login_at)\` to fetch each row's previous login timestamp.
+2. **\`session_flags\`**: \`CASE WHEN prev_login_at IS NULL OR (JULIANDAY(login_at) - JULIANDAY(prev_login_at)) * 24 * 60 > 30 THEN 1 ELSE 0 END AS is_new_session\`.
+3. **\`sessions_numbered\`**: \`SUM(is_new_session) OVER (PARTITION BY customer_id ORDER BY login_at)\` gives each row a stable session ID within the customer.
+4. **\`session_stats\`**: GROUP BY customer_id + session_id → compute \`CAST(ROUND((JULIANDAY(MAX(login_at)) - JULIANDAY(MIN(login_at))) * 24 * 60) AS INTEGER) AS duration_mins\`.
+
+Outer query: COUNT sessions and MAX duration per customer, ORDER BY \`customer_id\`.
+
+Sessionization is the canonical "gaps and islands" interview question at FAANG, fintech, and product-analytics roles. The four-CTE pattern — LAG → flag → cumsum → aggregate — works identically in BigQuery, Redshift, Snowflake, Spark SQL, and SQLite.`,
+    hint: "CTE 1: LAG(login_at) OVER (PARTITION BY customer_id ORDER BY login_at). CTE 2: CASE WHEN prev IS NULL OR (JULIANDAY(login_at)-JULIANDAY(prev))*24*60 > 30 THEN 1 ELSE 0 END. CTE 3: SUM(is_new_session) OVER (...) AS session_id. CTE 4: GROUP BY customer_id, session_id → CAST(ROUND(duration_mins) AS INTEGER). Final: COUNT + MAX per customer.",
+    seedQuery: `WITH lag_applied AS (
+  SELECT customer_id,
+         login_at,
+         LAG(login_at) OVER (PARTITION BY customer_id ORDER BY login_at) AS prev_login_at
+    FROM portal_logins
+),
+session_flags AS (
+  SELECT customer_id,
+         login_at,
+         CASE
+           WHEN prev_login_at IS NULL
+             OR (JULIANDAY(login_at) - JULIANDAY(prev_login_at)) * 24 * 60 >
+           THEN 1
+           ELSE 0
+         END AS is_new_session
+    FROM lag_applied
+),
+sessions_numbered AS (
+  SELECT customer_id,
+         login_at,
+         SUM(is_new_session) OVER (PARTITION BY customer_id ORDER BY login_at) AS session_id
+    FROM session_flags
+),
+session_stats AS (
+  SELECT customer_id,
+         session_id,
+         CAST(ROUND((JULIANDAY(MAX(login_at)) - JULIANDAY(MIN(login_at))) * 24 * 60) AS INTEGER) AS duration_mins
+    FROM sessions_numbered
+   GROUP BY customer_id, session_id
+)
+SELECT customer_id,
+       COUNT(session_id)  AS total_sessions,
+       MAX(duration_mins) AS longest_session_mins
+  FROM session_stats
+ GROUP BY
+ ORDER BY customer_id`,
+    solutionQuery: `WITH lag_applied AS (
+  SELECT customer_id,
+         login_at,
+         LAG(login_at) OVER (PARTITION BY customer_id ORDER BY login_at) AS prev_login_at
+    FROM portal_logins
+),
+session_flags AS (
+  SELECT customer_id,
+         login_at,
+         CASE
+           WHEN prev_login_at IS NULL
+             OR (JULIANDAY(login_at) - JULIANDAY(prev_login_at)) * 24 * 60 > 30
+           THEN 1
+           ELSE 0
+         END AS is_new_session
+    FROM lag_applied
+),
+sessions_numbered AS (
+  SELECT customer_id,
+         login_at,
+         SUM(is_new_session) OVER (PARTITION BY customer_id ORDER BY login_at) AS session_id
+    FROM session_flags
+),
+session_stats AS (
+  SELECT customer_id,
+         session_id,
+         CAST(ROUND((JULIANDAY(MAX(login_at)) - JULIANDAY(MIN(login_at))) * 24 * 60) AS INTEGER) AS duration_mins
+    FROM sessions_numbered
+   GROUP BY customer_id, session_id
+)
+SELECT customer_id,
+       COUNT(session_id)  AS total_sessions,
+       MAX(duration_mins) AS longest_session_mins
+  FROM session_stats
+ GROUP BY customer_id
+ ORDER BY customer_id`,
+    epoch: 'Expert',
+    difficulty: 5,
+  },
 ];

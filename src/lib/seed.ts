@@ -396,6 +396,53 @@ export function seedDatabase(database: Database): void {
     )
   );
 
+  // ── Portal Logins ─────────────────────────────────────────────────────────
+  // 36 rows across 11 customers (IDs 1–11), Jan–Jun 2024. Timestamps enable
+  // cohort-retention analysis (Level 68) and session-gap detection (Level 69).
+  database.run(`
+    CREATE TABLE IF NOT EXISTS portal_logins (
+      login_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      login_at    TEXT    NOT NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+    );
+  `);
+
+  type LoginRow = [number, string];
+  const loginData: LoginRow[] = [
+    // Customer 1 — Jan cohort; sessions: (09:00-09:18), (10:05), (Feb 03), (Mar 08)
+    [1, '2024-01-15 09:00:00'], [1, '2024-01-15 09:18:00'], [1, '2024-01-15 10:05:00'],
+    [1, '2024-02-03 11:00:00'], [1, '2024-03-08 15:30:00'],
+    // Customer 2 — Jan cohort; sessions: (14:00-14:22), (Feb 18)
+    [2, '2024-01-20 14:00:00'], [2, '2024-01-20 14:22:00'], [2, '2024-02-18 09:30:00'],
+    // Customer 3 — Jan cohort; sessions: (Jan 25), (Feb 07 16:00), (Feb 07 16:40), (Apr 12)
+    [3, '2024-01-25 08:45:00'], [3, '2024-02-07 16:00:00'],
+    [3, '2024-02-07 16:40:00'], [3, '2024-04-12 10:20:00'],
+    // Customer 4 — Jan cohort, churned Feb; sessions: (10:00-10:25), (May 20)
+    [4, '2024-01-10 10:00:00'], [4, '2024-01-10 10:25:00'], [4, '2024-05-20 08:00:00'],
+    // Customer 5 — Feb cohort; sessions: (09:00), (09:45), (Mar 10)
+    [5, '2024-02-05 09:00:00'], [5, '2024-02-05 09:45:00'], [5, '2024-03-10 14:30:00'],
+    // Customer 6 — Feb cohort; sessions: (Feb 14), (09:00-09:12 Mar 22)
+    [6, '2024-02-14 11:00:00'], [6, '2024-03-22 09:00:00'], [6, '2024-03-22 09:12:00'],
+    // Customer 7 — Feb cohort, churned Mar; sessions: (Feb 28), (Jun 01)
+    [7, '2024-02-28 16:00:00'], [7, '2024-06-01 10:00:00'],
+    // Customer 8 — Mar cohort; sessions: (Mar 01), (13:00-13:20 Apr 15), (13:55 Apr 15)
+    [8, '2024-03-01 08:00:00'], [8, '2024-04-15 13:00:00'],
+    [8, '2024-04-15 13:20:00'], [8, '2024-04-15 13:55:00'],
+    // Customer 9 — Mar cohort, churned Apr; sessions: (10:00-10:10 Mar 18), (May 30)
+    [9, '2024-03-18 10:00:00'], [9, '2024-03-18 10:10:00'], [9, '2024-05-30 09:00:00'],
+    // Customer 10 — Apr cohort; sessions: (09:00-09:08 Apr 02), (Jun 10)
+    [10, '2024-04-02 09:00:00'], [10, '2024-04-02 09:08:00'], [10, '2024-06-10 14:00:00'],
+    // Customer 11 — Apr cohort; sessions: (15:00-15:15 Apr 20), (16:00 Apr 20)
+    [11, '2024-04-20 15:00:00'], [11, '2024-04-20 15:15:00'], [11, '2024-04-20 16:00:00'],
+  ];
+  loginData.forEach(([cid, lat]) =>
+    database.run(
+      `INSERT INTO portal_logins (customer_id, login_at) VALUES (?, ?)`,
+      [cid, lat]
+    )
+  );
+
   // ── Indexes ───────────────────────────────────────────────────────────────
   database.run('CREATE INDEX IF NOT EXISTS idx_accounts_customer  ON accounts(customer_id)');
   database.run('CREATE INDEX IF NOT EXISTS idx_accounts_product   ON accounts(product_id)');
@@ -416,4 +463,6 @@ export function seedDatabase(database: Database): void {
   database.run('CREATE INDEX IF NOT EXISTS idx_customers_ab_group  ON customers(ab_test_group)');
   database.run('CREATE INDEX IF NOT EXISTS idx_accounts_opened_date ON accounts(opened_date)');
   database.run('CREATE INDEX IF NOT EXISTS idx_transactions_channel  ON transactions(channel)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_portal_logins_customer ON portal_logins(customer_id)');
+  database.run('CREATE INDEX IF NOT EXISTS idx_portal_logins_at       ON portal_logins(login_at)');
 }
