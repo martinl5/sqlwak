@@ -4,6 +4,28 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 11 — 2026-06-22
+
+### [UI/UX Improvements]
+
+- **Ship-wheel loading spinner** (`GameProvider.tsx`): Replaced the flat shimmer-bar + lion emoji loading screen with an animated SVG maritime ship's helm. An 8-spoke wheel (hub radius 5.5, rim radius 24, knob radius 2.8 at each spoke tip) rotates at 3 s/revolution via `@keyframes spinWheel`. All geometry computed inline via `SPOKE_ANGLES.map()` — no external asset. The spinner is `aria-hidden="true"` since the adjacent text already describes the loading state. Directly implements the "ship-wheel / compass loading spinners" item from the UI/UX rotation.
+
+- **Progressive hint system** (`SQLPanel.tsx`): Replaced the auto-display of the full hint (triggered on any failed attempt) with a click-to-reveal progressive disclosure UI. A `splitHint()` helper splits each level's hint string at `. ` boundaries into at most 3 chunks (grouping more if the hint is longer). After a first failed submission, a gold `💡 Request hint` button appears instead of the full text. Each click reveals one additional chunk in the hint panel; earlier chunks fade to 70% opacity to visually de-emphasise them as the current tip. A `hintChunkIdx` state (reset on every level change) tracks disclosure depth. The button label changes to `Show more hint (N step(s) remaining)` after the first reveal. This changes the cognitive posture from passive delivery to active retrieval — learners who request hints engage more deeply than those who receive them automatically.
+
+### [Game Design Tweaks]
+
+- **Level 70** *(Expert, difficulty 4)* — "Loan Book Risk Scorecard — Weighted Rate & Running Exposure": Teaches four high-value patterns in a single query: (1) **weighted-average rate** via `ROUND(SUM(principal_amount * interest_rate) / SUM(principal_amount), 2)` — the correct way to aggregate rates that differ in volume; (2) **scalar CTE cross-join** using a second `total` CTE and `CROSS JOIN` in the final SELECT to access the grand total for portfolio share computation; (3) **portfolio percentage** `ROUND(100.0 * g.total_principal / t.grand_total, 1)`; (4) **running cumulative exposure** via `SUM(g.total_principal) OVER (ORDER BY g.risk_grade ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)`. Against the active loan book (12 loans, grades A/B/C only) the result is 3 rows: A (5 loans, $1.88M, 2.50%, 86.5%, cumulative $1.88M), B (4 loans, $245K, 2.89%, 11.3%, cumulative $2.13M), C (3 loans, $48K, 5.50%, 2.2%, cumulative $2.17M). This exact scorecard is used in Basel III RWA dashboards at GIC, JPMorgan, and DBS. No new data needed — uses the existing `loans` table.
+
+- **Level 71** *(Expert, difficulty 4)* — "Loan Portfolio Year-over-Year Disbursement Growth": Teaches the canonical YoY growth pattern using two CTEs and `LAG`. CTE `yearly` groups all 15 loans (regardless of current status) by `STRFTIME('%Y', start_date)` into loan_count and total_disbursed. CTE `with_lag` adds `LAG(total_disbursed) OVER (ORDER BY loan_year) AS prev_disbursed`. Outer query computes `CASE WHEN prev_disbursed IS NULL THEN NULL ELSE ROUND(100.0 * (total_disbursed - prev_disbursed) / prev_disbursed, 1) END AS yoy_growth_pct`. Returns 7 rows (2018–2024) showing dramatic origination swings: +100% in 2020, -71.4% in 2021, +172.5% in 2022, -87.2% in 2023. The NULL-safe CASE WHEN pattern is the canonical SQL idiom for period-over-period growth, used in strategic planning decks, investor reports, and loan-book analytics at commercial banks and sovereign wealth funds. No new data needed.
+
+### [Database & Code Optimizations]
+
+- **`LevelUpModal` hint map** extended with entries for levels 70 (risk scorecard — weighted rate, CROSS JOIN scalar CTE) and 71 (YoY growth — STRFTIME + LAG + CASE WHEN NULL). `nextHintKey` sentinel array extended from `[…, 69]` to `[…, 69, 70, 71]`; fallback updated `?? 69` → `?? 71`. `MAX_LEVEL` in `progression.ts` auto-derives from the last level in the array (71) — no other touch points needed.
+- **Test suite**: 395 tests pass (up from 375 in iter-10). Both new levels are automatically picked up by the determinism invariants suite, verifying non-empty result sets and confirming all ORDER BY keys are distinct (no ties that could produce non-deterministic ordering).
+- **No new DB tables, seed rows, or indexes** — both levels run cleanly against the existing `loans` table.
+
+---
+
 ## Iteration 10 — 2026-06-15
 
 ### [UI/UX Improvements]

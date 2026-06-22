@@ -44,11 +44,25 @@ interface SQLPanelProps {
   onQueryRun?: () => void;
 }
 
+/** Split a hint string into up to 3 progressive reveal chunks. */
+function splitHint(hint: string): string[] {
+  const raw = hint.split('. ');
+  const parts = raw.map((p, i) => (i < raw.length - 1 ? p + '.' : p));
+  if (parts.length <= 3) return parts;
+  const n = parts.length;
+  return [
+    parts.slice(0, Math.ceil(n / 3)).join(' '),
+    parts.slice(Math.ceil(n / 3), Math.ceil((2 * n) / 3)).join(' '),
+    parts.slice(Math.ceil((2 * n) / 3)).join(' '),
+  ];
+}
+
 export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
   const [query, setQuery]           = useState('');
   const [error, setError]           = useState<string | null>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [doubloonAmt, setDoubloonAmt] = useState<number | null>(null);
+  const [hintChunkIdx, setHintChunkIdx] = useState(0);
   const editorRef                   = useRef<unknown>(null);
   const monacoRef                   = useRef<Monaco | null>(null);
   const dismissTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -277,6 +291,7 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
     setQuery(levels.find((l) => l.id === currentLevel)?.seedQuery ?? '');
     setError(null);
     setFailedAttempts(0);
+    setHintChunkIdx(0);
     const editor = editorRef.current as { focus?: () => void } | null;
     if (editor?.focus) setTimeout(() => editor.focus?.(), 50);
   }, [currentLevel]);
@@ -286,6 +301,8 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
   // result's shape (columns + row count) without revealing its values.
   const expectedShape =
     failedAttempts >= 3 && level ? getExpectedShape(level.solutionQuery) : null;
+
+  const hintChunks = level?.hint ? splitHint(level.hint) : [];
 
   return (
     <div
@@ -362,15 +379,50 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
         <p className="text-xs leading-5" style={{ color: 'var(--lcb-white)', opacity: 0.8, fontFamily: 'var(--font-ibm-plex-mono)', whiteSpace: 'pre-wrap' }}>
           {level?.description}
         </p>
-        {hasAttemptedCurrent && level?.hint && (
-          <div
-            className="flex items-start gap-2 mt-2 px-3 py-2"
-            style={{ border: '1px solid rgba(201,168,76,0.22)', background: 'rgba(201,168,76,0.05)', borderRadius: 3 }}
-          >
-            <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
-            <p className="text-xs" style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-ibm-plex-mono)' }}>
-              {level.hint}
-            </p>
+        {hasAttemptedCurrent && hintChunks.length > 0 && (
+          <div className="mt-2">
+            {hintChunkIdx > 0 && (
+              <div
+                className="flex items-start gap-2 px-3 py-2 mb-1"
+                style={{ border: '1px solid rgba(201,168,76,0.22)', background: 'rgba(201,168,76,0.05)', borderRadius: 3 }}
+              >
+                <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
+                <div className="flex-1 min-w-0">
+                  {hintChunks.slice(0, hintChunkIdx).map((chunk, i) => (
+                    <p
+                      key={i}
+                      className="text-xs leading-5"
+                      style={{
+                        color: 'var(--lcb-gold)',
+                        fontFamily: 'var(--font-ibm-plex-mono)',
+                        opacity: i < hintChunkIdx - 1 ? 0.7 : 1,
+                        marginTop: i > 0 ? 4 : 0,
+                      }}
+                    >
+                      {chunk}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {hintChunkIdx < hintChunks.length && (
+              <button
+                onClick={() => setHintChunkIdx((n) => n + 1)}
+                className="flex items-center gap-1.5 text-xs px-2 py-1 transition-opacity hover:opacity-80"
+                style={{
+                  fontFamily: 'var(--font-ibm-plex-mono)',
+                  color: 'var(--lcb-gold)',
+                  border: '1px solid rgba(201,168,76,0.3)',
+                  borderRadius: 3,
+                  background: 'rgba(201,168,76,0.04)',
+                }}
+              >
+                <Lightbulb className="w-3 h-3" />
+                {hintChunkIdx === 0
+                  ? 'Request hint'
+                  : `Show more hint (${hintChunks.length - hintChunkIdx} step${hintChunks.length - hintChunkIdx === 1 ? '' : 's'} remaining)`}
+              </button>
+            )}
           </div>
         )}
         {expectedShape && (
