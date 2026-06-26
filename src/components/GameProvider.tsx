@@ -84,13 +84,54 @@ export default function GameProvider() {
 
   // ── Loading state ──────────────────────────────────────────────────────────
   if (!isDbReady) {
+    const SPOKE_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-6" style={{ background: 'var(--lcb-black)' }}>
-        {/* LCB lion crest placeholder */}
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="animate-gold-pulse">
-          <circle cx="24" cy="24" r="22" stroke="var(--lcb-gold)" strokeWidth="1.5" />
-          <text x="24" y="30" textAnchor="middle" fontSize="22" fill="var(--lcb-gold)" fontFamily="serif">🦁</text>
+        {/* Ship-wheel spinner */}
+        <svg
+          width="60"
+          height="60"
+          viewBox="0 0 56 56"
+          fill="none"
+          style={{ animation: 'spinWheel 3s linear infinite', flexShrink: 0 }}
+          aria-hidden="true"
+        >
+          {/* Outer rim */}
+          <circle cx="28" cy="28" r="24" stroke="var(--lcb-gold)" strokeWidth="2" opacity="0.55" />
+          {/* 8 spokes hub→rim */}
+          {SPOKE_ANGLES.map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            return (
+              <line
+                key={deg}
+                x1={28 + 6 * Math.sin(rad)}
+                y1={28 - 6 * Math.cos(rad)}
+                x2={28 + 21 * Math.sin(rad)}
+                y2={28 - 21 * Math.cos(rad)}
+                stroke="var(--lcb-gold)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            );
+          })}
+          {/* Handle knobs at spoke tips */}
+          {SPOKE_ANGLES.map((deg) => {
+            const rad = (deg * Math.PI) / 180;
+            return (
+              <circle
+                key={`k${deg}`}
+                cx={28 + 24 * Math.sin(rad)}
+                cy={28 - 24 * Math.cos(rad)}
+                r="2.8"
+                fill="var(--lcb-gold)"
+              />
+            );
+          })}
+          {/* Hub */}
+          <circle cx="28" cy="28" r="5.5" stroke="var(--lcb-gold)" strokeWidth="1.5" fill="rgba(201,168,76,0.15)" />
+          <circle cx="28" cy="28" r="2" fill="var(--lcb-gold)" />
         </svg>
+
         <div className="text-center">
           <p className="text-base font-medium tracking-widest uppercase" style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-playfair)' }}>
             Lion City Bank
@@ -99,20 +140,10 @@ export default function GameProvider() {
             Initialising SQL Analytics Engine…
           </p>
         </div>
-        <div className="w-40 h-px overflow-hidden" style={{ background: 'var(--lcb-border)' }}>
-          <div
-            className="h-full"
-            style={{
-              background: 'var(--lcb-gold)',
-              animation: 'shimmerBar 1.4s ease-in-out infinite',
-              width: '40%',
-            }}
-          />
-        </div>
         <style>{`
-          @keyframes shimmerBar {
-            0%   { margin-left: -40%; }
-            100% { margin-left: 100%; }
+          @keyframes spinWheel {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
           }
         `}</style>
       </div>

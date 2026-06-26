@@ -25,6 +25,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   67: 'NOT EXISTS: the correlated anti-join without the NOT IN NULL trap',
   68: 'Cohort retention: first-login cohort month → Month-1 return rate — the core product-growth metric',
   69: 'Sessionization / gaps & islands: LAG → flag → SUM() OVER → aggregate — the universal session-detection pattern',
+  70: 'Risk scorecard: weighted-average rate via SUM(x*w)/SUM(w), CROSS JOIN scalar CTE for denominators, running exposure window function',
+  71: 'Year-over-Year growth: STRFTIME → GROUP BY year → LAG(total) OVER → CASE WHEN NULL — the canonical period-over-period growth pattern',
 };
 
 export default function LevelUpModal() {
@@ -61,7 +63,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69].find((k) => currentLevel < k) ?? 69;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71].find((k) => currentLevel < k) ?? 71;
   const xpEarned    = xpFor(currentLevel);
 
   return (

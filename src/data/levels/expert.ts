@@ -1101,10 +1101,6 @@ SELECT fl.cohort_month,
     difficulty: 4,
   },
 
-  // ============================================================
-  // SESSIONIZATION / GAPS & ISLANDS (Level 69)
-  // ============================================================
-
   {
     id: 69,
     title: 'Portal Session Reconstruction (Gaps & Islands)',
@@ -1199,5 +1195,146 @@ SELECT customer_id,
  ORDER BY customer_id`,
     epoch: 'Expert',
     difficulty: 5,
+  },
+
+  // ============================================================
+  // RISK SCORECARD & YoY GROWTH (Levels 70–71)
+  // ============================================================
+
+  {
+    id: 70,
+    title: 'Loan Book Risk Scorecard — Weighted Rate & Running Exposure',
+    description: `The Risk Management division needs a capital adequacy scorecard for the active loan portfolio, grouped by risk grade. Compute for each grade:
+- \`risk_grade\`
+- \`loan_count\` — number of active loans
+- \`total_principal\` — sum of original principals
+- \`wa_rate_pct\` — **weighted-average** interest rate (weighted by principal), ROUND to 2 dp — use \`ROUND(SUM(principal_amount * interest_rate) / SUM(principal_amount), 2)\`
+- \`portfolio_pct\` — this grade's share of total active principal, ROUND to 1 dp
+- \`cumulative_exposure\` — running cumulative principal ordered A → C using \`SUM(...) OVER (ORDER BY risk_grade ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\`
+
+Use **two CTEs**:
+1. **\`grade_stats\`**: \`FROM loans WHERE status = 'Active' GROUP BY risk_grade\` — compute loan_count, total_principal, wa_rate_pct.
+2. **\`total\`**: \`SELECT SUM(total_principal) AS grand_total FROM grade_stats\` — scalar aggregate for the denominator.
+
+In the final SELECT, \`CROSS JOIN grade_stats g\` with \`total t\`, compute portfolio_pct and the window-function cumulative_exposure. \`ORDER BY risk_grade\`.
+
+This pattern appears in Basel III capital adequacy reports, credit risk dashboards at GIC, JPMorgan, and DBS, and is a staple of senior DS interviews at investment banks and sovereign wealth funds.`,
+    hint: 'CTE grade_stats: FROM loans WHERE status = \'Active\' GROUP BY risk_grade → COUNT, SUM(principal_amount), ROUND(SUM(principal_amount * interest_rate)/SUM(principal_amount), 2). CTE total: SELECT SUM(total_principal) AS grand_total FROM grade_stats. Final: CROSS JOIN the two CTEs, ROUND(100.0 * g.total_principal / t.grand_total, 1) AS portfolio_pct, SUM(g.total_principal) OVER (ORDER BY g.risk_grade ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative_exposure. ORDER BY risk_grade.',
+    seedQuery: `WITH grade_stats AS (
+  SELECT risk_grade,
+         COUNT(*) AS loan_count,
+         SUM(principal_amount) AS total_principal,
+         ROUND(SUM(principal_amount * ) / SUM(principal_amount), 2) AS wa_rate_pct
+    FROM loans
+   WHERE status =
+   GROUP BY risk_grade
+),
+total AS (
+  SELECT SUM(total_principal) AS grand_total FROM grade_stats
+)
+SELECT g.risk_grade,
+       g.loan_count,
+       g.total_principal,
+       g.wa_rate_pct,
+       ROUND(100.0 * g.total_principal / t.grand_total, 1) AS portfolio_pct,
+       SUM(g.total_principal) OVER (ORDER BY g.risk_grade                          ) AS cumulative_exposure
+  FROM grade_stats g
+  CROSS JOIN total t
+ ORDER BY g.risk_grade`,
+    solutionQuery: `WITH grade_stats AS (
+  SELECT risk_grade,
+         COUNT(*) AS loan_count,
+         SUM(principal_amount) AS total_principal,
+         ROUND(SUM(principal_amount * interest_rate) / SUM(principal_amount), 2) AS wa_rate_pct
+    FROM loans
+   WHERE status = 'Active'
+   GROUP BY risk_grade
+),
+total AS (
+  SELECT SUM(total_principal) AS grand_total FROM grade_stats
+)
+SELECT g.risk_grade,
+       g.loan_count,
+       g.total_principal,
+       g.wa_rate_pct,
+       ROUND(100.0 * g.total_principal / t.grand_total, 1) AS portfolio_pct,
+       SUM(g.total_principal) OVER (ORDER BY g.risk_grade ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS cumulative_exposure
+  FROM grade_stats g
+  CROSS JOIN total t
+ ORDER BY g.risk_grade`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+
+  {
+    id: 71,
+    title: 'Loan Portfolio Year-over-Year Disbursement Growth',
+    description: `Strategy Analytics needs a historical view of LCB's loan origination volume. For **every year** in which loans were originated, compute:
+- \`loan_year\` — \`STRFTIME('%Y', start_date)\`
+- \`loan_count\` — number of loans originated that year
+- \`total_disbursed\` — total principal disbursed
+- \`yoy_growth_pct\` — year-over-year change in total_disbursed, ROUND to 1 dp — **NULL for the first year**
+
+Include **all loans** regardless of current status (disbursement is a historical fact).
+
+Use **two CTEs**:
+1. **\`yearly\`**: GROUP BY loan_year, aggregate loan_count and total_disbursed.
+2. **\`with_lag\`**: add \`LAG(total_disbursed) OVER (ORDER BY loan_year) AS prev_disbursed\` to carry the prior year's total forward.
+
+Outer SELECT:
+\`CASE WHEN prev_disbursed IS NULL THEN NULL ELSE ROUND(100.0 * (total_disbursed - prev_disbursed) / prev_disbursed, 1) END AS yoy_growth_pct\`
+
+ORDER BY loan_year.
+
+This is the Year-over-Year growth pattern used in strategic planning decks, investor relations reporting, and loan-book analytics at commercial banks, DBS, and GIC. The \`LAG(...) OVER\` → CASE WHEN NULL combination is the canonical SQL idiom for computing period-over-period changes.`,
+    hint: 'CTE yearly: SELECT STRFTIME(\'%Y\', start_date) AS loan_year, COUNT(*) AS loan_count, SUM(principal_amount) AS total_disbursed FROM loans GROUP BY loan_year. CTE with_lag: SELECT *, LAG(total_disbursed) OVER (ORDER BY loan_year) AS prev_disbursed FROM yearly. Outer: CASE WHEN prev_disbursed IS NULL THEN NULL ELSE ROUND(100.0*(total_disbursed-prev_disbursed)/prev_disbursed, 1) END AS yoy_growth_pct. ORDER BY loan_year.',
+    seedQuery: `WITH yearly AS (
+  SELECT STRFTIME('%Y', start_date) AS loan_year,
+         COUNT(*) AS loan_count,
+         SUM(principal_amount) AS total_disbursed
+    FROM loans
+   GROUP BY loan_year
+),
+with_lag AS (
+  SELECT loan_year,
+         loan_count,
+         total_disbursed,
+         LAG(          ) OVER (ORDER BY loan_year) AS prev_disbursed
+    FROM yearly
+)
+SELECT loan_year,
+       loan_count,
+       total_disbursed,
+       CASE
+         WHEN prev_disbursed IS     THEN NULL
+         ELSE ROUND(100.0 * (total_disbursed - prev_disbursed) /             , 1)
+       END AS yoy_growth_pct
+  FROM with_lag
+ ORDER BY loan_year`,
+    solutionQuery: `WITH yearly AS (
+  SELECT STRFTIME('%Y', start_date) AS loan_year,
+         COUNT(*) AS loan_count,
+         SUM(principal_amount) AS total_disbursed
+    FROM loans
+   GROUP BY loan_year
+),
+with_lag AS (
+  SELECT loan_year,
+         loan_count,
+         total_disbursed,
+         LAG(total_disbursed) OVER (ORDER BY loan_year) AS prev_disbursed
+    FROM yearly
+)
+SELECT loan_year,
+       loan_count,
+       total_disbursed,
+       CASE
+         WHEN prev_disbursed IS NULL THEN NULL
+         ELSE ROUND(100.0 * (total_disbursed - prev_disbursed) / prev_disbursed, 1)
+       END AS yoy_growth_pct
+  FROM with_lag
+ ORDER BY loan_year`,
+    epoch: 'Expert',
+    difficulty: 4,
   },
 ];
