@@ -27,6 +27,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   69: 'Sessionization / gaps & islands: LAG → flag → SUM() OVER → aggregate — the universal session-detection pattern',
   70: 'Risk scorecard: weighted-average rate via SUM(x*w)/SUM(w), CROSS JOIN scalar CTE for denominators, running exposure window function',
   71: 'Year-over-Year growth: STRFTIME → GROUP BY year → LAG(total) OVER → CASE WHEN NULL — the canonical period-over-period growth pattern',
+  72: 'Funnel analysis: UNION ALL multi-stage aggregation + CROSS JOIN scalar CTE for conversion rates — the standard product-analytics funnel pattern',
+  73: 'Deduplication: ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...) + WHERE rn = 1 — pick exactly one row per group, the universal dedup / latest-record-per-entity pattern',
 };
 
 export default function LevelUpModal() {
@@ -63,7 +65,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71].find((k) => currentLevel < k) ?? 71;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73].find((k) => currentLevel < k) ?? 73;
   const xpEarned    = xpFor(currentLevel);
 
   return (
