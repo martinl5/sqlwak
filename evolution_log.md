@@ -4,6 +4,26 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 12 — 2026-06-29
+
+### [UI/UX Improvements]
+
+- **Collapsible schema panel** (`GameProvider.tsx`): The right-hand Schema/Results column can now be collapsed to a narrow 40px rail on desktop (≥ lg breakpoint) by clicking the `›` chevron button appended to the right side of the tab bar. When collapsed, the rail shows a `‹` expand button and a vertical "SCHEMA" label so the affordance remains clear. The SQL editor column changes from a fixed `460px` to `lg:flex-1 min-w-0`, so it grows to fill the freed horizontal space — giving power users more room to compose long CTEs and window-function queries without layout thrash. A `transition-all duration-200 ease-in-out` CSS transition smooths the width change. The collapse state is session-local (`useState`), not persisted, so the panel always reopens on reload. Keyboard-accessible: both toggle buttons have `aria-label` and `title` attributes. Mobile layouts (< lg) are unaffected — the panels always stack vertically at full width. Directly implements the "collapsible schema panel" item from the UI/UX rotation.
+
+### [Game Design Tweaks]
+
+- **Level 72** *(Expert, difficulty 4)* — "Loan Product Acquisition Funnel": Teaches the canonical SQL product-analytics funnel pattern: a `UNION ALL` of four scalar aggregate queries (one per stage) tagged with an `ord` column, combined with a `CROSS JOIN` scalar CTE for the denominator. The four stages — All Customers (20), Loan Applicants (15), Active Loan Holders (12), Active Home Loan Holders (5) — yield conversion rates of 100 %, 75 %, 60 %, and 25 %. This exact UNION ALL + CROSS JOIN pattern is used in BigQuery, Redshift, Snowflake, and Spark SQL product-analytics pipelines at FAANG, digital banks, and MAS-regulated fintechs. Reinforces the CROSS JOIN scalar CTE idiom from Level 70 in a new product-analytics context. No new data or tables required.
+
+- **Level 73** *(Expert, difficulty 4)* — "First Salary Credit Per Account (ROW_NUMBER Dedup)": Teaches the universal SQL deduplication and latest/earliest-record-per-entity pattern: `ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY transaction_date ASC)` in a CTE, then `WHERE rn = 1` in the outer query. The compliance framing (MAS Notice 632 income-verification) makes the business case for dedup concrete. Returns 4 rows — accounts 5, 15, 25, 35 (customers Aisha Binte Yusof, Chen Mei Ling, Nur Hidayah, Fiona Tan) with their first Salary Credit amounts ($3,750 – $8,250) and dates in Jan–Feb 2024. The ROW_NUMBER PARTITION BY pattern is the universal dedup technique across every SQL dialect and is a staple of ETL pipelines, SCD snapshots, and data-quality remediations at FAANG, hedge funds, and GIC. No new data or tables required.
+
+### [Database & Code Optimizations]
+
+- **`LevelUpModal` hint map** extended with entries for levels 72 (funnel UNION ALL + CROSS JOIN) and 73 (ROW_NUMBER dedup). `nextHintKey` sentinel array extended from `[…, 71]` to `[…, 71, 72, 73]`; fallback updated `?? 71` → `?? 73`. `MAX_LEVEL` in `progression.ts` auto-derives from the last level in the array (73) — no other touch points needed.
+- **Left panel flex layout**: changed `lg:w-[460px] flex-shrink-0` to `lg:flex-1 min-w-0` so the SQL editor column grows naturally when the right panel is collapsed, filling available horizontal space without overflow.
+- **No new DB tables, seed rows, or indexes** — both new levels run cleanly against the existing `loans`, `transactions`, `accounts`, and `customers` tables.
+
+---
+
 ## Iteration 11 — 2026-06-22
 
 ### [UI/UX Improvements]

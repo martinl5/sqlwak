@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, Fragment } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SQLPanel from './SQLPanel';
 import DataPreview from './DataPreview';
 import HarbourStatus from './FlockStatus';
@@ -26,6 +27,7 @@ export default function GameProvider() {
   const [dimensions, setDimensions]             = useState({ width: 0, height: 0 });
   const [activeRightTab, setActiveRightTab]     = useState<'schema' | 'data'>('schema');
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const { currentLevel, totalXp, currentStreak, rehydrateFleet } = useGameStore();
 
@@ -269,43 +271,94 @@ export default function GameProvider() {
 
         {/* UI overlay */}
         <div className="relative z-10 h-full flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
-          {/* Left: SQL Editor */}
-          <div className="w-full lg:w-[460px] h-[75dvh] lg:h-full flex-shrink-0 p-3 lg:pr-2">
+          {/* Left: SQL Editor — grows to fill when right panel is collapsed */}
+          <div className="w-full lg:flex-1 min-w-0 h-[75dvh] lg:h-full p-3 lg:pr-2">
             <SQLPanel onQueryRun={handleQueryRun} />
           </div>
 
-          {/* Right: Schema / Results + status */}
-          <div ref={rightPanelRef} className="w-full lg:w-[420px] h-[75dvh] lg:h-full flex-shrink-0 p-3 lg:pl-2 flex flex-col gap-2">
-            {/* Tab bar */}
-            <div
-              className="flex"
-              style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 6 }}
-            >
-              {(['schema', 'data'] as const).map((tab) => (
+          {/* Right: Schema / Results + status — collapsible on desktop */}
+          <div
+            ref={rightPanelRef}
+            className={`w-full h-[75dvh] lg:h-full flex-shrink-0 flex flex-col gap-2 transition-all duration-200 ease-in-out${isPanelCollapsed ? ' lg:w-10 p-1.5 lg:p-1.5' : ' lg:w-[420px] p-3 lg:pl-2'}`}
+          >
+            {isPanelCollapsed ? (
+              /* ── Collapsed rail (desktop only) ──────────────────────── */
+              <div className="hidden lg:flex flex-col items-center gap-3 pt-1">
                 <button
-                  key={tab}
-                  onClick={() => setActiveRightTab(tab)}
-                  aria-pressed={activeRightTab === tab}
-                  className="flex-1 py-2 text-xs tracking-widest uppercase transition-colors"
+                  onClick={() => setIsPanelCollapsed(false)}
+                  aria-label="Expand schema panel"
+                  title="Expand schema panel"
+                  className="p-1.5 transition-opacity hover:opacity-80"
                   style={{
-                    fontFamily: 'var(--font-ibm-plex-mono)',
-                    color: activeRightTab === tab ? 'var(--lcb-gold)' : 'var(--lcb-muted)',
-                    borderBottom: activeRightTab === tab ? '2px solid var(--lcb-gold)' : '2px solid transparent',
-                    background: 'transparent',
+                    background: 'var(--lcb-panel)',
+                    border: '1px solid var(--lcb-border)',
+                    borderRadius: 4,
+                    color: 'var(--lcb-gold)',
                   }}
                 >
-                  {tab === 'schema' ? 'Schema' : 'Results'}
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-              ))}
-            </div>
+                <span
+                  className="text-[9px] tracking-[0.15em] uppercase select-none"
+                  style={{
+                    writingMode: 'vertical-rl',
+                    transform: 'rotate(180deg)',
+                    color: 'var(--lcb-muted)',
+                    fontFamily: 'var(--font-ibm-plex-mono)',
+                  }}
+                >
+                  Schema
+                </span>
+              </div>
+            ) : (
+              <>
+                {/* Tab bar */}
+                <div
+                  className="flex items-center"
+                  style={{ background: 'var(--lcb-panel)', border: '1px solid var(--lcb-border)', borderRadius: 6 }}
+                >
+                  {(['schema', 'data'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveRightTab(tab)}
+                      aria-pressed={activeRightTab === tab}
+                      className="flex-1 py-2 text-xs tracking-widest uppercase transition-colors"
+                      style={{
+                        fontFamily: 'var(--font-ibm-plex-mono)',
+                        color: activeRightTab === tab ? 'var(--lcb-gold)' : 'var(--lcb-muted)',
+                        borderBottom: activeRightTab === tab ? '2px solid var(--lcb-gold)' : '2px solid transparent',
+                        background: 'transparent',
+                      }}
+                    >
+                      {tab === 'schema' ? 'Schema' : 'Results'}
+                    </button>
+                  ))}
+                  {/* Desktop collapse toggle */}
+                  <button
+                    onClick={() => setIsPanelCollapsed(true)}
+                    aria-label="Collapse panel"
+                    title="Collapse schema panel"
+                    className="hidden lg:flex items-center justify-center px-2.5 py-2 transition-opacity hover:opacity-70"
+                    style={{
+                      borderLeft: '1px solid var(--lcb-border)',
+                      color: 'var(--lcb-muted)',
+                      background: 'transparent',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
 
-            {/* Tab content */}
-            <div className="flex-1 min-h-0">
-              {activeRightTab === 'schema' ? <SchemaViewer /> : <DataPreview />}
-            </div>
+                {/* Tab content */}
+                <div className="flex-1 min-h-0">
+                  {activeRightTab === 'schema' ? <SchemaViewer /> : <DataPreview />}
+                </div>
 
-            {/* Harbour status bar */}
-            <HarbourStatus onOpenLevelNavigator={() => setShowLevelNavigator(true)} />
+                {/* Harbour status bar */}
+                <HarbourStatus onOpenLevelNavigator={() => setShowLevelNavigator(true)} />
+              </>
+            )}
           </div>
         </div>
       </div>

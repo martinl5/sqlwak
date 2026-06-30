@@ -1337,4 +1337,175 @@ SELECT loan_year,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ============================================================
+  // FUNNEL ANALYSIS & DEDUPLICATION (Levels 72–73)
+  // ============================================================
+
+  {
+    id: 72,
+    title: 'Loan Product Acquisition Funnel',
+    description: `Product Strategy needs a multi-stage acquisition funnel showing how many LCB customers progress through each stage of the loan product journey. Build a **vertical funnel** with four stages and a conversion percentage:
+
+| stage | customer_count | conversion_pct |
+|---|---|---|
+| All Customers | 20 | 100.0 |
+| Loan Applicants | 15 | 75.0 |
+| Active Loan Holders | 12 | 60.0 |
+| Active Home Loan Holders | 5 | 25.0 |
+
+Use **two CTEs**:
+1. **\`funnel\`**: a \`UNION ALL\` of four scalar aggregate queries, each tagged with an \`ord\` (1–4) and a \`stage\` label — one row per funnel stage. The four stages:
+   - \`ord=1\`: \`COUNT(*) FROM customers\`
+   - \`ord=2\`: \`COUNT(DISTINCT customer_id) FROM loans\`
+   - \`ord=3\`: \`COUNT(DISTINCT customer_id) FROM loans WHERE status = 'Active'\`
+   - \`ord=4\`: \`COUNT(DISTINCT customer_id) FROM loans WHERE status = 'Active' AND product_id = 7\` *(product 7 = HDB Home Loan)*
+2. **\`total\`**: \`SELECT customer_count AS total_customers FROM funnel WHERE ord = 1\` — a scalar CTE for the denominator.
+
+Final SELECT: \`CROSS JOIN funnel f\` with \`total t\`, compute \`ROUND(100.0 * f.customer_count / t.total_customers, 1) AS conversion_pct\`. \`ORDER BY f.customer_count DESC\` — the four counts are distinct (20 → 15 → 12 → 5), so descending count order matches funnel stage order.
+
+This UNION ALL + CROSS JOIN scalar CTE pattern is the standard SQL funnel in BigQuery, Redshift, and Snowflake product-analytics pipelines at FAANG, digital banks, and MAS-regulated fintechs.`,
+    hint: 'CTE funnel: SELECT 1 AS ord, \'All Customers\' AS stage, COUNT(*) AS customer_count FROM customers UNION ALL SELECT 2, \'Loan Applicants\', COUNT(DISTINCT customer_id) FROM loans UNION ALL ... (stages 3 and 4 add WHERE status=\'Active\' and AND product_id=7). CTE total: SELECT customer_count AS total_customers FROM funnel WHERE ord=1. Final: f.stage, f.customer_count, ROUND(100.0 * f.customer_count / t.total_customers, 1) AS conversion_pct FROM funnel f CROSS JOIN total t ORDER BY f.customer_count DESC.',
+    seedQuery: `WITH funnel AS (
+  SELECT 1 AS ord, 'All Customers'        AS stage,
+         COUNT(*)                          AS customer_count
+    FROM customers
+  UNION ALL
+  SELECT 2, 'Loan Applicants',
+         COUNT(DISTINCT               )
+    FROM loans
+  UNION ALL
+  SELECT 3, 'Active Loan Holders',
+         COUNT(DISTINCT customer_id)
+    FROM loans
+   WHERE status =
+  UNION ALL
+  SELECT 4, 'Active Home Loan Holders',
+         COUNT(DISTINCT customer_id)
+    FROM loans
+   WHERE status = 'Active' AND product_id =
+),
+total AS (
+  SELECT customer_count AS total_customers
+    FROM funnel
+   WHERE ord = 1
+)
+SELECT f.stage,
+       f.customer_count,
+       ROUND(100.0 * f.customer_count /       , 1) AS conversion_pct
+  FROM funnel f
+  CROSS JOIN total t
+ ORDER BY f.customer_count DESC`,
+    solutionQuery: `WITH funnel AS (
+  SELECT 1 AS ord, 'All Customers'        AS stage,
+         COUNT(*)                          AS customer_count
+    FROM customers
+  UNION ALL
+  SELECT 2, 'Loan Applicants',
+         COUNT(DISTINCT customer_id)
+    FROM loans
+  UNION ALL
+  SELECT 3, 'Active Loan Holders',
+         COUNT(DISTINCT customer_id)
+    FROM loans
+   WHERE status = 'Active'
+  UNION ALL
+  SELECT 4, 'Active Home Loan Holders',
+         COUNT(DISTINCT customer_id)
+    FROM loans
+   WHERE status = 'Active' AND product_id = 7
+),
+total AS (
+  SELECT customer_count AS total_customers
+    FROM funnel
+   WHERE ord = 1
+)
+SELECT f.stage,
+       f.customer_count,
+       ROUND(100.0 * f.customer_count / t.total_customers, 1) AS conversion_pct
+  FROM funnel f
+  CROSS JOIN total t
+ ORDER BY f.customer_count DESC`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+
+  {
+    id: 73,
+    title: 'First Salary Credit Per Account (ROW_NUMBER Dedup)',
+    description: `The Compliance team needs to verify when each LCB account first received a salary credit — a mandatory check for income-verification under MAS Notice 632. Some accounts have received multiple salary credits over the months; you must return **exactly one row per account**: the earliest one.
+
+Return:
+- \`account_id\`
+- \`customer_name\`
+- \`amount\` — salary of the first credit
+- \`first_salary_date\` — \`transaction_date\` of the earliest salary credit
+
+**Pattern: ROW_NUMBER deduplication**
+
+Use a single CTE \`ranked\`:
+\`\`\`sql
+WITH ranked AS (
+  SELECT t.account_id, c.customer_name, t.amount,
+         t.transaction_date AS first_salary_date,
+         ROW_NUMBER() OVER (
+           PARTITION BY t.account_id
+           ORDER BY t.transaction_date ASC
+         ) AS rn
+    FROM transactions t
+    JOIN accounts  a ON t.account_id  = a.account_id
+    JOIN customers c ON a.customer_id = c.customer_id
+   WHERE t.merchant_category = 'Salary Credit'
+)
+SELECT account_id, customer_name, amount, first_salary_date
+  FROM ranked
+ WHERE rn = 1
+ ORDER BY first_salary_date
+\`\`\`
+
+\`PARTITION BY account_id ORDER BY transaction_date ASC\` assigns \`rn = 1\` to the earliest salary transaction per account. \`WHERE rn = 1\` in the outer query selects exactly one row per account — the dedup step.
+
+This ROW_NUMBER PARTITION BY pattern is the universal deduplication and **latest/earliest record per group** technique used across every SQL dialect (BigQuery, Redshift, Snowflake, Spark SQL, PostgreSQL) in ETL pipelines, slowly-changing dimension snapshots, and data-quality remediations at FAANG, hedge funds, and GIC.`,
+    hint: 'CTE ranked: SELECT t.account_id, c.customer_name, t.amount, t.transaction_date AS first_salary_date, ROW_NUMBER() OVER (PARTITION BY t.account_id ORDER BY t.transaction_date ASC) AS rn FROM transactions t JOIN accounts a ON t.account_id=a.account_id JOIN customers c ON a.customer_id=c.customer_id WHERE t.merchant_category=\'Salary Credit\'. Outer: SELECT account_id, customer_name, amount, first_salary_date FROM ranked WHERE rn=1 ORDER BY first_salary_date.',
+    seedQuery: `WITH ranked AS (
+  SELECT
+    t.account_id,
+    c.customer_name,
+    t.amount,
+    t.transaction_date                                     AS first_salary_date,
+    ROW_NUMBER() OVER (
+      PARTITION BY
+      ORDER BY t.transaction_date
+    ) AS rn
+  FROM transactions t
+  JOIN accounts   a ON t.account_id = a.account_id
+  JOIN customers  c ON a.customer_id = c.customer_id
+  WHERE t.merchant_category =
+)
+SELECT account_id, customer_name, amount, first_salary_date
+  FROM ranked
+ WHERE rn =
+ ORDER BY first_salary_date`,
+    solutionQuery: `WITH ranked AS (
+  SELECT
+    t.account_id,
+    c.customer_name,
+    t.amount,
+    t.transaction_date                                     AS first_salary_date,
+    ROW_NUMBER() OVER (
+      PARTITION BY t.account_id
+      ORDER BY t.transaction_date ASC
+    ) AS rn
+  FROM transactions t
+  JOIN accounts   a ON t.account_id = a.account_id
+  JOIN customers  c ON a.customer_id = c.customer_id
+  WHERE t.merchant_category = 'Salary Credit'
+)
+SELECT account_id, customer_name, amount, first_salary_date
+  FROM ranked
+ WHERE rn = 1
+ ORDER BY first_salary_date`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];
