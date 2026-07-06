@@ -29,6 +29,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   71: 'Year-over-Year growth: STRFTIME → GROUP BY year → LAG(total) OVER → CASE WHEN NULL — the canonical period-over-period growth pattern',
   72: 'Funnel analysis: UNION ALL multi-stage aggregation + CROSS JOIN scalar CTE for conversion rates — the standard product-analytics funnel pattern',
   73: 'Deduplication: ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...) + WHERE rn = 1 — pick exactly one row per group, the universal dedup / latest-record-per-entity pattern',
+  74: 'Simple-interest accrual: principal × (rate/100) × JULIANDAY days / 365 — the standard MAS regulatory loan-book reporting formula',
+  75: 'A/B test SRM check: multi-CTE counts → CROSS JOIN total → deviation_pct → CASE srm_check — the Experimentation platform guard used at every FAANG-scale company',
 };
 
 export default function LevelUpModal() {
@@ -65,7 +67,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73].find((k) => currentLevel < k) ?? 73;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75].find((k) => currentLevel < k) ?? 75;
   const xpEarned    = xpFor(currentLevel);
 
   return (

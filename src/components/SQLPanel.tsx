@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Editor, { Monaco, loader } from '@monaco-editor/react';
-import { Play, Lightbulb, X, Anchor, Check } from 'lucide-react';
+import { Play, Lightbulb, X, Anchor, Check, HelpCircle, Compass } from 'lucide-react';
 import { useGameStore } from '@/store/useGameStore';
 import { executeQuery } from '@/lib/db';
 import { validateQuery, getExpectedShape } from '@/lib/validator';
@@ -63,6 +63,7 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [doubloonAmt, setDoubloonAmt] = useState<number | null>(null);
   const [hintChunkIdx, setHintChunkIdx] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const editorRef                   = useRef<unknown>(null);
   const monacoRef                   = useRef<Monaco | null>(null);
   const dismissTimerRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,6 +90,21 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
   const [modKey, setModKey] = useState('⌘');
   useEffect(() => {
     if (!/Mac|iP(hone|ad|od)/.test(navigator.platform)) setModKey('Ctrl');
+  }, []);
+
+  // ? key toggles the shortcuts panel (ignored when editor textarea has focus).
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setShowShortcuts((s) => !s);
+      } else if (e.key === 'Escape') {
+        setShowShortcuts(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   // Touch devices get a 16px editor font (anything smaller makes iOS zoom the
@@ -338,6 +354,104 @@ export default function SQLPanel({ onQueryRun }: SQLPanelProps) {
               +{doubloonAmt} ⬡ XP
             </div>
           )}
+
+          {/* ── Keyboard Shortcuts Help ───────────────────────────── */}
+          <div className="relative">
+            <button
+              onClick={() => setShowShortcuts((s) => !s)}
+              title="Keyboard shortcuts (?)"
+              aria-label="Toggle keyboard shortcuts"
+              className="lcb-icon-btn flex items-center justify-center w-6 h-6 transition-opacity hover:opacity-80"
+              style={{
+                color: showShortcuts ? 'var(--lcb-gold)' : 'var(--lcb-muted)',
+                border: `1px solid ${showShortcuts ? 'rgba(201,168,76,0.5)' : 'transparent'}`,
+                borderRadius: 4,
+              }}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+
+            {showShortcuts && (
+              <div
+                className="absolute z-50"
+                style={{
+                  bottom: 'calc(100% + 10px)',
+                  right: 0,
+                  width: 280,
+                  background: 'var(--lcb-black)',
+                  border: '1px solid rgba(201,168,76,0.35)',
+                  borderRadius: 6,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  padding: '12px 14px',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Compass className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--lcb-gold)' }} />
+                  <span
+                    className="text-xs font-semibold uppercase tracking-widest"
+                    style={{ color: 'var(--lcb-gold)', fontFamily: 'var(--font-ibm-plex-mono)' }}
+                  >
+                    Navigator&apos;s Chart
+                  </span>
+                  <button
+                    onClick={() => setShowShortcuts(false)}
+                    className="ml-auto lcb-icon-btn p-0.5 transition-opacity hover:opacity-60"
+                    style={{ color: 'var(--lcb-muted)' }}
+                    aria-label="Close shortcuts"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {([
+                    { keys: [`${modKey}↵`],   label: 'Run query (free exploration)' },
+                    { keys: [`⇧${modKey}↵`],  label: 'Submit for grading' },
+                    { keys: ['?'],             label: 'Toggle this panel' },
+                    { keys: ['Esc'],           label: 'Close overlays' },
+                  ] as { keys: string[]; label: string }[]).map(({ keys, label }) => (
+                    <div key={label} className="flex items-center justify-between gap-3">
+                      <span
+                        className="text-xs"
+                        style={{ color: 'var(--lcb-white)', opacity: 0.75, fontFamily: 'var(--font-ibm-plex-mono)' }}
+                      >
+                        {label}
+                      </span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {keys.map((k) => (
+                          <kbd
+                            key={k}
+                            className="px-1.5 py-0.5 text-xs rounded"
+                            style={{
+                              fontFamily: 'var(--font-ibm-plex-mono)',
+                              fontSize: 10,
+                              color: 'var(--lcb-gold)',
+                              background: 'rgba(201,168,76,0.12)',
+                              border: '1px solid rgba(201,168,76,0.3)',
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {k}
+                          </kbd>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div
+                  className="mt-3 pt-2.5"
+                  style={{ borderTop: '1px solid rgba(201,168,76,0.15)' }}
+                >
+                  <p className="text-xs" style={{ color: 'var(--lcb-muted)', fontFamily: 'var(--font-ibm-plex-mono)', lineHeight: 1.5 }}>
+                    <Anchor className="w-3 h-3 inline mr-1" style={{ color: 'var(--lcb-gold)', opacity: 0.6, verticalAlign: 'middle' }} />
+                    Run freely to explore — only Submit counts toward grading.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleRun}
             disabled={isExecuting}

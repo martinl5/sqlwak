@@ -4,6 +4,26 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 13 — 2026-07-06
+
+### [UI/UX Improvements]
+
+- **Keyboard Shortcuts Help Panel** (`SQLPanel.tsx`): Added a "Navigator's Chart" floating shortcuts reference card accessible via a `HelpCircle` icon button in the SQLPanel header (immediately left of the Run button). The panel appears as a gold-bordered floating card (`box-shadow: 0 8px 32px rgba(0,0,0,0.6)`) anchored above the button. It lists all four key bindings — Run (`⌘↵` / `Ctrl↵`), Submit (`⇧⌘↵` / `⇧Ctrl↵`), Toggle shortcuts (`?`), and Close overlays (`Esc`) — in a two-column layout with gold `<kbd>` chips. A compass (`Compass` Lucide icon) and thematic footer note ("Run freely to explore — only Submit counts toward grading") reinforce the maritime theme. The `?` key itself toggles the panel globally, except when the Monaco editor textarea has focus (to avoid intercepting SQL input). `Escape` closes it. Implements the "Accessibility & DX: keyboard shortcuts" item from the UI/UX rotation.
+
+### [Game Design Tweaks]
+
+- **Level 74** *(Expert, difficulty 4)* — "Active Loan Interest Accrual": Teaches simple-interest accrual date arithmetic, the standard MAS regulatory approximation for loan-book exposure. The formula `principal × (rate / 100) × JULIANDAY days / 365` is computed inline in a single SELECT JOIN against loans and customers — no CTE needed. Against the 12 active loans the result ranks Lee Hui Min's $450k grade-A home loan (started 2018-09-30, ~7.75 years elapsed) at the top with ~$87k accrued, and Siti Rahimah's $8k personal loan (started 2024-01-15) at the bottom with ~$1.1k accrued. The deliberate range (5× difference between oldest and newest loans) illustrates how accrual compounds time × principal simultaneously. This exact formula appears in IFRS 9 expected-credit-loss provisioning, Basel III RWA calculations, and treasury liquidity reports at GIC, DBS, and JPMorgan. No new tables or seed data required.
+
+- **Level 75** *(Expert, difficulty 4)* — "A/B Test Sample-Ratio Mismatch (SRM) Check": Teaches the experimentation-platform SRM guard — the first check before any A/B test result can be trusted. Three-CTE chain: (1) `counts` groups `customers.ab_test_group` to get actual group sizes; (2) `total` sums to get the grand total; (3) `expected` CROSS JOINs counts with total to compute `expected_n = total × 0.5`. The outer query adds `deviation_pct = ROUND(100*(actual − expected)/expected, 1)` and a `CASE` expression that flags `'FAIL — SRM detected'` when `|deviation|/expected > 5 %` or `'PASS'` otherwise. With the balanced alternating 'A'/'B' assignment (10 each), both groups return `deviation_pct = 0.0, srm_check = PASS` — the cleanest pedagogical outcome: the check works correctly and the test is valid to analyse. This exact guard is mandated in Experimentation platforms at Booking.com, Airbnb, Netflix, and Meta before any metric computation. Uses the existing `ab_test_group` column added in Iteration 2.
+
+### [Database & Code Optimizations]
+
+- **`LevelUpModal` hint map** extended with entries for levels 74 (simple-interest accrual formula and JULIANDAY arithmetic) and 75 (multi-CTE SRM check pattern). `nextHintKey` sentinel array extended from `[…, 73]` to `[…, 73, 74, 75]`; fallback updated `?? 73` → `?? 75`. `MAX_LEVEL` in `progression.ts` auto-derives from the last level in the array (75) — no other touch points needed.
+- **Tests**: 415 tests pass (up from 395 in iter-12). Both new levels are automatically picked up by the determinism invariants suite.
+- **No new DB tables, seed rows, or indexes** — Level 74 uses the existing `loans` + `customers` tables; Level 75 uses the existing `customers.ab_test_group` column.
+
+---
+
 ## Iteration 12 — 2026-06-29
 
 ### [UI/UX Improvements]
