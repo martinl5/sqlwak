@@ -1508,4 +1508,120 @@ SELECT account_id, customer_name, amount, first_salary_date
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ── Level 74 ── Interest Accrual (date arithmetic) ─────────────────────────
+  {
+    id: 74,
+    title: 'Active Loan Interest Accrual',
+    description: `The MAS Liquidity Coverage Ratio report requires LCB to quantify total interest outstanding on every active loan as of today (2026-07-06). Using simple-interest accrual — the standard approximation for MAS regulatory reporting — compute how much interest has accumulated on each active loan from its start date to the reference date.
+
+Formula: accrued_interest = principal × (rate / 100) × days_elapsed / 365
+
+Return \`loan_id\`, \`customer_name\`, \`principal_amount\`, \`interest_rate\`, and \`accrued_interest_usd\` (rounded to 2 dp), ordered by accrued_interest_usd descending.
+
+Note: Use JULIANDAY('2026-07-06') - JULIANDAY(l.start_date) for days_elapsed. Include only loans with status = 'Active'.`,
+    hint: "JOIN loans to customers on customer_id. Filter WHERE l.status = 'Active'. Compute ROUND(l.principal_amount * (l.interest_rate / 100.0) * (JULIANDAY('2026-07-06') - JULIANDAY(l.start_date)) / 365.0, 2) AS accrued_interest_usd. No CTE needed — a single SELECT with the arithmetic expression is sufficient. ORDER BY accrued_interest_usd DESC.",
+    seedQuery: `SELECT
+  l.loan_id,
+  c.customer_name,
+  l.principal_amount,
+  l.interest_rate,
+  ROUND(
+    l.principal_amount * (l.interest_rate / 100.0) *
+    (JULIANDAY(   ) - JULIANDAY(l.start_date)) / 365.0,
+  2) AS accrued_interest_usd
+FROM loans l
+JOIN customers c ON l.customer_id =
+WHERE l.status =
+ORDER BY accrued_interest_usd DESC`,
+    solutionQuery: `SELECT
+  l.loan_id,
+  c.customer_name,
+  l.principal_amount,
+  l.interest_rate,
+  ROUND(
+    l.principal_amount * (l.interest_rate / 100.0) *
+    (JULIANDAY('2026-07-06') - JULIANDAY(l.start_date)) / 365.0,
+    2
+  ) AS accrued_interest_usd
+FROM loans l
+JOIN customers c ON l.customer_id = c.customer_id
+WHERE l.status = 'Active'
+ORDER BY accrued_interest_usd DESC`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+
+  // ── Level 75 ── A/B Test Sample-Ratio Mismatch ──────────────────────────────
+  {
+    id: 75,
+    title: 'A/B Test Sample-Ratio Mismatch (SRM) Check',
+    description: `LCB ran an A/B test on a new digital onboarding UI (captured in customers.ab_test_group). Before analysing conversion rates, the Experimentation team must verify that the traffic split is valid — a sample-ratio mismatch (SRM) means the assignment mechanism was broken and results cannot be trusted.
+
+An SRM is declared when |actual_n − expected_n| / expected_n > 5 % (0.05).
+
+For a balanced 50/50 split design, build a multi-CTE query:
+ 1. \`counts\` — actual group sizes (GROUP BY ab_test_group)
+ 2. \`total\` — grand total across both groups
+ 3. \`expected\` — each group's expected_n = total × 0.5
+
+Return \`ab_test_group\`, \`actual_n\`, \`expected_n\` (ROUND to 1 dp), \`deviation_pct\` (ROUND(100*(actual−expected)/expected, 1)), and \`srm_check\` ('FAIL — SRM detected' or 'PASS'), ordered by ab_test_group.`,
+    hint: "WITH counts AS (SELECT ab_test_group, COUNT(*) AS actual_n FROM customers GROUP BY ab_test_group), total AS (SELECT SUM(actual_n) AS total_n FROM counts), expected AS (SELECT c.ab_test_group, c.actual_n, ROUND(t.total_n * 0.5, 1) AS expected_n FROM counts c CROSS JOIN total t) — outer SELECT adds deviation_pct = ROUND(100.0*(actual_n - expected_n)/expected_n, 1) and CASE WHEN ABS(actual_n - expected_n)/expected_n > 0.05 THEN 'FAIL — SRM detected' ELSE 'PASS' END AS srm_check.",
+    seedQuery: `WITH counts AS (
+  SELECT ab_test_group, COUNT(*) AS actual_n
+  FROM customers
+  GROUP BY ab_test_group
+),
+total AS (
+  SELECT SUM(actual_n) AS total_n FROM counts
+),
+expected AS (
+  SELECT
+    c.ab_test_group,
+    c.actual_n,
+    ROUND(t.total_n * 0.5, 1) AS expected_n
+  FROM counts c
+  CROSS JOIN total t
+)
+SELECT
+  ab_test_group,
+  actual_n,
+  expected_n,
+  ROUND(100.0 * (actual_n - expected_n) / expected_n, 1) AS deviation_pct,
+  CASE
+    WHEN ABS(actual_n - expected_n) / expected_n >  THEN 'FAIL — SRM detected'
+    ELSE 'PASS'
+  END AS srm_check
+FROM expected
+ORDER BY ab_test_group`,
+    solutionQuery: `WITH counts AS (
+  SELECT ab_test_group, COUNT(*) AS actual_n
+  FROM customers
+  GROUP BY ab_test_group
+),
+total AS (
+  SELECT SUM(actual_n) AS total_n FROM counts
+),
+expected AS (
+  SELECT
+    c.ab_test_group,
+    c.actual_n,
+    ROUND(t.total_n * 0.5, 1) AS expected_n
+  FROM counts c
+  CROSS JOIN total t
+)
+SELECT
+  ab_test_group,
+  actual_n,
+  expected_n,
+  ROUND(100.0 * (actual_n - expected_n) / expected_n, 1) AS deviation_pct,
+  CASE
+    WHEN ABS(actual_n - expected_n) / expected_n > 0.05 THEN 'FAIL — SRM detected'
+    ELSE 'PASS'
+  END AS srm_check
+FROM expected
+ORDER BY ab_test_group`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];
