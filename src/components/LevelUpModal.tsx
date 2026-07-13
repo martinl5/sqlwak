@@ -31,6 +31,8 @@ const EPOCH_NEXT_HINT: Record<number, string> = {
   73: 'Deduplication: ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...) + WHERE rn = 1 — pick exactly one row per group, the universal dedup / latest-record-per-entity pattern',
   74: 'Simple-interest accrual: principal × (rate/100) × JULIANDAY days / 365 — the standard MAS regulatory loan-book reporting formula',
   75: 'A/B test SRM check: multi-CTE counts → CROSS JOIN total → deviation_pct → CASE srm_check — the Experimentation platform guard used at every FAANG-scale company',
+  76: 'WITH RECURSIVE date spine: iterative CTE + LEFT JOIN zero-fill — the universal gap-filling pattern for contiguous time-series in every BI pipeline',
+  77: 'FIRST_VALUE + LAST_VALUE: always specify ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING for LAST_VALUE — the default frame only looks back to the current row',
 };
 
 export default function LevelUpModal() {
@@ -67,7 +69,7 @@ export default function LevelUpModal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showLevelUp, handleClose]);
 
-  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75].find((k) => currentLevel < k) ?? 75;
+  const nextHintKey = [10, 20, 30, 40, 44, 54, 57, 59, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77].find((k) => currentLevel < k) ?? 77;
   const xpEarned    = xpFor(currentLevel);
 
   return (
