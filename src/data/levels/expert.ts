@@ -1624,4 +1624,155 @@ ORDER BY ab_test_group`,
     epoch: 'Expert',
     difficulty: 4,
   },
+
+  // ── Level 76 ── WITH RECURSIVE date spine ──────────────────────────────────
+  {
+    id: 76,
+    title: 'Monthly Revenue Completeness Check (WITH RECURSIVE)',
+    description: `The LCB Data Quality team needs to confirm that cargo revenue data is present for **every** month in the Jan–Jun 2024 reporting window — not just the months that have shipments. Missing months must appear as zeros, not invisible gaps.
+
+The standard SQL technique is a **date spine**: a recursive CTE that generates every month in the range, then LEFT JOINs the actual data so zero-activity months show up explicitly.
+
+**Step 1 — Generate the date spine:**
+\`\`\`sql
+WITH RECURSIVE months(month) AS (
+  SELECT '2024-01'
+  UNION ALL
+  SELECT STRFTIME('%Y-%m', DATE(month || '-01', '+1 month'))
+  FROM months
+  WHERE month < '2024-06'
+)
+\`\`\`
+\`WITH RECURSIVE\` is the standard SQL mechanism for iterative computation. Each row generates the next by advancing the date by one month; the \`WHERE\` clause is the termination condition.
+
+**Step 2 — Aggregate actual revenue by month**, then LEFT JOIN the spine to it.
+
+Return \`month\`, \`shipments\` (COALESCE to 0), \`revenue_m_usd\` (SUM of cargo_value_usd ÷ 1 000 000, ROUND to 2 dp, COALESCE to 0.00), and \`status\` ('No shipments' when the month had no data, 'Active' otherwise), ordered by month.
+
+**Why it matters:** Date spines are fundamental to every BI pipeline at FAANG, digital banks, and sovereign wealth funds. Without them, a simple GROUP BY silently hides zero-activity periods — which masquerades as missing ETL runs in production dashboards.`,
+    hint: "WITH RECURSIVE months(month) AS (SELECT '2024-01' UNION ALL SELECT STRFTIME('%Y-%m', DATE(month || '-01', '+1 month')) FROM months WHERE month < '2024-06'), monthly_revenue AS (SELECT STRFTIME('%Y-%m', departure_date) AS month, COUNT(*) AS shipment_count, ROUND(SUM(cargo_value_usd)/1000000.0,2) AS revenue_m_usd FROM cargo_shipments GROUP BY month) — outer: SELECT m.month, COALESCE(r.shipment_count,0) AS shipments, COALESCE(r.revenue_m_usd,0.00) AS revenue_m_usd, CASE WHEN r.month IS NULL THEN 'No shipments' ELSE 'Active' END AS status FROM months m LEFT JOIN monthly_revenue r ON m.month = r.month ORDER BY m.month.",
+    seedQuery: `WITH RECURSIVE months(month) AS (
+  SELECT '2024-01'
+  UNION ALL
+  SELECT STRFTIME('%Y-%m', DATE(month || '-01', '+1 month'))
+  FROM months
+  WHERE month <
+),
+monthly_revenue AS (
+  SELECT
+    STRFTIME('%Y-%m', departure_date) AS month,
+    COUNT(*)                                        AS shipment_count,
+    ROUND(SUM(cargo_value_usd) / 1000000.0, 2)    AS revenue_m_usd
+  FROM cargo_shipments
+  GROUP BY month
+)
+SELECT
+  m.month,
+  COALESCE(r.shipment_count, 0)   AS shipments,
+  COALESCE(r.revenue_m_usd, 0.00) AS revenue_m_usd,
+  CASE WHEN r.month IS NULL THEN 'No shipments' ELSE 'Active' END AS status
+FROM months m
+LEFT JOIN monthly_revenue r ON m.month = r.month
+ORDER BY m.month`,
+    solutionQuery: `WITH RECURSIVE months(month) AS (
+  SELECT '2024-01'
+  UNION ALL
+  SELECT STRFTIME('%Y-%m', DATE(month || '-01', '+1 month'))
+  FROM months
+  WHERE month < '2024-06'
+),
+monthly_revenue AS (
+  SELECT
+    STRFTIME('%Y-%m', departure_date) AS month,
+    COUNT(*)                                        AS shipment_count,
+    ROUND(SUM(cargo_value_usd) / 1000000.0, 2)    AS revenue_m_usd
+  FROM cargo_shipments
+  GROUP BY month
+)
+SELECT
+  m.month,
+  COALESCE(r.shipment_count, 0)   AS shipments,
+  COALESCE(r.revenue_m_usd, 0.00) AS revenue_m_usd,
+  CASE WHEN r.month IS NULL THEN 'No shipments' ELSE 'Active' END AS status
+FROM months m
+LEFT JOIN monthly_revenue r ON m.month = r.month
+ORDER BY m.month`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
+
+  // ── Level 77 ── FIRST_VALUE + LAST_VALUE ────────────────────────────────────
+  {
+    id: 77,
+    title: 'Fleet Voyage Bookends (FIRST_VALUE + LAST_VALUE)',
+    description: `The LCB Fleet Operations desk needs a vessel utilisation summary showing each ship's **first ever** departure port and **most recent** departure port — the bookends of its service history in the LCB data. This reveals routing evolution: did a tanker's homebase shift from Singapore to Bangkok over the year?
+
+Use \`FIRST_VALUE\` and \`LAST_VALUE\` window functions partitioned by vessel, combined with a \`ROW_NUMBER\` dedup to return exactly one row per vessel.
+
+**Critical gotcha — LAST_VALUE and window frames:**
+\`LAST_VALUE\` with its *default* frame \`RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\` returns the **current row's value**, not the partition's last. You must specify an explicit frame:
+\`\`\`sql
+LAST_VALUE(s.origin_port) OVER (
+  PARTITION BY v.vessel_id ORDER BY s.departure_date
+  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+)
+\`\`\`
+
+**Pattern:** Single CTE \`voyage_data\` computes all four window expressions together (FIRST_VALUE, LAST_VALUE, COUNT, ROW_NUMBER), then the outer query filters \`WHERE rn = 1\` to collapse each vessel to one row.
+
+Return \`vessel_id\`, \`vessel_name\`, \`vessel_type\`, \`voyage_count\`, \`first_origin\`, \`last_origin\`, ordered by \`vessel_id\`.
+
+This exact FIRST_VALUE / LAST_VALUE frame pattern appears in FAANG DS interviews, trading-desk settlement-gap analysis, and logistics routing pipelines at sovereign wealth funds.`,
+    hint: "WITH voyage_data AS (SELECT v.vessel_id, v.vessel_name, v.vessel_type, COUNT(*) OVER (PARTITION BY v.vessel_id) AS voyage_count, FIRST_VALUE(s.origin_port) OVER (PARTITION BY v.vessel_id ORDER BY s.departure_date) AS first_origin, LAST_VALUE(s.origin_port) OVER (PARTITION BY v.vessel_id ORDER BY s.departure_date ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_origin, ROW_NUMBER() OVER (PARTITION BY v.vessel_id ORDER BY s.departure_date) AS rn FROM cargo_shipments s JOIN vessels v ON s.vessel_id = v.vessel_id) — outer: SELECT vessel_id, vessel_name, vessel_type, voyage_count, first_origin, last_origin FROM voyage_data WHERE rn = 1 ORDER BY vessel_id.",
+    seedQuery: `WITH voyage_data AS (
+  SELECT
+    v.vessel_id,
+    v.vessel_name,
+    v.vessel_type,
+    COUNT(*) OVER (PARTITION BY v.vessel_id)              AS voyage_count,
+    FIRST_VALUE(s.origin_port) OVER (
+      PARTITION BY v.vessel_id ORDER BY s.departure_date
+    )                                                      AS first_origin,
+    LAST_VALUE(s.origin_port) OVER (
+      PARTITION BY v.vessel_id ORDER BY s.departure_date
+      ROWS BETWEEN UNBOUNDED PRECEDING AND
+    )                                                      AS last_origin,
+    ROW_NUMBER() OVER (
+      PARTITION BY v.vessel_id ORDER BY s.departure_date
+    )                                                      AS rn
+  FROM cargo_shipments s
+  JOIN vessels v ON s.vessel_id = v.vessel_id
+)
+SELECT vessel_id, vessel_name, vessel_type, voyage_count,
+       first_origin, last_origin
+FROM voyage_data
+WHERE rn = 1
+ORDER BY vessel_id`,
+    solutionQuery: `WITH voyage_data AS (
+  SELECT
+    v.vessel_id,
+    v.vessel_name,
+    v.vessel_type,
+    COUNT(*) OVER (PARTITION BY v.vessel_id)              AS voyage_count,
+    FIRST_VALUE(s.origin_port) OVER (
+      PARTITION BY v.vessel_id ORDER BY s.departure_date
+    )                                                      AS first_origin,
+    LAST_VALUE(s.origin_port) OVER (
+      PARTITION BY v.vessel_id ORDER BY s.departure_date
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    )                                                      AS last_origin,
+    ROW_NUMBER() OVER (
+      PARTITION BY v.vessel_id ORDER BY s.departure_date
+    )                                                      AS rn
+  FROM cargo_shipments s
+  JOIN vessels v ON s.vessel_id = v.vessel_id
+)
+SELECT vessel_id, vessel_name, vessel_type, voyage_count,
+       first_origin, last_origin
+FROM voyage_data
+WHERE rn = 1
+ORDER BY vessel_id`,
+    epoch: 'Expert',
+    difficulty: 4,
+  },
 ];

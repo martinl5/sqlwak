@@ -4,6 +4,33 @@ Each entry records one autonomous improvement iteration.
 
 ---
 
+## Iteration 14 — 2026-07-13
+
+### [UI/UX Improvements]
+
+- **Rank Promotion Banner** (`RankPromotionBanner.tsx`, `GameProvider.tsx`): When a player's XP crosses a career-rank threshold (Graduate Analyst → Senior Analyst → VP, Data & Analytics → Managing Director), an animated maritime-themed promotion notification slides in from the top-center of the screen. Design details:
+  - Spring-animated entrance (`stiffness: 320, damping: 26`) slides the card down from 80 px above the viewport and out the same way on dismiss.
+  - Gold top accent stripe + `box-shadow: 0 8px 40px rgba(0,0,0,0.7)` give depth without blocking gameplay.
+  - The rank-appropriate icon (⚓ / 🧭 / 🏅) spins 720° on entry via `framer-motion` (2 full rotations, ease-out, 1.2 s) — a single deliberate motion moment rather than ambient animation.
+  - A depleting gold countdown bar across the bottom auto-dismisses after 6 seconds; a dismiss `×` button and click-anywhere-to-close ensure no accidental blockers.
+  - Each rank has bespoke flavour text linking the player's SQL skill set to the promotion (`fleet's risk dashboards`, `LCB analytics fleet is yours to command`).
+  - Detection in `GameProvider.tsx` via `useRef<string | null>` tracking the previous rank name, compared against `rankInfo(totalXp).name` on every XP change. Promotion fires only when `prevRank !== null` (ignores the initial render).
+  - Implements the "gamification: rank tiers" rotation item, giving the career-rank ladder (added in iter-7) its missing feedback loop.
+
+### [Game Design Tweaks]
+
+- **Level 76** *(Expert, difficulty 4)* — "Monthly Revenue Completeness Check (WITH RECURSIVE)": Introduces the `WITH RECURSIVE` date-spine pattern — the first use of recursive CTEs in the entire level catalog. The recursive CTE `months(month)` seeds with `'2024-01'` and advances by one calendar month via `STRFTIME('%Y-%m', DATE(month || '-01', '+1 month'))` with `WHERE month < '2024-06'` as the termination guard. A second CTE `monthly_revenue` aggregates `cargo_shipments` by month. The outer query LEFT JOINs the spine to actual revenue, using `COALESCE` for zero-fill and a `CASE WHEN r.month IS NULL` for a `'No shipments'` / `'Active'` status flag. Returns 6 rows — Jan through Jun 2024, all Active (the data has complete coverage, proving the check works correctly). The pedagogical point: a plain `GROUP BY` silently hides zero-activity periods; date spines make gaps explicit. This pattern is foundational in every BI pipeline at FAANG, digital banks, and sovereign wealth funds — used in Looker measures, Redshift/Snowflake time-spine logic, and MAS reporting gap-detection pipelines.
+
+- **Level 77** *(Expert, difficulty 4)* — "Fleet Voyage Bookends (FIRST_VALUE + LAST_VALUE)": Teaches `FIRST_VALUE` and `LAST_VALUE` window functions with the critical **window-frame gotcha**. `LAST_VALUE` with its default frame `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` returns the current row's value, not the partition's last — a common production bug. The solution requires the explicit frame `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`. The level uses a single CTE `voyage_data` computing all four window expressions together (`FIRST_VALUE`, `LAST_VALUE`, `COUNT(*) OVER`, `ROW_NUMBER() OVER`), then the outer query deduplicates with `WHERE rn = 1`. Returns 12 rows — one per vessel, ordered by `vessel_id`. Vessels with multiple departures from different ports (2, 4, 5, 6, 7, 9, 10) show `first_origin ≠ last_origin`, revealing routing evolution over the year; single-voyage vessels (11, 12) and vessels that always depart Singapore (1, 3, 8) show matching bookends. This exact FIRST_VALUE/LAST_VALUE frame pattern appears in FAANG DS interviews, trading-desk settlement-gap analysis, and logistics routing pipelines at sovereign wealth funds.
+
+### [Database & Code Optimizations]
+
+- **`LevelUpModal` hint map** extended with entries for levels 76 (WITH RECURSIVE date spine — "the universal gap-filling pattern for contiguous time-series in every BI pipeline") and 77 (FIRST_VALUE + LAST_VALUE window frames — "always specify ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING for LAST_VALUE"). `nextHintKey` sentinel array extended from `[…, 74, 75]` to `[…, 74, 75, 76, 77]`; fallback updated `?? 75` → `?? 77`. `MAX_LEVEL` in `progression.ts` auto-derives from `levels[levels.length - 1].id` (77) — no other touch points needed.
+- **Tests**: 425 tests pass (up from 415 in iter-13). Both new levels auto-picked up by the determinism invariants suite — non-empty result sets confirmed, all ORDER BY keys verified distinct.
+- **No new DB tables, seed rows, or indexes** — Level 76 uses the existing `cargo_shipments` table; Level 77 uses the existing `cargo_shipments` + `vessels` tables.
+
+---
+
 ## Iteration 13 — 2026-07-06
 
 ### [UI/UX Improvements]

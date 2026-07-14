@@ -15,6 +15,7 @@ import { EPOCH_RANGES, MAX_LEVEL, rankInfo } from '@/lib/progression';
 import SchemaViewer from './SchemaViewer';
 import LevelProgressMap from './LevelProgressMap';
 import OnboardingOverlay from './OnboardingOverlay';
+import RankPromotionBanner from './RankPromotionBanner';
 
 const HarbourCanvas = dynamic(() => import('./FlockCanvas'), {
   ssr: false,
@@ -28,12 +29,22 @@ export default function GameProvider() {
   const [activeRightTab, setActiveRightTab]     = useState<'schema' | 'data'>('schema');
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [promotionRank, setPromotionRank]       = useState<string | null>(null);
+  const prevRankRef = useRef<string | null>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const { currentLevel, totalXp, currentStreak, rehydrateFleet } = useGameStore();
 
   // Career-rank ladder derived from the level data (see progression.ts),
   // so every rank up to Managing Director is actually reachable.
   const rank = rankInfo(totalXp);
+
+  // Detect rank promotions and surface the banner.
+  useEffect(() => {
+    if (prevRankRef.current !== null && prevRankRef.current !== rank.name) {
+      setPromotionRank(rank.name);
+    }
+    prevRankRef.current = rank.name;
+  }, [rank.name]);
 
   useEffect(() => {
     initDatabase()
@@ -366,6 +377,7 @@ export default function GameProvider() {
       <LevelNavigator isOpen={showLevelNavigator} onClose={() => setShowLevelNavigator(false)} />
       <LevelUpModal />
       <OnboardingOverlay />
+      <RankPromotionBanner rankName={promotionRank} onDismiss={() => setPromotionRank(null)} />
     </div>
   );
 }
