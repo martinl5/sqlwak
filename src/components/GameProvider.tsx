@@ -30,7 +30,7 @@ export default function GameProvider() {
   const [showLevelNavigator, setShowLevelNavigator] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [promotionRank, setPromotionRank]       = useState<string | null>(null);
-  const prevRankRef = useRef<string | null>(null);
+  const [prevRank, setPrevRank]                 = useState<string | null>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
   const { currentLevel, totalXp, currentStreak, rehydrateFleet } = useGameStore();
 
@@ -38,13 +38,14 @@ export default function GameProvider() {
   // so every rank up to Managing Director is actually reachable.
   const rank = rankInfo(totalXp);
 
-  // Detect rank promotions and surface the banner.
-  useEffect(() => {
-    if (prevRankRef.current !== null && prevRankRef.current !== rank.name) {
+  // Detect rank promotions and surface the banner. State is adjusted during
+  // render (not in an effect) per https://react.dev/learn/you-might-not-need-an-effect
+  if (prevRank !== rank.name) {
+    if (prevRank !== null) {
       setPromotionRank(rank.name);
     }
-    prevRankRef.current = rank.name;
-  }, [rank.name]);
+    setPrevRank(rank.name);
+  }
 
   useEffect(() => {
     initDatabase()
